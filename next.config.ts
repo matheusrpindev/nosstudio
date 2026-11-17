@@ -45,6 +45,8 @@ const nextConfig: NextConfig = {
       // uploads passam por Route Handler; as actions só carregam formulários de texto
       bodySizeLimit: "2mb",
     },
+    // o proxy (src/proxy.ts) cobre /painel/**: sem isto, uploads acima de 10 MB seriam truncados
+    proxyClientMaxBodySize: "32mb",
   },
   turbopack: {
     rules: {

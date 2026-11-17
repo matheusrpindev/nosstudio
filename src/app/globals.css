@@ -1,17 +1,211 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Tokens da marca NÓS Studio (Tailwind v4, CSS-first).
+   Cores oficiais: roxo, lima, lavanda, offwhite, grafite. O resto é derivado.
+   ========================================================================== */
 @theme {
-  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
+  /* paleta oficial */
   --color-roxo: #3b1f8e;
   --color-lima: #c6f432;
   --color-lavanda: #cfc6ff;
   --color-offwhite: #f6f4ef;
   --color-grafite: #1b1b22;
+
+  /* derivados */
+  --color-roxo-escuro: #2c1670; /* hover de roxo */
+  --color-roxo-noite: #1f0f52; /* fundos profundos */
+  --color-lima-escuro: #b2dc1f; /* hover de lima */
+  --color-lavanda-claro: #efecff; /* superfícies suaves */
+  --color-areia: #e6e2d8; /* bordas sobre offwhite/branco */
+  --color-areia-escuro: #cdc7b9; /* bordas fortes / foco neutro */
+  --color-cinza: #5e5c66; /* texto secundário (AA sobre offwhite e branco) */
+
+  /* estados (painel) */
+  --color-sucesso: #1f7a4d;
+  --color-sucesso-claro: #e2f3e9;
+  --color-perigo: #b3261e;
+  --color-perigo-claro: #fbe9e7;
+  --color-alerta: #8a5a00;
+  --color-alerta-claro: #fff1cc;
+
+  --radius-campo: 0.625rem; /* inputs e botões */
+  --radius-cartao: 1rem; /* cards */
+
+  --shadow-cartao: 0 1px 2px rgb(27 27 34 / 0.04), 0 4px 16px rgb(27 27 34 / 0.04);
+  --shadow-flutuante: 0 8px 30px rgb(27 27 34 / 0.14);
 }
 
-body {
-  background: var(--color-offwhite);
-  color: var(--color-grafite);
-  font-family: var(--font-sans);
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--color-offwhite);
+    color: var(--color-grafite);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01";
+  }
+  ::selection {
+    background: var(--color-lima);
+    color: var(--color-grafite);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-roxo);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Classes de componente compartilhadas (vocabulário visual do painel).
+   Os componentes de src/components/ui embrulham estas classes; use-as direto
+   quando precisar de um elemento nativo com a mesma aparência.
+   ========================================================================== */
+@layer components {
+  /* ---- botões */
+  .btn {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-campo border border-transparent px-4 py-2 text-sm leading-tight font-semibold whitespace-nowrap transition-colors select-none disabled:cursor-not-allowed disabled:opacity-55;
+  }
+  .btn-primary {
+    @apply bg-roxo hover:bg-roxo-escuro text-white;
+  }
+  .btn-accent {
+    @apply bg-lima text-grafite hover:bg-lima-escuro;
+  }
+  .btn-secondary {
+    @apply border-areia-escuro text-grafite hover:border-roxo hover:text-roxo bg-white;
+  }
+  .btn-ghost {
+    @apply text-roxo hover:bg-lavanda-claro;
+  }
+  .btn-danger {
+    @apply bg-perigo text-white hover:brightness-90;
+  }
+  .btn-danger-ghost {
+    @apply text-perigo hover:bg-perigo-claro;
+  }
+  .btn-sm {
+    @apply min-h-9 px-3 py-1.5 text-[0.8125rem];
+  }
+  .btn-lg {
+    @apply min-h-12 px-6 text-base;
+  }
+  .btn-icon {
+    @apply size-11 px-0;
+  }
+  .btn-icon.btn-sm {
+    @apply size-9;
+  }
+
+  /* ---- formulários (fonte ≥ 16px evita zoom no iOS) */
+  .label {
+    @apply text-grafite mb-1.5 block text-sm font-semibold;
+  }
+  .hint {
+    @apply text-cinza mt-1.5 text-[0.8125rem] leading-snug;
+  }
+  .field-error {
+    @apply text-perigo mt-1.5 text-[0.8125rem] leading-snug font-medium;
+  }
+  .input {
+    @apply border-areia-escuro text-grafite placeholder:text-cinza/70 focus:border-roxo focus:ring-roxo/20 block min-h-11 w-full rounded-campo border bg-white px-3 py-2 text-base transition-colors outline-none focus:ring-4 disabled:cursor-not-allowed disabled:bg-offwhite disabled:opacity-70;
+  }
+  .input[aria-invalid="true"] {
+    @apply border-perigo focus:border-perigo focus:ring-perigo/20;
+  }
+  textarea.input {
+    @apply min-h-24 leading-relaxed;
+  }
+  select.input {
+    @apply cursor-pointer appearance-none bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e5c66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+  .checkbox {
+    @apply border-areia-escuro accent-roxo size-5 shrink-0 cursor-pointer rounded border;
+  }
+
+  /* ---- superfícies */
+  .card {
+    @apply border-areia rounded-cartao shadow-cartao border bg-white;
+  }
+  .card-pad {
+    @apply p-4 sm:p-6;
+  }
+
+  /* ---- etiquetas de status */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs leading-5 font-semibold whitespace-nowrap;
+  }
+  .badge-neutral {
+    @apply bg-areia/70 text-grafite;
+  }
+  .badge-roxo {
+    @apply bg-lavanda-claro text-roxo;
+  }
+  .badge-lima {
+    @apply bg-lima text-grafite;
+  }
+  .badge-sucesso {
+    @apply bg-sucesso-claro text-sucesso;
+  }
+  .badge-alerta {
+    @apply bg-alerta-claro text-alerta;
+  }
+  .badge-perigo {
+    @apply bg-perigo-claro text-perigo;
+  }
+
+  .link {
+    @apply text-roxo decoration-roxo/40 hover:decoration-roxo font-semibold underline underline-offset-4;
+  }
+}
+
+/* Texto rico renderizado por <Markdown> */
+@layer components {
+  .prosa {
+    @apply leading-relaxed;
+  }
+  .prosa > * + * {
+    @apply mt-4;
+  }
+  .prosa h2 {
+    @apply mt-8 text-xl font-bold;
+  }
+  .prosa h3,
+  .prosa h4 {
+    @apply mt-6 text-lg font-bold;
+  }
+  .prosa ul {
+    @apply list-disc pl-5;
+  }
+  .prosa ol {
+    @apply list-decimal pl-5;
+  }
+  .prosa li + li {
+    @apply mt-1.5;
+  }
+  .prosa a {
+    @apply text-roxo font-semibold underline underline-offset-4;
+  }
+  .prosa strong {
+    @apply font-bold;
+  }
+  .prosa blockquote {
+    @apply border-lavanda border-l-4 pl-4 italic;
+  }
 }
