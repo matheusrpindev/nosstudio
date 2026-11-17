@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+
+  --color-roxo: #3b1f8e;
+  --color-lima: #c6f432;
+  --color-lavanda: #cfc6ff;
+  --color-offwhite: #f6f4ef;
+  --color-grafite: #1b1b22;
+}
+
+body {
+  background: var(--color-offwhite);
+  color: var(--color-grafite);
+  font-family: var(--font-sans);
+}

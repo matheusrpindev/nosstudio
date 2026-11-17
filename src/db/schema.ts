@@ -1,0 +1,824 @@
+/**
+ * Schema do banco (SQLite / libSQL via Drizzle).
+ *
+ * Convenções:
+ * - Dinheiro: sempre em centavos (integer). Nunca float.
+ * - Datas "de calendário" (vencimento, data do evento, prazo): texto ISO `YYYY-MM-DD` — sem fuso horário.
+ * - Horários de agenda: texto `HH:mm` (horário local do estúdio).
+ * - Instantes (criado em, enviado em): integer em milissegundos (`timestamp_ms` → Date).
+ * - Listas pequenas e estruturas livres: colunas JSON tipadas com `$type`.
+ * - Enums: listas em `src/lib/domain.ts` (fonte única, com rótulos em pt-BR).
+ */
+import { relations, sql } from "drizzle-orm";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  AGENDA_KINDS,
+  APPROVAL_STATUSES,
+  BACKUP_STATUSES,
+  BRAND_ASSET_CATEGORIES,
+  BRAND_COLORS,
+  CLIENT_KINDS,
+  CLIENT_STATUSES,
+  CONTACT_SOURCES,
+  CONTENT_FORMATS,
+  CONTENT_NETWORKS,
+  CONTENT_STATUSES,
+  CONTRACT_KINDS,
+  CONTRACT_STATUSES,
+  ENTRY_MODES,
+  FINANCE_CATEGORIES,
+  FINANCE_TYPES,
+  INTERACTION_KINDS,
+  LEAD_STATUSES,
+  MEDIA_VISIBILITIES,
+  PACKAGE_KINDS,
+  PAYMENT_METHODS,
+  PORTFOLIO_CATEGORIES,
+  PRICE_MODES,
+  PROJECT_STAGES,
+  PROPOSAL_COST_CATEGORIES,
+  PROPOSAL_ITEM_KINDS,
+  PROPOSAL_MODALITIES,
+  PROPOSAL_STATUSES,
+  SERVICE_INTERESTS,
+  TASK_PRIORITIES,
+  TESTIMONIAL_KINDS,
+  USER_ROLES,
+} from "@/lib/domain";
+
+// ------------------------------------------------------------------ helpers
+const id = () => integer("id").primaryKey({ autoIncrement: true });
+const createdAt = () =>
+  integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`);
+const updatedAt = () =>
+  integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`)
+    .$onUpdate(() => new Date());
+const bool = (name: string, def = false) => integer(name, { mode: "boolean" }).notNull().default(def);
+const sortOrder = () => integer("sort_order").notNull().default(0);
+
+// tipos das colunas JSON
+export type LabeledDate = { label: string; date: string };
+export type LabeledLink = { label: string; url: string };
+export type ChecklistItem = { id: string; text: string; done: boolean };
+export type Deliverable = { label: string; quantity: string };
+export type MediaVariant = { width: number; height: number; key: string };
+export type LeadDetails = {
+  /** Campos extras do formulário de evento/casamento. */
+  eventType?: string;
+  eventLocation?: string;
+  guests?: string;
+  startTime?: string;
+  endTime?: string;
+  coverage?: string; // foto, vídeo, foto + vídeo
+  storymaker?: string; // sim / não / talvez
+  /** Pacote ou serviço avulso de origem, quando o visitante veio de um card. */
+  packageName?: string;
+  extras?: Record<string, string>;
+};
+
+// ============================================================== AUTENTICAÇÃO
+export const users = sqliteTable("users", {
+  id: id(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(), // sempre minúsculo
+  passwordHash: text("password_hash").notNull(),
+  role: text("role", { enum: USER_ROLES }).notNull().default("admin"),
+  active: bool("active", true),
+  /** Força a troca de senha no próximo login (contas criadas por outra pessoa). */
+  mustChangePassword: bool("must_change_password", false),
+  lastLoginAt: integer("last_login_at", { mode: "timestamp_ms" }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    /** SHA-256 (hex) do token que fica no cookie. O token em si nunca é gravado. */
+    id: text("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
+    userAgent: text("user_agent"),
+    ip: text("ip"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("sessions_user_idx").on(t.userId)],
+);
+
+export const passwordResetTokens = sqliteTable(
+  "password_reset_tokens",
+  {
+    /** SHA-256 (hex) do token enviado por e-mail. */
+    id: text("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    usedAt: integer("used_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("password_reset_user_idx").on(t.userId)],
+);
+
+/** Limitador de tentativas (login, recuperação de senha, formulário público). */
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(), // ex.: "login:ip:<hash>", "login:email:<hash>", "lead:ip:<hash>"
+  count: integer("count").notNull().default(0),
+  windowStart: integer("window_start", { mode: "timestamp_ms" }).notNull(),
+  blockedUntil: integer("blocked_until", { mode: "timestamp_ms" }),
+});
+
+/** Trilha de alterações e acessos do painel. */
+export const auditLog = sqliteTable(
+  "audit_log",
+  {
+    id: id(),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    userName: text("user_name"), // nome no momento da ação (sobrevive à exclusão do usuário)
+    action: text("action").notNull(), // "login", "create", "update", "delete", "status", "export", "pdf"…
+    entity: text("entity"), // "client", "proposal", "site_content"…
+    entityId: text("entity_id"),
+    summary: text("summary"), // frase curta em pt-BR. Nunca gravar senhas/tokens aqui.
+    createdAt: createdAt(),
+  },
+  (t) => [index("audit_created_idx").on(t.createdAt), index("audit_entity_idx").on(t.entity, t.entityId)],
+);
+
+// ===================================================================== MÍDIA
+export const media = sqliteTable(
+  "media",
+  {
+    id: id(),
+    /** Caminho dentro do storage (aleatório, não adivinhável). Ex.: "2026/11/ab12cd34ef.webp". */
+    storageKey: text("storage_key").notNull().unique(),
+    visibility: text("visibility", { enum: MEDIA_VISIBILITIES }).notNull().default("public"),
+    mime: text("mime").notNull(),
+    originalName: text("original_name").notNull(),
+    size: integer("size").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    /** Texto alternativo (acessibilidade/SEO) — obrigatório para imagens públicas com conteúdo. */
+    alt: text("alt").notNull().default(""),
+    /** Versões redimensionadas (WebP) geradas no upload. */
+    variants: text("variants", { mode: "json" }).$type<MediaVariant[]>().notNull().default([]),
+    /** Cor dominante/placeholder (hex) para evitar "pulo" de layout. */
+    placeholderColor: text("placeholder_color"),
+    uploadedBy: integer("uploaded_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("media_visibility_idx").on(t.visibility)],
+);
+
+// ============================================================ SITE PÚBLICO
+/** Blocos de conteúdo editável do site (um registro por seção; valor em JSON validado por zod). */
+export const siteContent = sqliteTable("site_content", {
+  key: text("key").primaryKey(),
+  value: text("value", { mode: "json" }).$type<unknown>().notNull(),
+  updatedBy: integer("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: updatedAt(),
+});
+
+/** Configurações internas do painel (reserva de caixa, padrões de proposta…). Nunca públicas. */
+export const settings = sqliteTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value", { mode: "json" }).$type<unknown>().notNull(),
+  updatedBy: integer("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: updatedAt(),
+});
+
+/** Barra de avisos no topo do site. */
+export const announcements = sqliteTable("announcements", {
+  id: id(),
+  message: text("message").notNull(),
+  linkLabel: text("link_label"),
+  linkUrl: text("link_url"),
+  bgColor: text("bg_color", { enum: BRAND_COLORS }).notNull().default("roxo"),
+  textColor: text("text_color", { enum: BRAND_COLORS }).notNull().default("branco"),
+  /** Janela de exibição, horário local `YYYY-MM-DDTHH:mm`. Nulo = sem limite. */
+  startsAt: text("starts_at"),
+  endsAt: text("ends_at"),
+  enabled: bool("enabled", false),
+  dismissible: bool("dismissible", true),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const services = sqliteTable("services", {
+  id: id(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  /** Frase curta para cards. */
+  summary: text("summary").notNull().default(""),
+  /** Texto longo (markdown leve). */
+  description: text("description").notNull().default(""),
+  /** Lista de entregas/itens do serviço. */
+  items: text("items", { mode: "json" }).$type<string[]>().notNull().default([]),
+  ctaLabel: text("cta_label").notNull().default("Solicitar orçamento"),
+  /** Valor pré-selecionado no formulário de contato (SERVICE_INTERESTS). */
+  interest: text("interest", { enum: SERVICE_INTERESTS }).notNull().default("outro"),
+  coverMediaId: integer("cover_media_id").references(() => media.id, { onDelete: "set null" }),
+  gallery: text("gallery", { mode: "json" }).$type<number[]>().notNull().default([]), // ids de media
+  videoUrl: text("video_url"),
+  /** Página própria (ex.: /casamentos) em vez de âncora em /servicos. */
+  pagePath: text("page_path"),
+  visible: bool("visible", true),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const packages = sqliteTable("packages", {
+  id: id(),
+  kind: text("kind", { enum: PACKAGE_KINDS }).notNull().default("plano"),
+  name: text("name").notNull(),
+  /** "Para marcas que…" */
+  tagline: text("tagline").notNull().default(""),
+  description: text("description").notNull().default(""),
+  /** Serviços incluídos. */
+  includes: text("includes", { mode: "json" }).$type<string[]>().notNull().default([]),
+  /** Quantidades de entregas (ex.: {label: "Reels", quantity: "8 por mês"}). Vazio = não exibe. */
+  deliverables: text("deliverables", { mode: "json" }).$type<Deliverable[]>().notNull().default([]),
+  recordingDuration: text("recording_duration").notNull().default(""),
+  revisionLimit: text("revision_limit").notNull().default(""),
+  priceMode: text("price_mode", { enum: PRICE_MODES }).notNull().default("sob_consulta"),
+  priceCents: integer("price_cents"),
+  /** Complemento do preço (ex.: "/mês", "por diária"). */
+  priceSuffix: text("price_suffix").notNull().default(""),
+  recommended: bool("recommended", false),
+  ctaLabel: text("cta_label").notNull().default("Solicitar orçamento"),
+  visible: bool("visible", true),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const portfolioProjects = sqliteTable(
+  "portfolio_projects",
+  {
+    id: id(),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    clientName: text("client_name").notNull().default(""),
+    /** Só exibe o nome do cliente quando autorizado. */
+    showClient: bool("show_client", false),
+    category: text("category", { enum: PORTFOLIO_CATEGORIES }).notNull(),
+    summary: text("summary").notNull().default(""),
+    description: text("description").notNull().default(""),
+    servicesDone: text("services_done", { mode: "json" }).$type<string[]>().notNull().default([]),
+    coverMediaId: integer("cover_media_id").references(() => media.id, { onDelete: "set null" }),
+    gallery: text("gallery", { mode: "json" }).$type<number[]>().notNull().default([]),
+    videoUrl: text("video_url"),
+    /** Data do trabalho/publicação exibida no site. */
+    projectDate: text("project_date"),
+    published: bool("published", false),
+    featured: bool("featured", false),
+    sortOrder: sortOrder(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("portfolio_published_idx").on(t.published, t.category)],
+);
+
+export const testimonials = sqliteTable("testimonials", {
+  id: id(),
+  kind: text("kind", { enum: TESTIMONIAL_KINDS }).notNull().default("texto"),
+  authorName: text("author_name").notNull().default(""),
+  authorRole: text("author_role").notNull().default(""), // empresa / relação com a NÓS
+  content: text("content").notNull().default(""),
+  mediaId: integer("media_id").references(() => media.id, { onDelete: "set null" }), // foto do cliente ou print
+  /** Descrição acessível do print (o que a conversa diz). */
+  mediaAlt: text("media_alt").notNull().default(""),
+  videoUrl: text("video_url"),
+  /** O cliente autorizou a publicação (nome, imagem, conteúdo)? Sem isso não publica. */
+  authorized: bool("authorized", false),
+  published: bool("published", false),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const faqs = sqliteTable("faqs", {
+  id: id(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull().default(""),
+  /** Só aparece no site quando publicada (respostas precisam ser revisadas pelos sócios). */
+  published: bool("published", false),
+  /** Aparece também no resumo de FAQ da home. */
+  showOnHome: bool("show_on_home", false),
+  /** Aparece na página de casamentos. */
+  showOnWeddings: bool("show_on_weddings", false),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+// ======================================================================= CRM
+export const leads = sqliteTable(
+  "leads",
+  {
+    id: id(),
+    name: text("name").notNull(),
+    whatsapp: text("whatsapp").notNull(),
+    email: text("email"),
+    serviceInterest: text("service_interest", { enum: SERVICE_INTERESTS }).notNull().default("outro"),
+    eventDate: text("event_date"),
+    city: text("city"),
+    message: text("message").notNull().default(""),
+    details: text("details", { mode: "json" }).$type<LeadDetails>().notNull().default({}),
+    source: text("source", { enum: CONTACT_SOURCES }).notNull().default("site"),
+    /** Página do site de onde o formulário foi enviado. */
+    originPath: text("origin_path"),
+    /** LGPD: momento e versão da política aceita. */
+    consentAt: integer("consent_at", { mode: "timestamp_ms" }),
+    consentVersion: text("consent_version"),
+    status: text("status", { enum: LEAD_STATUSES }).notNull().default("novo"),
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("leads_status_idx").on(t.status, t.createdAt)],
+);
+
+export const clients = sqliteTable(
+  "clients",
+  {
+    id: id(),
+    /** Nome ou empresa. */
+    name: text("name").notNull(),
+    contactName: text("contact_name").notNull().default(""),
+    kind: text("kind", { enum: CLIENT_KINDS }).notNull().default("pf"),
+    whatsapp: text("whatsapp").notNull().default(""),
+    email: text("email").notNull().default(""),
+    document: text("document").notNull().default(""), // CPF/CNPJ (opcional)
+    city: text("city").notNull().default(""),
+    segment: text("segment").notNull().default(""),
+    source: text("source", { enum: CONTACT_SOURCES }).notNull().default("outro"),
+    serviceInterest: text("service_interest", { enum: SERVICE_INTERESTS }).notNull().default("outro"),
+    ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }), // responsável
+    status: text("status", { enum: CLIENT_STATUSES }).notNull().default("novo_contato"),
+    lostReason: text("lost_reason").notNull().default(""),
+    firstContactAt: text("first_contact_at"), // YYYY-MM-DD
+    nextStep: text("next_step").notNull().default(""),
+    nextStepDate: text("next_step_date"),
+    importantDates: text("important_dates", { mode: "json" }).$type<LabeledDate[]>().notNull().default([]),
+    notes: text("notes").notNull().default(""), // observações internas
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("clients_status_idx").on(t.status), index("clients_name_idx").on(t.name)],
+);
+
+/** Histórico de atendimento (inclui mudanças de status, com data e autor). */
+export const clientInteractions = sqliteTable(
+  "client_interactions",
+  {
+    id: id(),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+    kind: text("kind", { enum: INTERACTION_KINDS }).notNull().default("nota"),
+    content: text("content").notNull(),
+    occurredAt: integer("occurred_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    createdAt: createdAt(),
+  },
+  (t) => [index("interactions_client_idx").on(t.clientId, t.occurredAt)],
+);
+
+// ================================================== PROJETOS, TAREFAS, AGENDA
+export const projects = sqliteTable(
+  "projects",
+  {
+    id: id(),
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+    proposalId: integer("proposal_id"), // proposta de origem (sem FK para evitar ciclo)
+    title: text("title").notNull(),
+    serviceType: text("service_type", { enum: SERVICE_INTERESTS }).notNull().default("outro"),
+    stage: text("stage", { enum: PROJECT_STAGES }).notNull().default("briefing"),
+    ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }),
+    location: text("location").notNull().default(""),
+    eventDate: text("event_date"), // data do evento/gravação principal
+    shootDeadline: text("shoot_deadline"), // prazo de gravação
+    deliveryDeadline: text("delivery_deadline"), // prazo de entrega
+    deliveredAt: text("delivered_at"), // data em que a entrega foi feita
+    checklist: text("checklist", { mode: "json" }).$type<ChecklistItem[]>().notNull().default([]),
+    // Arquivos e entregas: links (não hospedamos vídeo pesado)
+    driveUrl: text("drive_url").notNull().default(""),
+    galleryUrl: text("gallery_url").notNull().default(""),
+    referencesUrl: text("references_url").notNull().default(""),
+    finalFilesUrl: text("final_files_url").notNull().default(""),
+    links: text("links", { mode: "json" }).$type<LabeledLink[]>().notNull().default([]),
+    backupStatus: text("backup_status", { enum: BACKUP_STATUSES }).notNull().default("pendente"),
+    backupNote: text("backup_note").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("projects_stage_idx").on(t.stage), index("projects_client_idx").on(t.clientId)],
+);
+
+export const tasks = sqliteTable(
+  "tasks",
+  {
+    id: id(),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    dueDate: text("due_date"),
+    ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }),
+    priority: text("priority", { enum: TASK_PRIORITIES }).notNull().default("normal"),
+    done: bool("done", false),
+    doneAt: integer("done_at", { mode: "timestamp_ms" }),
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+    projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("tasks_due_idx").on(t.done, t.dueDate)],
+);
+
+export const agendaEvents = sqliteTable(
+  "agenda_events",
+  {
+    id: id(),
+    title: text("title").notNull(),
+    kind: text("kind", { enum: AGENDA_KINDS }).notNull().default("outro"),
+    date: text("date").notNull(), // YYYY-MM-DD
+    startTime: text("start_time"), // HH:mm — nulo = dia inteiro
+    endTime: text("end_time"),
+    location: text("location").notNull().default(""),
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+    projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }),
+    ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }),
+    notes: text("notes").notNull().default(""),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("agenda_date_idx").on(t.date)],
+);
+
+// ================================================================= PROPOSTAS
+export const proposals = sqliteTable(
+  "proposals",
+  {
+    id: id(),
+    /** Número exibido ao cliente, ex.: "2026-007". Único por versão (número + versão). */
+    number: text("number").notNull(),
+    version: integer("version").notNull().default(1),
+    /** Proposta original desta cadeia de versões (nulo na primeira). */
+    rootId: integer("root_id"),
+    /** Modelos reutilizáveis ficam na mesma tabela. */
+    isTemplate: bool("is_template", false),
+    templateName: text("template_name").notNull().default(""),
+    modality: text("modality", { enum: PROPOSAL_MODALITIES }).notNull().default("personalizada"),
+    status: text("status", { enum: PROPOSAL_STATUSES }).notNull().default("rascunho"),
+
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+    /** Nome como aparece na capa do PDF (pode diferir do cadastro, ex.: "Ana & Bruno"). */
+    clientDisplayName: text("client_display_name").notNull().default(""),
+    contactName: text("contact_name").notNull().default(""),
+    ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }), // responsável comercial
+
+    title: text("title").notNull(), // ex.: "Cobertura de casamento"
+    eventDate: text("event_date"),
+    eventLocation: text("event_location").notNull().default(""),
+    validUntil: text("valid_until"),
+
+    // ---- textos que VÃO para o PDF
+    intro: text("intro").notNull().default(""), // descrição do projeto
+    scheduleText: text("schedule_text").notNull().default(""), // cronograma / duração da cobertura
+    exclusions: text("exclusions").notNull().default(""), // o que não está incluso
+    paymentNotes: text("payment_notes").notNull().default(""), // condições de pagamento (texto livre)
+    conditions: text("conditions").notNull().default(""), // observações e condições comerciais
+
+    // ---- preço ao cliente
+    /** Desconto concedido. Só entra no PDF quando `discountApproved` for verdadeiro. */
+    discountCents: integer("discount_cents").notNull().default(0),
+    discountLabel: text("discount_label").notNull().default(""),
+    discountApproved: bool("discount_approved", false),
+    /** Mostrar o valor de cada item no PDF (senão, só o total). */
+    showItemPrices: bool("show_item_prices", false),
+    entryMode: text("entry_mode", { enum: ENTRY_MODES }).notNull().default("percentual"),
+    entryPercent: real("entry_percent").notNull().default(0),
+    entryCents: integer("entry_cents").notNull().default(0),
+
+    // ---- cálculo INTERNO (nunca vai para o PDF)
+    internalNotes: text("internal_notes").notNull().default(""),
+    /** Rateio de despesas fixas atribuído a esta proposta. */
+    overheadCents: integer("overhead_cents").notNull().default(0),
+    /** Percentual estimado de tributos sobre o preço. */
+    taxPercent: real("tax_percent").notNull().default(0),
+    /** Margem-alvo (%), para comparar com a margem calculada. */
+    targetMarginPercent: real("target_margin_percent").notNull().default(0),
+
+    // ---- controle
+    sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+    respondedAt: integer("responded_at", { mode: "timestamp_ms" }),
+    projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }), // projeto gerado
+    contractId: integer("contract_id"), // contrato anexado (sem FK para evitar ciclo)
+    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("proposals_number_version_idx").on(t.number, t.version),
+    index("proposals_status_idx").on(t.isTemplate, t.status),
+    index("proposals_client_idx").on(t.clientId),
+  ],
+);
+
+/** Itens e entregas apresentados ao cliente. */
+export const proposalItems = sqliteTable(
+  "proposal_items",
+  {
+    id: id(),
+    proposalId: integer("proposal_id")
+      .notNull()
+      .references(() => proposals.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: PROPOSAL_ITEM_KINDS }).notNull().default("incluso"),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    quantity: real("quantity").notNull().default(1),
+    unit: text("unit").notNull().default(""), // "horas", "fotógrafos", "vídeos"…
+    unitPriceCents: integer("unit_price_cents").notNull().default(0),
+    sortOrder: sortOrder(),
+  },
+  (t) => [index("proposal_items_proposal_idx").on(t.proposalId, t.sortOrder)],
+);
+
+/** Custos internos da proposta — SOMENTE painel. Jamais renderizar em PDF ou página pública. */
+export const proposalCosts = sqliteTable(
+  "proposal_costs",
+  {
+    id: id(),
+    proposalId: integer("proposal_id")
+      .notNull()
+      .references(() => proposals.id, { onDelete: "cascade" }),
+    category: text("category", { enum: PROPOSAL_COST_CATEGORIES }).notNull().default("outros"),
+    description: text("description").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    sortOrder: sortOrder(),
+  },
+  (t) => [index("proposal_costs_proposal_idx").on(t.proposalId, t.sortOrder)],
+);
+
+/** Parcelas e vencimentos (entrada + saldo). */
+export const proposalPayments = sqliteTable(
+  "proposal_payments",
+  {
+    id: id(),
+    proposalId: integer("proposal_id")
+      .notNull()
+      .references(() => proposals.id, { onDelete: "cascade" }),
+    label: text("label").notNull(), // "Entrada (30%)", "Parcela 1 de 3"…
+    dueDate: text("due_date"), // YYYY-MM-DD
+    dueLabel: text("due_label").notNull().default(""), // alternativa textual: "na assinatura do contrato"
+    amountCents: integer("amount_cents").notNull().default(0),
+    sortOrder: sortOrder(),
+  },
+  (t) => [index("proposal_payments_proposal_idx").on(t.proposalId, t.sortOrder)],
+);
+
+// ================================================================= CONTRATOS
+export const contracts = sqliteTable(
+  "contracts",
+  {
+    id: id(),
+    title: text("title").notNull(),
+    kind: text("kind", { enum: CONTRACT_KINDS }).notNull().default("outro"),
+    /** Modelos de contrato (texto reutilizável) ficam na mesma tabela. */
+    isTemplate: bool("is_template", false),
+    /** Texto do contrato/modelo (markdown leve). A redação jurídica depende de revisão. */
+    body: text("body").notNull().default(""),
+    versionLabel: text("version_label").notNull().default(""),
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+    projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }),
+    proposalId: integer("proposal_id").references(() => proposals.id, { onDelete: "set null" }),
+    status: text("status", { enum: CONTRACT_STATUSES }).notNull().default("rascunho"),
+    signedAt: text("signed_at"), // YYYY-MM-DD
+    validFrom: text("valid_from"),
+    validUntil: text("valid_until"),
+    /** Documento assinado (upload privado) ou link externo. */
+    fileMediaId: integer("file_media_id").references(() => media.id, { onDelete: "set null" }),
+    externalUrl: text("external_url").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("contracts_client_idx").on(t.clientId), index("contracts_template_idx").on(t.isTemplate)],
+);
+
+// ================================================================ FINANCEIRO
+/** Lançamentos. `paidAt` nulo = previsto; preenchido = realizado (recebido/pago). */
+export const financeEntries = sqliteTable(
+  "finance_entries",
+  {
+    id: id(),
+    type: text("type", { enum: FINANCE_TYPES }).notNull(),
+    category: text("category", { enum: FINANCE_CATEGORIES }).notNull(),
+    description: text("description").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    dueDate: text("due_date").notNull(), // vencimento / data prevista
+    paidAt: text("paid_at"), // data em que foi efetivamente recebido/pago
+    installmentLabel: text("installment_label").notNull().default(""), // "Entrada", "2/3"…
+    method: text("method", { enum: PAYMENT_METHODS }),
+    supplier: text("supplier").notNull().default(""), // fornecedor / freelancer (despesas)
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
+    projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }),
+    proposalId: integer("proposal_id").references(() => proposals.id, { onDelete: "set null" }),
+    /** Comprovante: upload privado ou link. */
+    receiptMediaId: integer("receipt_media_id").references(() => media.id, { onDelete: "set null" }),
+    receiptUrl: text("receipt_url").notNull().default(""),
+    notes: text("notes").notNull().default(""),
+    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("finance_due_idx").on(t.dueDate), index("finance_type_idx").on(t.type, t.paidAt)],
+);
+
+// ===================================================== CALENDÁRIO EDITORIAL
+export const contentItems = sqliteTable(
+  "content_items",
+  {
+    id: id(),
+    title: text("title").notNull(), // tema
+    /** Nulo = conteúdo da própria NÓS; preenchido = conteúdo de um cliente. */
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "cascade" }),
+    network: text("network", { enum: CONTENT_NETWORKS }).notNull().default("instagram"),
+    format: text("format", { enum: CONTENT_FORMATS }).notNull().default("reels"),
+    status: text("status", { enum: CONTENT_STATUSES }).notNull().default("ideia"),
+    ideaNotes: text("idea_notes").notNull().default(""),
+    script: text("script").notNull().default(""), // roteiro
+    caption: text("caption").notNull().default(""), // legenda
+    cta: text("cta").notNull().default(""),
+    recordDate: text("record_date"), // data de gravação
+    editDeadline: text("edit_deadline"), // prazo de edição
+    publishDate: text("publish_date"), // data de publicação
+    approvalStatus: text("approval_status", { enum: APPROVAL_STATUSES }).notNull().default("pendente"),
+    ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }),
+    assetUrl: text("asset_url").notNull().default(""), // link Canva / Drive / CapCut
+    notes: text("notes").notNull().default(""),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("content_status_idx").on(t.status), index("content_publish_idx").on(t.publishDate)],
+);
+
+// ===================================================== BIBLIOTECA DA MARCA
+export const brandAssets = sqliteTable("brand_assets", {
+  id: id(),
+  category: text("category", { enum: BRAND_ASSET_CATEGORIES }).notNull().default("outro"),
+  title: text("title").notNull(),
+  description: text("description").notNull().default(""),
+  /** Link (Drive, Canva…) ou arquivo enviado (privado). */
+  url: text("url").notNull().default(""),
+  mediaId: integer("media_id").references(() => media.id, { onDelete: "set null" }),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+// ================================================================== RELAÇÕES
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+}));
+
+export const servicesRelations = relations(services, ({ one }) => ({
+  cover: one(media, { fields: [services.coverMediaId], references: [media.id] }),
+}));
+
+export const portfolioProjectsRelations = relations(portfolioProjects, ({ one }) => ({
+  cover: one(media, { fields: [portfolioProjects.coverMediaId], references: [media.id] }),
+}));
+
+export const testimonialsRelations = relations(testimonials, ({ one }) => ({
+  media: one(media, { fields: [testimonials.mediaId], references: [media.id] }),
+}));
+
+export const leadsRelations = relations(leads, ({ one }) => ({
+  client: one(clients, { fields: [leads.clientId], references: [clients.id] }),
+}));
+
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  owner: one(users, { fields: [clients.ownerId], references: [users.id] }),
+  interactions: many(clientInteractions),
+  projects: many(projects),
+  proposals: many(proposals),
+  contracts: many(contracts),
+  leads: many(leads),
+  tasks: many(tasks),
+  agendaEvents: many(agendaEvents),
+  financeEntries: many(financeEntries),
+  contentItems: many(contentItems),
+}));
+
+export const clientInteractionsRelations = relations(clientInteractions, ({ one }) => ({
+  client: one(clients, { fields: [clientInteractions.clientId], references: [clients.id] }),
+  user: one(users, { fields: [clientInteractions.userId], references: [users.id] }),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  client: one(clients, { fields: [projects.clientId], references: [clients.id] }),
+  owner: one(users, { fields: [projects.ownerId], references: [users.id] }),
+  tasks: many(tasks),
+  agendaEvents: many(agendaEvents),
+  contracts: many(contracts),
+  financeEntries: many(financeEntries),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  owner: one(users, { fields: [tasks.ownerId], references: [users.id] }),
+  client: one(clients, { fields: [tasks.clientId], references: [clients.id] }),
+  project: one(projects, { fields: [tasks.projectId], references: [projects.id] }),
+}));
+
+export const agendaEventsRelations = relations(agendaEvents, ({ one }) => ({
+  owner: one(users, { fields: [agendaEvents.ownerId], references: [users.id] }),
+  client: one(clients, { fields: [agendaEvents.clientId], references: [clients.id] }),
+  project: one(projects, { fields: [agendaEvents.projectId], references: [projects.id] }),
+}));
+
+export const proposalsRelations = relations(proposals, ({ one, many }) => ({
+  client: one(clients, { fields: [proposals.clientId], references: [clients.id] }),
+  owner: one(users, { fields: [proposals.ownerId], references: [users.id] }),
+  project: one(projects, { fields: [proposals.projectId], references: [projects.id] }),
+  items: many(proposalItems),
+  costs: many(proposalCosts),
+  payments: many(proposalPayments),
+}));
+
+export const proposalItemsRelations = relations(proposalItems, ({ one }) => ({
+  proposal: one(proposals, { fields: [proposalItems.proposalId], references: [proposals.id] }),
+}));
+
+export const proposalCostsRelations = relations(proposalCosts, ({ one }) => ({
+  proposal: one(proposals, { fields: [proposalCosts.proposalId], references: [proposals.id] }),
+}));
+
+export const proposalPaymentsRelations = relations(proposalPayments, ({ one }) => ({
+  proposal: one(proposals, { fields: [proposalPayments.proposalId], references: [proposals.id] }),
+}));
+
+export const contractsRelations = relations(contracts, ({ one }) => ({
+  client: one(clients, { fields: [contracts.clientId], references: [clients.id] }),
+  project: one(projects, { fields: [contracts.projectId], references: [projects.id] }),
+  proposal: one(proposals, { fields: [contracts.proposalId], references: [proposals.id] }),
+  file: one(media, { fields: [contracts.fileMediaId], references: [media.id] }),
+}));
+
+export const financeEntriesRelations = relations(financeEntries, ({ one }) => ({
+  client: one(clients, { fields: [financeEntries.clientId], references: [clients.id] }),
+  project: one(projects, { fields: [financeEntries.projectId], references: [projects.id] }),
+  proposal: one(proposals, { fields: [financeEntries.proposalId], references: [proposals.id] }),
+  receipt: one(media, { fields: [financeEntries.receiptMediaId], references: [media.id] }),
+}));
+
+export const contentItemsRelations = relations(contentItems, ({ one }) => ({
+  client: one(clients, { fields: [contentItems.clientId], references: [clients.id] }),
+  owner: one(users, { fields: [contentItems.ownerId], references: [users.id] }),
+}));
+
+export const brandAssetsRelations = relations(brandAssets, ({ one }) => ({
+  media: one(media, { fields: [brandAssets.mediaId], references: [media.id] }),
+}));
+
+// ===================================================================== TIPOS
+export type User = typeof users.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type Media = typeof media.$inferSelect;
+export type Announcement = typeof announcements.$inferSelect;
+export type Service = typeof services.$inferSelect;
+export type Package = typeof packages.$inferSelect;
+export type PortfolioProject = typeof portfolioProjects.$inferSelect;
+export type Testimonial = typeof testimonials.$inferSelect;
+export type Faq = typeof faqs.$inferSelect;
+export type Lead = typeof leads.$inferSelect;
+export type Client = typeof clients.$inferSelect;
+export type ClientInteraction = typeof clientInteractions.$inferSelect;
+export type Project = typeof projects.$inferSelect;
+export type Task = typeof tasks.$inferSelect;
+export type AgendaEvent = typeof agendaEvents.$inferSelect;
+export type Proposal = typeof proposals.$inferSelect;
+export type ProposalItem = typeof proposalItems.$inferSelect;
+export type ProposalCost = typeof proposalCosts.$inferSelect;
+export type ProposalPayment = typeof proposalPayments.$inferSelect;
+export type Contract = typeof contracts.$inferSelect;
+export type FinanceEntry = typeof financeEntries.$inferSelect;
+export type ContentItem = typeof contentItems.$inferSelect;
+export type BrandAsset = typeof brandAssets.$inferSelect;
+export type AuditLogEntry = typeof auditLog.$inferSelect;

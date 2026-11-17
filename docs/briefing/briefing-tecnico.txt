@@ -1,0 +1,781 @@
+NÓS
+STUDIO / SITE + ÁREA DE GESTÃO
+
+
+
+
+Briefing para
+desenvolvimento
+Escopo funcional, arquitetura, visual, conteúdo
+e critérios para solicitação de orçamento.
+
+
+
+
+  VERSÃO PARA O DESENVOLVEDOR
+
+
+
+
+17 DE NOVEMBRO DE 2026 • ESCOPO PROPOSTO, SUJEITO À VALIDAÇÃO
+NÓS                                                                                      BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+     01        Resumo executivo
+
+ Objetivo: criar um site comercial atrativo para captar contatos e apresentar a NÓS Studio, com uma área
+ privada de gestão para os dois sócios e um sistema de propostas comerciais exportáveis em PDF. O
+ projeto não é apenas uma landing page e também não deve começar como um ERP complexo.
+
+
+       Princípio de arquitetura
+
+       Duas experiências conectadas, mas com permissões independentes: site público (visível a
+       visitantes) e painel protegido por login (somente Pedro e Laura). Custos, margens,
+       contratos e informações de clientes jamais devem aparecer nas páginas públicas.
+
+
+
+   JÁ DEFINIDO                                      RECOMENDAÇÃO DE EXECUÇÃO
+
+
+   Marca: NÓS Studio; perfil                        Visual jovem, criativo, confiável; não sofisticado a ponto de parecer
+   @nosstudio.cria                                  inacessível.
+
+
+   Atuação: vídeo, foto, social media,              Organizar a oferta em dois eixos: marcas/conteúdo e momentos/eventos.
+   eventos e casamentos
+
+
+   Sócios: Pedro e Laura                            Dois logins pessoais, ambos administradores; trilha de alterações.
+
+
+   Portfólio ainda não montado                      Não usar cases, logotipos ou depoimentos fictícios. Módulos podem ficar
+                                                    ocultos até serem preenchidos.
+
+
+   A marca tem logo e paleta                        Criar componentes flexíveis, sem depender de um showreel no
+                                                    lançamento.
+
+
+
+     02        Escopo, prioridades e mapa do site
+
+ O desenvolvedor deve orçar o projeto por módulo e fase, deixando claro o que está incluído no preço de
+ implantação e o que exige assinatura, hospedagem, licença ou manutenção.
+
+
+   ÁREA                    SEÇÕES / ROTAS SUGERIDAS                                                     PRIORIDADE
+
+
+   Pública                 / (Início); /sobre; /servicos; /pacotes; /casamentos; /portfolio;            Essencial; portfólio
+                           /contato; /privacidade                                                       opcional até ter
+                                                                                                        material
+
+
+   Privada                 /painel; /painel/clientes; /orcamentos; /projetos; /financeiro;              Entregar por fase
+                           /conteudo; /contratos; /marca; /arquivos; /site
+
+
+   Sistema                 Login, perfis de acesso, cadastro, upload/link de arquivo, geração de        Essencial conforme
+                           PDF, avisos e backup                                                         cada módulo
+
+ Navegação do topo sugerida: Início · Sobre NÓS · Serviços · Pacotes · Casamentos · Projetos (quando
+ existir) · Solicitar orçamento. O menu deve ficar curto, sobretudo no celular.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                          02
+NÓS                                                                                      BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+ Entrada administrativa: /painel ou /login, sem link de destaque na página pública. Ocultar o link não
+ substitui autenticação e controle de acesso.
+
+
+
+     03        Identidade visual e experiência
+
+ Utilizar a identidade atual da NÓS Studio. Os códigos abaixo foram definidos no projeto da marca; a
+ aplicação real do logo será entregue em arquivo original pelos sócios.
+
+
+
+
+ ROXO                       LIMA                          LAVANDA              OFF-WHITE                  GRAFITE
+ #3B1F8E                    #C6F432                       #CFC6FF              #F6F4EF                    #1B1B22
+
+
+   ELEMENTO                        DIRETRIZ
+
+
+   Tipografia                      Preferência por Montserrat (ou substituta compatível e licenciada). Títulos fortes e
+                                   legíveis.
+
+
+   Paleta                          Roxo principal, lima como acento/CTA, lavanda para apoio, off-white para fundos e
+                                   grafite para textos.
+
+
+   Composição                      Grid limpo, espaçamento generoso, cards simples, cantos suaves e fotografia real. Evitar
+                                   excesso de efeitos e aparência de template genérico.
+
+
+   Motion                          Microanimações leves de entrada, transições sutis e hover; respeitar a preferência por
+                                   movimento reduzido.
+
+
+   Mobile                          Design mobile-first, CTA de WhatsApp acessível sem bloquear conteúdo; imagens e
+                                   vídeos otimizados.
+
+
+   Acessibilidade                  Contraste adequado, navegação por teclado, texto alternativo, foco visível, formulários
+                                   rotulados.
+
+
+
+     04        Proposta de página inicial
+
+ Wireframe conceitual (não é layout aprovado; serve para o desenvolvedor precificar e o designer elaborar
+ a primeira versão).
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                         03
+NÓS                                                                                      BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+     NÓS                                        Sobre   Serviços   Pacotes   Como funciona     Contato       PEDIR ORÇAMENTO
+
+
+
+
+      Sua história.
+      Nosso olhar.
+      Estratégia, conteúdo e audiovisual para marcas,                                                    FOTO REAL
+      pessoas e momentos que merecem ser lembrados.                                                      Pedro + Laura
+                                                                                                     a inserir pela NÓS
+
+          CONVERSE COM A NÓS
+
+
+
+
+       01                                        02                                          03
+
+       Vídeo e fotografia                        Marketing e social media                    Eventos e casamentos
+
+
+
+ Frase de impacto sugerida: “Sua história. Nosso olhar.” Texto de apoio: “Estratégia, conteúdo e
+ audiovisual para marcas, pessoas e momentos que merecem ser lembrados.” O slogan não está
+ homologado; deve ser editável no CMS.
+
+ Ordem das seções da home: (1) hero e CTA; (2) três serviços; (3) apresentação rápida dos dois
+ fundadores; (4) como trabalhamos; (5) pacotes e soluções; (6) projetos e depoimentos somente se
+ houver conteúdo autorizado; (7) FAQ resumida; (8) contato com formulário e WhatsApp.
+
+
+
+     05        Páginas públicas - requisitos funcionais
+
+
+ Início e Quem somos
+  • Hero com título, subtítulo, CTA “Pedir orçamento”, link Instagram e imagem/foto verdadeira dos
+     fundadores (ou composição com logo até a sessão de fotos).
+  • História da NÓS: empresa criada pelos dois sócios; proposta de unir criatividade, comunicação, estratégia
+     e produção audiovisual. Não inventar data de fundação, clientes ou resultados.
+  • Apresentação individual de Pedro e Laura com foto, função, resumo profissional e campos editáveis.
+  • Bloco “Nosso jeito de trabalhar”: escutar o objetivo → planejar → produzir → revisar → entregar e
+     acompanhar.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                          04
+NÓS                                                                                      BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+ Serviços (páginas ou cards expansíveis)
+
+   SERVIÇO                   DESCRIÇÃO PARA O SITE                                                      CTA
+
+
+   Foto                      Ensaios, fotos para marcas e produtos, fotografia de eventos e             Quero fotos
+                             cobertura social.
+
+
+   Vídeo                     Roteiro, captação, reels, vídeos institucionais, edição e                  Quero vídeo
+                             pós-produção.
+
+
+   Marketing /               Diagnóstico, planejamento, calendário, gestão de conteúdo e                Quero presença
+   social media              acompanhamento de resultados de acordo com o contrato.                     digital
+
+
+   Eventos                   Foto, filme, aftermovie, storymaker e cobertura no dia, conforme           Quero cobrir meu
+                             escopo.                                                                    evento
+
+
+   Casamentos                Pré-wedding, making of, cobertura, fotografia e filme, com                 Pedir proposta de
+                             proposta específica de cada casal.                                         casamento
+
+
+
+ Pacotes e diárias
+ Mensais: Começo, Presença e Destaque. Cada card deve ter: público indicado, objetivo, entregáveis,
+ quantidade/mês, número de captações, revisões, prazo, canais, extras e CTA “Receber proposta”. Não
+ publicar preço ou quantidade definitiva até a precificação comercial ser aprovada.
+
+ Diárias / avulsos: diária de gravação, fotografia, storymaker, edição, cobertura de evento e produção sob
+ medida. Filtros por tipo, duração e equipe devem preencher automaticamente o briefing no formulário.
+
+
+   PLANO                     POSICIONAMENTO PROPOSTO                                 DADOS QUE FALTAM
+
+
+   Começo                    Presença inicial para negócios que precisam             Posts, reels, captação, revisões,
+                             começar a se comunicar com consistência.                vigência e preço
+
+
+   Presença                  Rotina de comunicação e audiovisual com                 Escopo exato, equipe, entregas e preço
+                             planejamento recorrente.
+
+
+   Destaque                  Conteúdo com maior frequência e                         Escopo, limites, indicadores e preço
+                             acompanhamento estratégico.
+
+
+
+ Portfólio, depoimentos e FAQ
+  • Portfólio preparado no painel para categorias: Casamentos, Eventos e Marketing. Cada projeto deve ter
+     título, categoria, cliente (se autorizado), data, contexto, fotos, vídeo, texto, capa e status
+     “publicar/ocultar”.
+  • Antes de ter trabalhos liberados, não exibir grade vazia nem fotos de banco como se fossem produções
+     da NÓS. Pode usar imagens reais dos sócios e material demonstrativo claramente identificado como
+     autoral, quando existir.
+  • Depoimentos somente reais, publicados com permissão. Suportar vídeo, texto e imagem do print com
+     descrição acessível; esconder a seção se vazia.
+  • FAQ editável: prazo, pagamentos, cancelamentos, deslocamento, revisões, materiais entregues, direitos
+     de uso e reserva de data. Respostas jurídicas/financeiras precisam de validação antes da publicação.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                         05
+NÓS                                                                          BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+ Contato e solicitação de orçamento
+ Formulário curto recomendado: nome; WhatsApp; e-mail (opcional); tipo de projeto; data do
+ evento/necessidade (quando aplicável); cidade; campo livre “Conte um pouco da ideia”. Checkbox/link de
+ privacidade conforme base legal definida.
+
+ Ao enviar: confirmar o recebimento na tela; salvar o lead no painel com origem “site”; notificar o contato
+ comercial escolhido; permitir abrir WhatsApp com mensagem contextual, sem prometer envio automático
+ se isso não for contratado. Configurar proteção antispam e testes de entrega.
+
+
+
+     06        Experiência de casamento e eventos
+
+ Recomenda-se uma página própria de casamentos, pois a compra é diferente da contratação de social
+ media: a pessoa quer entender equipe, segurança, estilo, cobertura, entrega e condições de reserva.
+
+  • Apresentar a abordagem da NÓS: registrar momentos espontâneos e contar a história do casal com
+     sensibilidade; texto sujeito a aprovação.
+  • Expor o que a cobertura pode incluir: ensaio pré-wedding, making of, cerimônia, festa, galeria digital,
+     filme de melhores momentos e teaser vertical. Cada proposta define o que está contratado.
+  • Separar “incluído no pacote” de “opcionais”; não anunciar itens “gratuitos” se compõem o preço total,
+     preferir “inclusos sem cobrança adicional”.
+  • Formulário de evento: tipo, data, local, número aproximado de convidados, início/fim, foto/vídeo,
+     necessidade de storymaker, observações.
+  • Ao receber um orçamento, registrar dados e possibilidade de gerar uma proposta personalizada em PDF
+     com validade e condições de pagamento.
+
+
+       Exemplo comercial já discutido internamente
+
+       Cobertura de casamento de 8 horas com 2 fotógrafos e 2 filmmakers, incluindo
+       pré-wedding, making of, fotografias, filme de melhores momentos, teaser vertical e galeria
+       digital: referência de proposta em R$ 10.900, sinal de 30%. Usar apenas como exemplo
+       autorizado de orçamento; não definir como preço fixo do site.
+
+
+
+     07        Painel administrativo - visão geral
+
+ A área interna precisa funcionar como uma central simples de operação, não apenas um “editor de
+ textos”. Pedro e Laura devem entrar com contas próprias, visualizar o trabalho em andamento e atualizar
+ cada etapa.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                             06
+NÓS                                                                                            BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+     NÓS / painel                      Resumo da semana
+
+     Visão geral                         Leads novos                       Propostas em aberto               Entregas previstas
+
+
+     Clientes                            03                                02                                04
+     Orçamentos
+                                       Próximas tarefas
+     Projetos & prazos
+
+                                       Seg       Enviar proposta - cliente A
+     Financeiro
+
+                                       Qua       Captação - cliente B
+     Conteúdo
+
+
+     Editar site                       Sex       Entrega de edição - projeto C
+
+                                       Dados ilustrativos. Números não representam operações reais da NÓS.
+     Arquivos
+
+
+   MÓDULO                    O QUE DEVE SER POSSÍVEL FAZER                                                                  FASE
+
+
+   Painel                    Próximos eventos, prazos, tarefas, orçamentos sem resposta, cobranças                          1/2
+                             abertas, atalhos.
+
+
+   Clientes / Leads          Cadastrar; registrar origem, status, contato, histórico, arquivos e                            1
+                             observações; buscar/filtrar.
+
+
+   Projetos /                Criar projeto a partir de proposta aceita; associar cliente, tarefas, responsável,             1/2
+   Agenda                    datas, status.
+
+
+   Orçamentos                Montar itens, calcular custos e preço, duplicar, versionar, imprimir/baixar PDF.               1
+
+
+   Editor do site            Alterar textos, imagens, destaque, FAQ, serviços e visibilidade dos módulos.                   1
+
+
+   Financeiro                Receitas/despesas, vencimento, status e reserva de caixa; exportar CSV.                        2
+
+
+   Contratos                 Modelos, anexos PDF assinados, links e datas; assinatura digital apenas se                     2
+                             cotada.
+
+
+   Conteúdo                  Calendário editorial, pauta, roteiro, legenda, aprovação e status.                             2
+
+
+   Marca / Arquivos          Biblioteca de logos, templates, links Drive e backups/referências.                             1/2
+
+
+
+     08         Painel interno - campos e processos
+
+
+ Clientes e pipeline
+ Campos: ID, nome/empresa, pessoa de contato, telefone, e-mail, segmento, origem, serviço de interesse,
+ responsável, data do primeiro contato, status, notas, anexos e próximos passos.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                               07
+NÓS                                                                                    BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+ Status editáveis sugeridos: Novo contato → Em atendimento → Orçamento enviado → Negociação →
+ Fechado → Em andamento → Entregue → Pós-venda; Perdido/Cancelado como estados separados.
+ Registrar data e autor de cada atualização.
+
+
+ Projetos, agenda e tarefas
+ Campos: cliente, projeto, tipo de serviço, local/data, prazo de gravação, prazo de entrega, responsável
+ (Pedro/Laura), checklist, etapa (briefing, planejamento, gravação, edição, revisão, entregue), links dos
+ arquivos, notas e avisos de vencimento.
+
+
+ Financeiro - dados mínimos
+ Receitas: cliente, projeto, valor, parcela, vencimento, pagamento, método, status e comprovante.
+ Despesas: categoria, projeto, fornecedor, custo, vencimento e comprovante. Painel: previsão, recebido, a
+ receber, custos e saldo; reserva de caixa definida manualmente pelos sócios.
+
+ O financeiro inicial é de gestão, não contabilidade fiscal. Não pedir integração bancária, emissão de nota
+ fiscal ou conciliação automática sem escopo e orçamento separados.
+
+
+ Conteúdo, contratos, marca e arquivos
+  • Conteúdo: marca/cliente, rede, tema, formato, data, roteiro, legenda, CTA, responsável, status, link
+     Canva/Drive/CapCut e observações.
+  • Contratos: modelos editáveis para diária, recorrente e parceria entre sócios; guardar versão, cliente,
+     assinatura, data, vigência, anexo e status. A redação jurídica depende de revisão.
+  • Marca: biblioteca com logo, versões, paleta, tipografias, templates e manuais. Nada precisa ser
+     disponibilizado publicamente.
+  • Arquivos: preferir links estruturados para pastas do Google Drive (cliente/projeto/entregas) em vez de
+     carregar vídeos enormes no servidor. Prever permissões e backups.
+
+
+     09        Gerador de propostas e PDFs
+
+ Funcionalidade essencial. O administrador escolhe uma modalidade (Mensal, Diária/Evento, Casamento
+ ou Personalizada), seleciona/insere o cliente, monta os itens e gera um PDF com apresentação comercial.
+
+
+   ETAPA                             REQUISITOS
+
+
+   1. Dados                          Número e versão da proposta; cliente e contato; serviço; data; local; validade;
+                                     responsável comercial.
+
+
+   2. Escopo                         Itens inclusos, volume, duração, equipe, prazos, etapas, quantidade de revisões,
+                                     opcionais e exclusões.
+
+
+   3. Cálculo interno                Custos de equipe, locação, deslocamento, pós-produção, outras despesas, impostos
+                                     estimados, margem-alvo e descontos. Somente no painel.
+
+
+   4. Preço ao cliente               Preço final, sinal (percentual ou valor), parcelas, datas de vencimento, opcionais e
+                                     observações comerciais.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                       08
+NÓS                                                                                    BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+   ETAPA                             REQUISITOS
+
+
+   5. PDF                            Marca, apresentação, escopo, etapas, prazo, investimento, pagamento, validade,
+                                     contato; sem custos/margens internos.
+
+
+   6. Controle                       Salvar rascunho, duplicar, criar versão, emitir, registrar envio, mudar status, anexar
+                                     contrato e converter em projeto.
+
+ Fórmulas internas sugeridas: custo direto = soma de itens de execução; custo total = custo direto +
+ rateio de despesas + tributos estimados; margem bruta de contribuição estimada = (preço - custos
+ variáveis) / preço. O sistema deve distinguir margem de markup e permitir editar premissas, sem tratar a
+ conta como apuração fiscal oficial.
+
+
+       Regra de segurança fundamental
+
+       Nunca renderizar no PDF público: custo de prestadores, aluguel de equipamentos, margem,
+       pró-labore, notas internas ou descontos ainda não aprovados. A pré-visualização do PDF
+       deve ser idêntica ao arquivo baixado.
+
+ Ver arquivo de demonstração anexo: “NÓS Studio - Modelo de Proposta Comercial.pdf”, para referência
+ de estética e campos.
+
+
+
+     10        Fluxos de uso e permissões
+
+   CENÁRIO                                      RESULTADO ESPERADO
+
+
+   Lead chega pelo site                         Registro no painel com origem, data, serviço e dados do formulário; alerta
+                                                sem expor informações a terceiros.
+
+
+   Pedro prepara orçamento                      Escolhe modelo, calcula custos, define preço, pré-visualiza e baixa PDF;
+                                                status “enviado”.
+
+
+   Laura fecha com cliente                      Muda para “fechado”, cria projeto, agenda captação e primeira entrega,
+                                                vincula contrato.
+
+
+   Novo case aprovado                           Preenche projeto no CMS e ativa “publicar” para que apareça no portfólio
+                                                público.
+
+
+   Sem portfólio/depoimentos                    Home mantém aparência completa; blocos vazios não aparecem e não
+                                                geram links quebrados.
+
+
+   Sócio atualiza home                          Altera texto ou foto, pré-visualiza e publica sem escrever código nem pedir
+                                                ao desenvolvedor.
+
+ Perfis de acesso: Pedro e Laura = administradores totais. Não compartilhar login. O desenvolvedor pode
+ ter uma conta técnica temporária e revogável; logs de acesso/alteração são desejáveis. Envio de
+ propostas e acesso a documentos financeiros somente para usuários autenticados.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                         09
+NÓS                                                                               BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+     11        Requisitos técnicos, segurança e SEO
+
+  • Domínio e hospedagem registrados sob titularidade da NÓS. Entregar acessos ao domínio, DNS,
+     hospedagem, CMS, repositório e banco de dados quando aplicável; orientar a recuperação de senhas.
+  • HTTPS; login seguro com recuperação de senha; proteção contra tentativas automatizadas; autorização
+     também no servidor; gestão de sessões; backups automáticos e teste documentado de restauração.
+  • Formulário com prevenção de spam, validação de campos, consentimento/informação de privacidade e
+     finalidade de uso; acesso limitado a dados pessoais.
+  • Política de privacidade, retenção e canal de contato adequados à operação real da empresa.
+     Implementação alinhada à LGPD e boas práticas ANPD, com revisão jurídica quando necessária.
+  • SEO técnico: títulos e descrições editáveis, URLs claras, indexação pública, sitemap, alt text, compressão
+     de imagem, desempenho mobile, Google Search Console/Analytics quando autorizados.
+  • Performance: imagens modernas, vídeo com carregamento leve, sem autoplay pesado obrigatório, lazy
+     loading, validação de Core Web Vitals; acessibilidade e revisão em navegadores mobile/desktop.
+  • Integrações opcionais, cotadas separadamente: calendário Google bidirecional, assinatura eletrônica,
+     pagamento online, e-mail transacional, WhatsApp Business API, automações e notificações.
+ Observação: conexão com WhatsApp por link de conversa é diferente de integração oficial via API. A proposta do
+ fornecedor deve indicar claramente qual modalidade está incluída.
+
+
+
+     12        Estratégia técnica e entrega por fases
+
+   FASE                    O QUE ENTRA                                      CRITÉRIO DE CONCLUSÃO
+
+
+   Fase 1 -                Identidade aplicada; site público completo;      Receber e gerenciar lead; alterar site;
+   Lançamento              formulário; WhatsApp; CMS; contas de             gerar PDF real; operar pelo celular.
+                           Pedro/Laura; leads; clientes; gerador de
+                           proposta PDF; agenda básica.
+
+
+   Fase 2 -                Tarefas e projetos detalhados, calendário        Fluxo interno gerenciado sem planilhas
+   Operação                editorial, financeiro operacional, modelos de    paralelas obrigatórias.
+                           contrato, documentos e biblioteca de marca.
+
+
+   Fase 3 -                Automação, assinatura digital, notificações,     Cada integração validada em ambiente de
+   Evolução                indicadores avançados, integrações com           testes com preço à parte.
+                           Drive/Calendar, eventual portal de cliente.
+
+ Dois caminhos possíveis: (A) CMS tradicional + ferramentas de gestão integradas = menor complexidade
+ inicial, porém pode exigir assinaturas e telas diferentes; (B) aplicação web com CMS e painel sob medida
+ = experiência unificada e maior personalização, mas desenvolvimento e manutenção tendem a ser mais
+ trabalhosos. Solicitar ao fornecedor justificativa da arquitetura, custos recorrentes e limitações.
+
+
+       Priorização recomendada
+
+       Se o orçamento apertar, preservar site + CMS + leads/clientes + geração de proposta PDF.
+       Módulos avançados de financeiro, contratos e conteúdo podem entrar na segunda fase. Isso
+       protege a operação e evita pagar agora por funcionalidades que ainda não serão usadas.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                  10
+NÓS                                                                                    BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+     13        Critérios de aceite e testes
+
+  • Os dois sócios conseguem entrar com contas distintas e redefinir senha; usuário anônimo não acessa
+     rotas nem APIs internas.
+  • Pedro ou Laura conseguem editar título, foto, serviços, pacotes, FAQ, contato e visibilidade dos cases;
+     alterações aparecem corretamente em celular e desktop.
+  • Formulário público cadastra o lead, informa sucesso ao visitante e não perde envio; origem e data ficam
+     visíveis no painel.
+  • Um orçamento de casamento e um orçamento mensal podem ser criados, duplicados, revisados e
+     exportados em PDF; valores internos não aparecem no documento.
+  • Não há portfólio ou depoimento fictício; páginas vazias não provocam links quebrados; imagens são reais
+     e autorizadas.
+  • Site funciona em navegador atual de iPhone, Android e desktop; botões, formulários, navegação, links e
+     download funcionam.
+  • Backup e restauração são demonstrados; fornecedor entrega tutorial breve (vídeo ou PDF) para editar o
+     site e criar propostas.
+  • As contas, licenças, cobranças mensais e eventual suporte pós-entrega são documentados por escrito.
+
+
+     14        Pedido de orçamento ao desenvolvedor
+
+ Solicitamos proposta de implementação para site comercial + painel administrativo. Para permitir
+ comparação, responder os itens abaixo separadamente, identificando o que é obrigatório, opcional e não
+ incluído.
+
+
+   ITEM A COTAR                                ENTREGA QUE DEVE SER ESPECIFICADA
+
+
+   1. Projeto e UI/UX                          Wireframes, criação de layouts desktop/mobile, rodadas de revisão,
+                                               conteúdo/copy ou apenas implementação.
+
+
+   2. Site público                             Páginas, serviços, pacotes, página de casamentos, formulários,
+                                               Instagram/WhatsApp, CMS e SEO.
+
+
+   3. Área administrativa                      Login de dois sócios, clientes/leads, agenda/projetos, editor do site e outros
+                                               módulos solicitados.
+
+
+   4. Orçamentos em PDF                        Cadastro de itens, cálculo interno, templates, download, histórico, versões e
+                                               personalização visual.
+
+
+   5. Segunda fase                             Financeiro, contratos, calendário de conteúdo, biblioteca e integrações -
+                                               preço à parte.
+
+
+   6. Infraestrutura                           Domínio (se aplicável), hospedagem, banco de dados, armazenamento,
+                                               e-mail, licenças e backups.
+
+
+   7. Implantação e suporte                    Importação de dados, treinamento, testes, prazo por fase, garantia de
+                                               correção, suporte, mensalidade.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                           11
+NÓS                                                                                       BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+   ITEM A COTAR                                ENTREGA QUE DEVE SER ESPECIFICADA
+
+
+   8. Propriedade e saída                      Acessos, arquivos-fonte, documentação, exportação dos dados e
+                                               portabilidade para outro fornecedor.
+
+ Pedimos que o orçamento informe: (1) preço único de implantação por fase; (2) custos
+ recorrentes/mensais; (3) calendário por etapas, com marcos de aceite; (4) tecnologia proposta; (5)
+ número de revisões; (6) limitações do painel; (7) suporte/garantia; (8) quem será dono do código, dos
+ dados e das contas.
+
+
+
+     15         Referências de mercado - com finalidade
+
+ Referências consultadas em 17/11/2026. Usar apenas como inspiração de estrutura, clareza e
+ experiência, sem copiar identidade, conteúdo, fotos ou layout.
+
+ A Órbita - site institucional e método
+ Boa divisão entre serviços, processo, fundadores, cases e contato; linguagem humana para agência audiovisual.
+
+ https://aorbita.com.br/
+
+
+ Cortex Filmes - categorias de audiovisual
+ Apresentação direta de especialidades e contato curto, com hierarquia editorial.
+
+ https://cortexfilmes.com/
+
+
+ Estratto Co. - posicionamento estratégico
+ Integra o raciocínio estratégico à entrega audiovisual, sem vender apenas gravação.
+
+ https://estratto.co/
+
+
+ Madeira Filmes - proposta de casamentos
+ Referência de itens, cobertura, perguntas frequentes e formas de pagamento; não copiar preços/condições.
+
+ https://www.madeirafilmes.com.br/proposta-2026/
+
+
+ Spoti / Framer - padrão visual
+ Exemplo de hero tipográfico, projetos via CMS e formulário; não implica a contratação do Framer.
+
+ https://www.framer.com/marketplace/templates/spoti/
+
+
+ Google Search Central - SEO
+ Referência técnica para conteúdo encontrável, navegação e boas práticas de indexação.
+
+ https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+
+
+ ANPD - segurança para pequenos agentes
+ Base de segurança e privacidade para dados pessoais de leads e clientes.
+
+ https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informa
+ cao-para-agentes-de-tratamento-de-pequeno-porte
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                                12
+NÓS                                                                               BRIEFING TÉCNICO E CRIATIVO • 17.11.2026
+
+
+
+
+     16        Pendências da NÓS e checklist de entrega
+
+   A NÓS PRECISA FORNECER                                   O DESENVOLVEDOR PRECISA ENTREGAR
+
+
+   Arquivo final de logo em vetor/PNG, variantes e          Site mobile e desktop, CMS com tutorial e editor de
+   fontes licenciadas                                       conteúdo
+
+
+   Fotos reais de Pedro e Laura ou agendar sessão           Gestão segura dos dois acessos, autenticação e
+   de retratos                                              permissões
+
+
+   Número de WhatsApp, e-mail comercial e                   Formulários e contatos testados; dados dos leads no
+   domínio escolhido                                        painel
+
+
+   Descrição e quantidade finais de cada pacote;            Catálogo editável e orçamento/PDF sem custos internos
+   política comercial
+
+
+   Documentos jurídicos validados e política de             Páginas legais, segurança, backup e documentação
+   privacidade                                              técnica
+
+
+   Autorização de cases, imagens e depoimentos              Portfólio/depoimentos preparados para publicação sob
+   futuros                                                  controle dos sócios
+
+
+
+
+       Resultado esperado
+
+       A NÓS deve conseguir publicar e vender com um site bonito mesmo antes de ter portfólio,
+       receber pedidos, responder com propostas profissionais, manter os clientes organizados e
+       evoluir o sistema sem precisar reconstruí-lo.
+
+
+
+ Documento de especificação produzido para solicitação de orçamento. Fluxos, valores comerciais e textos de marketing
+ dependem de validação final dos sócios.
+
+
+
+
+Uso para cotação e alinhamento de escopo • NÓS Studio                                                                   13
+
