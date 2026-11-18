@@ -792,9 +792,10 @@
     transform: translate(2px, -2px);
   }
   .s-hero__title {
-    /* --hero-word / --hero-line: nº de caracteres da maior palavra / linha (vem do JSX) — o título nunca estoura o grid */
-    --fit-word: calc(var(--s-wrap) / var(--hero-word, 9) / 0.48);
-    --fit-line: calc(var(--s-wrap) / var(--hero-line, 13) / 0.5);
+    /* --hero-word / --hero-line: largura estimada da maior palavra / linha, em letras médias (vem do JSX,
+       ver titleMetrics) — o corpo diminui o necessário para o título nunca quebrar palavra nem estourar o grid */
+    --fit-word: calc(var(--s-wrap) / var(--hero-word, 6.75) / 0.62);
+    --fit-line: calc(var(--s-wrap) / var(--hero-line, 10.3) / 0.61);
     margin-top: 1.5rem;
     font-size: min(20.5vw, 6.75rem, var(--fit-word));
     font-weight: 900;

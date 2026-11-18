@@ -1,6 +1,7 @@
 // ROTA TEMPORÁRIA de verificação visual (site-base). Remover antes de entregar.
 import { CtaBand, FaqAccordion, ServicePanels, StatementBanner, Steps } from "@/components/site/blocks";
 import { SiteButton, SiteButtonLink } from "@/components/site/button";
+import { HomeHero } from "@/components/site/home-hero";
 import { PageHeader, Section, SectionHeader } from "@/components/site/layout";
 import { LeadForm } from "@/components/site/lead-form";
 import { PackageBoard } from "@/components/site/package-card";
@@ -113,6 +114,17 @@ export default function Lab() {
             </SiteButtonLink>
           </>
         }
+      />
+
+      <HomeHero
+        eyebrow="Hero com foto"
+        title="Um título de teste bem mais comprido, para ver o ajuste."
+        lead="Texto de apoio."
+        text="Segundo parágrafo."
+        primaryCta={{ label: "Conheça nossos serviços", href: "/servicos" }}
+        secondaryCta={{ label: "Vamos criar juntos", href: "/contato" }}
+        image={img(30, 1200, 1500, "#9a7b62", "#3a3340")}
+        caption={["Pedro Henrique + Laura Nepomuceno", "Legenda opcional da foto"]}
       />
 
       <Section id="lab-portfolio" number={next()} label="Portfólio">

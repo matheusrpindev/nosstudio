@@ -50,13 +50,31 @@ export function stripAccent(text: string): string {
   return text.replace(/\*(.+?)\*/g, "$1");
 }
 
-/** Métricas para o título gigante do hero caber no grid: maior palavra e maior linha, em caracteres. */
+/**
+ * Largura aproximada de um texto em Montserrat Black, em "letras médias": letras estreitas (i, l, t, r, f, j,
+ * pontuação, espaço) contam ~metade; m/w e maiúsculas contam mais. Não é tipografia exata — é só o bastante
+ * para o título gigante do hero escolher um corpo que caiba no grid com qualquer copy.
+ */
+function textUnits(text: string): number {
+  let units = 0;
+  for (const char of text) {
+    if (/[iíìîïlrtfj1.,;:!'’|\s]/.test(char)) units += 0.55;
+    else if (/[mw]/.test(char)) units += 1.5;
+    else if (/[MW]/.test(char)) units += 1.65;
+    else if (/\p{Lu}/u.test(char)) units += 1.2;
+    else units += 1;
+  }
+  return units;
+}
+
+/** Métricas para o título gigante do hero caber no grid: maior palavra e maior linha (ver `textUnits`). */
 export function titleMetrics(lines: (string | null)[]): { word: number; line: number } {
   const present = lines.filter((line): line is string => Boolean(line));
   const words = present.flatMap((line) => line.split(/\s+/));
+  const round = (n: number) => Math.round(n * 100) / 100;
   return {
-    word: Math.max(4, ...words.map((word) => word.length)),
-    line: Math.max(8, ...present.map((line) => line.length)),
+    word: round(Math.max(3, ...words.map(textUnits))),
+    line: round(Math.max(6, ...present.map(textUnits))),
   };
 }
 
