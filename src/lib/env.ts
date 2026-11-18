@@ -35,8 +35,11 @@ export const env = {
     /** Remetente, ex.: "NÓS Studio <contato@seudominio.com.br>" */
     from: process.env.MAIL_FROM || "",
   },
-  /** Quantos proxies confiáveis existem na frente do app (para ler o IP real em X-Forwarded-For). */
-  trustedProxies: Number(process.env.TRUSTED_PROXIES || 1),
+  /**
+   * Quantos proxies confiáveis existem na frente do app (para ler o IP real em X-Forwarded-For): só Nginx/Caddy = 1;
+   * Cloudflare + Nginx = 2. Valor inválido ou menor que 1 vale 1.
+   */
+  trustedProxies: Math.max(1, Math.floor(Number(process.env.TRUSTED_PROXIES)) || 1),
 };
 
 export const smtpConfigured = () => Boolean(env.smtp.host && env.smtp.from);

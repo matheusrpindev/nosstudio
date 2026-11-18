@@ -26,9 +26,9 @@ import {
   type Service,
   type Testimonial,
 } from "@/db/schema";
-import { nowLocal } from "@/lib/dates";
 import { toPublicImage, type PublicImage } from "@/lib/media";
 import { defaultSiteContent, resolveSiteContent, SITE_CONTENT_KEYS, type SiteContent } from "@/lib/site/content";
+import { servableAnnouncements } from "./admin/announcement-status";
 import { SITE_TAG } from "./cache";
 
 /** Durante o build o banco pode não existir ainda: registra e segue com o valor de fallback. */
@@ -116,26 +116,27 @@ export type PublicAnnouncement = Pick<
 > & {
   /** Muda quando o aviso é editado — um aviso fechado pelo visitante volta a aparecer se o texto mudar. */
   version: number;
+  /** O início está a poucos minutos: vai no HTML ESCONDIDO e só o script da barra o revela na hora. */
+  pending: boolean;
 };
 
 /**
- * Avisos ativados que ainda não terminaram. A janela exata (início/fim) é conferida de novo no navegador
- * pelo componente da barra, porque esta lista fica em cache por alguns minutos.
+ * Avisos ativados que estão no período — ou prestes a começar (ver `servableAnnouncements`). Um aviso agendado
+ * para depois NÃO sai daqui: o texto não pode aparecer no código-fonte do site antes da data combinada.
+ * A janela exata (início/fim) é conferida de novo no navegador pelo componente da barra, porque esta lista
+ * fica em cache por alguns minutos.
  */
 export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
   "use cache";
   cacheTag(SITE_TAG);
   cacheLife("site");
   return safely("avisos", [], async () => {
-    const now = nowLocal();
     const rows = await db
       .select()
       .from(announcements)
       .where(eq(announcements.enabled, true))
       .orderBy(asc(announcements.sortOrder), desc(announcements.id));
-    return rows
-      .filter((row) => !row.endsAt || row.endsAt > now)
-      .map((row) => ({
+    return servableAnnouncements(rows, new Date()).map((row) => ({
         id: row.id,
         message: row.message,
         linkLabel: row.linkLabel,
@@ -146,6 +147,7 @@ export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
         endsAt: row.endsAt,
         dismissible: row.dismissible,
         version: row.updatedAt.getTime(),
+        pending: row.pending,
       }));
   });
 }
@@ -342,6 +344,31 @@ export async function getTestimonials(): Promise<PublicTestimonial[]> {
       image: row.mediaId ? (images.get(row.mediaId) ?? null) : null,
     }));
   });
+}
+
+// ------------------------------------------------- imagens em uso no site
+/**
+ * Ids das imagens que o site público pode exibir AGORA: exatamente as que saem das consultas acima (conteúdo
+ * fixo, serviços visíveis, portfólio e depoimentos publicados). A rota /media usa esta lista: uma imagem pública
+ * que nenhum conteúdo publicado usa (depoimento despublicado, projeto em rascunho, upload ainda não salvo) só é
+ * entregue a quem está logado no painel — despublicar tira a imagem do ar, não só o texto.
+ */
+export async function getPublishedMediaIds(): Promise<number[]> {
+  "use cache";
+  cacheTag(SITE_TAG);
+  cacheLife("site");
+  const [images, serviceList, portfolio, testimonialList] = await Promise.all([getSiteImages(), getServices(), getPortfolio(), getTestimonials()]);
+  const all: (PublicImage | null)[] = [
+    images.hero,
+    images.couple,
+    images.weddingsHero,
+    images.share,
+    ...images.founders,
+    ...serviceList.flatMap((service) => [service.cover, ...service.gallery]),
+    ...portfolio.flatMap((project) => [project.cover, ...project.gallery]),
+    ...testimonialList.map((testimonial) => testimonial.image),
+  ];
+  return [...new Set(all.flatMap((image) => (image ? [image.id] : [])))];
 }
 
 // ---------------------------------------------------------------- navegação

@@ -3,6 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { services, type Service } from "@/db/schema";
 import type { ServiceInterest } from "@/lib/domain";
+import { droppedMediaIds, releaseMedia } from "@/server/media";
 import { moveInOrder, nextSortOrder, slugTaken, uniqueSlug, type MoveDirection } from "./order";
 
 export type ServiceInput = {
@@ -44,8 +45,12 @@ export async function saveService(id: number | null, input: ServiceInput): Promi
     const [row] = await db.insert(services).values({ ...values, sortOrder: await nextSortOrder(services) }).returning();
     return { ok: true, row };
   }
+  const previous = await getService(id);
   const [row] = await db.update(services).set(values).where(eq(services.id, id)).returning();
-  return row ? { ok: true, row } : { ok: false, error: "not_found" };
+  if (!row) return { ok: false, error: "not_found" };
+  // fotos trocadas ou tiradas da galeria: os arquivos antigos são apagados
+  if (previous) await releaseMedia(droppedMediaIds([previous.coverMediaId, ...previous.gallery], [row.coverMediaId, ...row.gallery]));
+  return { ok: true, row };
 }
 
 export async function setServiceVisible(id: number, visible: boolean): Promise<Service | null> {
@@ -55,7 +60,9 @@ export async function setServiceVisible(id: number, visible: boolean): Promise<S
 
 export const moveService = (id: number, direction: MoveDirection) => moveInOrder(services, id, direction);
 
+/** Exclui o serviço e apaga as fotos dele (as que nenhum outro conteúdo usa). */
 export async function deleteService(id: number): Promise<Service | null> {
   const [row] = await db.delete(services).where(eq(services.id, id)).returning();
+  if (row) await releaseMedia([row.coverMediaId, ...row.gallery]);
   return row ?? null;
 }

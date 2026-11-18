@@ -10,10 +10,11 @@ import { anonymize } from "@/lib/auth/tokens";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { getClientIp } from "@/lib/request";
-import { LEAD_HONEYPOT_FIELD, LEAD_MIN_FILL_MS, LEAD_STARTED_AT_FIELD, leadFormSchema, type LeadSuccess } from "@/lib/site/lead-form";
+import { rateLimitIp } from "@/lib/client-ip";
+import { knownPackageName, LEAD_HONEYPOT_FIELD, LEAD_MIN_FILL_MS, LEAD_STARTED_AT_FIELD, leadFormSchema, type LeadSuccess } from "@/lib/site/lead-form";
 import { parseForm } from "@/server/action";
 import { getSetting } from "@/server/settings";
-import { getSiteContent } from "@/server/site/queries";
+import { getPackages, getSiteContent } from "@/server/site/queries";
 import { createLead, leadNotificationEmail, leadWhatsAppUrl } from "./create-lead";
 
 const MINUTE = 60 * 1000;
@@ -40,7 +41,7 @@ export async function submitLeadAction(_prev: ActionState<LeadSuccess>, formData
   const parsed = parseForm(leadFormSchema, formData);
   if (!parsed.ok) return parsed.state as ActionState<LeadSuccess>;
 
-  const ip = anonymize(await getClientIp());
+  const ip = anonymize(rateLimitIp(await getClientIp()));
   for (const [key, rule] of [
     [`lead:ip:${ip}`, { limit: 5, windowMs: 10 * MINUTE }],
     [`lead:dia:${ip}`, { limit: 20, windowMs: 24 * 60 * MINUTE }],
@@ -54,7 +55,11 @@ export async function submitLeadAction(_prev: ActionState<LeadSuccess>, formData
     }
   }
 
-  const lead = await createLead(parsed.data, content.privacyPage.version);
+  // "Pacote de origem" só é gravado se for o nome de um pacote publicado (o campo vem da URL: ?pacote=…).
+  const packages = await getPackages();
+  const packageName = knownPackageName(parsed.data.packageName, [...packages.plans, ...packages.standalone].map((pkg) => pkg.name));
+
+  const lead = await createLead({ ...parsed.data, packageName }, content.privacyPage.version);
 
   // Aviso por e-mail aos sócios, depois da resposta ao visitante (o lead já está salvo; falha aqui não o perde).
   after(async () => {

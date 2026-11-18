@@ -9,7 +9,7 @@
 import { z } from "zod";
 import { isISODate, isTime } from "@/lib/dates";
 import { SERVICE_INTERESTS } from "@/lib/domain";
-import { isValidPhone } from "@/lib/format";
+import { isValidEmail, isValidPhone } from "@/lib/format";
 
 /**
  * Campo-isca: fica fora da tela e do teclado (tabindex -1, aria-hidden, autocomplete off).
@@ -37,7 +37,8 @@ export const leadFormSchema = z.object({
     .refine(isValidPhone, "Informe um WhatsApp com DDD, por exemplo (11) 91234-5678."),
   email: optionalText(160)
     .transform((value) => value.toLowerCase())
-    .refine((value) => value === "" || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value), "Confira o e-mail informado."),
+    // `isValidEmail` recusa `?`, `&`, `%`… — o e-mail vira link `mailto:` no painel e não pode carregar parâmetros
+    .refine((value) => value === "" || isValidEmail(value), "Confira o e-mail informado."),
   serviceInterest: z.enum(SERVICE_INTERESTS, "Escolha uma das opções.").optional().default("outro"),
   eventDate: optionalText(10)
     .transform((value) => (value ? value : null))
@@ -64,6 +65,17 @@ export const leadFormSchema = z.object({
 });
 
 export type LeadFormData = z.infer<typeof leadFormSchema>;
+
+/**
+ * O pacote/serviço de origem (`?pacote=…` na URL do formulário) só vale se for o nome de um pacote publicado.
+ * Qualquer outro texto é ignorado: senão um link do próprio site exibiria uma frase arbitrária ("Pedido sobre:
+ * promoção falsa…") com a identidade da NÓS e a gravaria no lead. Devolve o nome oficial ou "".
+ */
+export function knownPackageName(value: string | null | undefined, publishedNames: readonly string[]): string {
+  const wanted = (value ?? "").trim();
+  if (!wanted) return "";
+  return publishedNames.find((name) => name.trim() === wanted)?.trim() ?? "";
+}
 
 /** O que a action devolve em caso de sucesso (para a tela de confirmação). */
 export type LeadSuccess = {

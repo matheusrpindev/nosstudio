@@ -464,6 +464,9 @@ export function StepPreco({ draft, patch, numbers, errors, attempted, listsKey }
             <Alert tone="alerta" role="status" className="mt-3" title="A soma das parcelas não fecha com o total">
               As parcelas somam {formatBRL(client.totalCents + difference)} e o total é {formatBRL(client.totalCents)}:{" "}
               <strong>{difference > 0 ? `sobram ${formatBRL(difference)}` : `faltam ${formatBRL(-difference)}`}</strong>. Ajuste os valores ou use “Recalcular parcelas”.
+              {draft.discountCents > 0 && !draft.discountApproved ? (
+                <> Enquanto o desconto não estiver aprovado e as parcelas não fecharem com o total, <strong>elas não entram no PDF</strong> (para o desconto pendente não aparecer para o cliente).</>
+              ) : null}
             </Alert>
           )
         ) : null}

@@ -3,6 +3,7 @@ import { and, desc, eq, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { portfolioProjects, type PortfolioProject } from "@/db/schema";
 import type { PortfolioCategory } from "@/lib/domain";
+import { droppedMediaIds, releaseMedia } from "@/server/media";
 import { slugTaken, uniqueSlug, nextSortOrder } from "./order";
 import type { SaveResult } from "./services";
 
@@ -71,8 +72,12 @@ export async function savePortfolioProject(id: number | null, input: PortfolioIn
     const [row] = await db.insert(portfolioProjects).values({ ...values, sortOrder: await nextSortOrder(portfolioProjects) }).returning();
     return { ok: true, row };
   }
+  const previous = await getPortfolioProject(id);
   const [row] = await db.update(portfolioProjects).set(values).where(eq(portfolioProjects.id, id)).returning();
-  return row ? { ok: true, row } : { ok: false, error: "not_found" };
+  if (!row) return { ok: false, error: "not_found" };
+  // fotos trocadas ou tiradas da galeria: os arquivos antigos são apagados (não ficam acessíveis pelo link)
+  if (previous) await releaseMedia(droppedMediaIds([previous.coverMediaId, ...previous.gallery], [row.coverMediaId, ...row.gallery]));
+  return { ok: true, row };
 }
 
 export async function setPortfolioPublished(id: number, published: boolean): Promise<PortfolioProject | null> {
@@ -80,7 +85,9 @@ export async function setPortfolioPublished(id: number, published: boolean): Pro
   return row ?? null;
 }
 
+/** Exclui o projeto e apaga as fotos dele (as que nenhum outro conteúdo usa). */
 export async function deletePortfolioProject(id: number): Promise<PortfolioProject | null> {
   const [row] = await db.delete(portfolioProjects).where(eq(portfolioProjects.id, id)).returning();
+  if (row) await releaseMedia([row.coverMediaId, ...row.gallery]);
   return row ?? null;
 }

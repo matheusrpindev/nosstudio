@@ -19,7 +19,7 @@ import "server-only";
 import { z } from "zod";
 import { actionError, type ActionState } from "@/lib/action-state";
 import { isISODate, isTime } from "@/lib/dates";
-import { parseBRL } from "@/lib/format";
+import { isValidEmail, parseBRL } from "@/lib/format";
 
 /** FormData → objeto simples. Chaves repetidas (ou terminadas em `[]`) viram array. Arquivos são ignorados. */
 export function formToObject(formData: FormData): Record<string, string | string[]> {
@@ -160,5 +160,5 @@ export const f = {
       .max(160)
       .optional()
       .transform((v) => v ?? "")
-      .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v), "E-mail inválido."),
+      .refine((v) => v === "" || isValidEmail(v), "E-mail inválido."),
 };

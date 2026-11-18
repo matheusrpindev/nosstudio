@@ -11,6 +11,7 @@ import {
   EVENT_STORYMAKER_OPTIONS,
   LEAD_HONEYPOT_FIELD,
   LEAD_STARTED_AT_FIELD,
+  knownPackageName,
   type LeadSuccess,
 } from "@/lib/site/lead-form";
 import { submitLeadAction } from "@/server/leads/actions";
@@ -46,6 +47,11 @@ export type LeadFormProps = {
   defaultEventType?: string;
   /** Pacote/serviço de origem, quando o formulário está ao lado de um cartão específico. */
   packageName?: string;
+  /**
+   * Nomes dos pacotes publicados (`getPackages()`): `?pacote=…` da URL só é aceito se for um deles. Sem esta
+   * lista o parâmetro é ignorado. (O servidor confere de novo em `submitLeadAction`.)
+   */
+  packageOptions?: readonly string[];
   privacyHref?: string;
   /** Contorno fino — use quando o formulário estiver sobre o papel (sobre roxo/grafite não precisa). */
   bordered?: boolean;
@@ -93,6 +99,7 @@ function LeadFormInner({
   defaultInterest,
   defaultEventType = "",
   packageName,
+  packageOptions,
   privacyHref = "/privacidade",
   bordered = false,
   id,
@@ -106,7 +113,7 @@ function LeadFormInner({
   const search = useSyncExternalStore(subscribeNever, readSearch, readSearchOnServer);
   const query = new URLSearchParams(search);
   const queryInterest = SERVICE_INTERESTS.find((value) => value === query.get("servico"));
-  const queryPackage = (query.get("pacote") ?? "").slice(0, 120);
+  const queryPackage = knownPackageName(query.get("pacote"), packageOptions ?? []);
 
   // Campos controlados: o que a pessoa digitou sobrevive a um erro de validação (com e sem JS).
   const [values, setValues] = useState<Values>(() => state.values ?? {});

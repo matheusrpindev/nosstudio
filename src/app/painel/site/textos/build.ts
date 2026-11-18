@@ -5,7 +5,7 @@
  * id em campos ocultos. A estrutura vem do mapa em `config.ts`, então um único código serve às 12 seções.
  * Arquivo puro (sem banco): testado em `build.test.ts`.
  */
-import { isValidPhone, safeHref } from "@/lib/format";
+import { isValidEmail, isValidPhone, safeHref } from "@/lib/format";
 import { siteContentSchemas, type SiteContentKey } from "@/lib/site/content";
 import { SITE_SECTIONS, type ListField, type SectionConfig } from "./config";
 
@@ -13,7 +13,6 @@ export type ParsedSection =
   | { ok: true; data: Record<string, unknown>; mediaIds: number[] }
   | { ok: false; errors: Record<string, string>; values: Record<string, string> };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const HANDLE_RE = /^[A-Za-z0-9._]{1,30}$/;
 const REQUIRED = "Preencha este campo.";
 const HREF_ERROR = "Link inválido. Para uma página do site comece com / (ex.: /contato); para outro site use https://…";
@@ -175,7 +174,7 @@ export function parseSectionForm(key: SiteContentKey, formData: FormData): Parse
         }
         case "email": {
           const value = read(field.path).trim().toLowerCase();
-          if (value && !EMAIL_RE.test(value)) fail(field.path, "E-mail inválido. Exemplo: contato@nosstudio.com.br");
+          if (value && !isValidEmail(value)) fail(field.path, "E-mail inválido. Exemplo: contato@nosstudio.com.br");
           setPath(data, field.path, value);
           break;
         }

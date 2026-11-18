@@ -33,7 +33,7 @@ export const instant = false;
 const navButton = `${buttonClasses({ variant: "secondary" })} !px-0 w-11`;
 
 export default async function FinancePage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  const user = await requireUser();
   const today = todayISO();
   const filters = parseFinanceFilters(await searchParams, today);
   const month = filters.month;
@@ -163,12 +163,15 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
         description="Receitas, despesas e a reserva de caixa: o que está previsto e o que já aconteceu."
         actions={
           <>
-            <a href={exportHref} className={buttonClasses({ variant: "secondary" })}>
-              <span className="btn-icone" aria-hidden="true">
-                <Download />
-              </span>
-              Exportar CSV
-            </a>
+            {/* exportação é só de administradores (a rota confere de novo) */}
+            {user.role === "admin" ? (
+              <a href={exportHref} className={buttonClasses({ variant: "secondary" })}>
+                <span className="btn-icone" aria-hidden="true">
+                  <Download />
+                </span>
+                Exportar CSV
+              </a>
+            ) : null}
             <ButtonLink href={newHref()} icon={<Plus />}>
               Novo lançamento
             </ButtonLink>

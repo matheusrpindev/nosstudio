@@ -4,7 +4,8 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
+import { isValidEmail } from "@/lib/format";
 import { f, jsonField, parseInput } from "@/server/action";
 import { saveSetting } from "@/server/settings";
 
@@ -13,15 +14,19 @@ const emailSchema = z
   .trim()
   .toLowerCase()
   .max(160, "E-mail longo demais.")
-  .refine((v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v), "Há um e-mail inválido na lista.");
+  .refine(isValidEmail, "Há um e-mail inválido na lista.");
 
 const schema = z.object({
   notifyOnLead: f.checkbox(),
   leadEmails: z.array(emailSchema).max(10, "No máximo 10 destinatários."),
 });
 
+/**
+ * Só administradores: a lista define para onde vão os dados de cada pedido de orçamento. Uma conta de acesso
+ * técnico (temporária) não pode colocar um endereço de fora que continuaria recebendo leads depois de revogada.
+ */
 export async function saveNotificationsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const parsed = parseInput(schema, { notifyOnLead: formData.get("notifyOnLead") ?? undefined, leadEmails: jsonField(formData, "leadEmails") ?? [] });
   if (!parsed.ok) {
     // o erro de um item da lista (`leadEmails.2`) aparece no campo da lista inteira
@@ -37,7 +42,8 @@ export async function saveNotificationsAction(_prev: ActionState, formData: Form
     action: "update",
     entity: "settings",
     entityId: "notifications",
-    summary: `Aviso de novo lead por e-mail: ${parsed.data.notifyOnLead ? "ligado" : "desligado"} (${leadEmails.length === 0 ? "todos os usuários ativos" : `${leadEmails.length} destinatário(s)`})`,
+    // os endereços ficam na auditoria: dá para ver quem incluiu um destinatário e quando
+    summary: `Aviso de novo lead por e-mail: ${parsed.data.notifyOnLead ? "ligado" : "desligado"} (${leadEmails.length === 0 ? "todos os usuários ativos" : `destinatários: ${leadEmails.join(", ")}`})`,
   });
   refresh();
   return actionOk("Notificações salvas.");

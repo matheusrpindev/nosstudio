@@ -9,7 +9,7 @@
 import { formatDate } from "@/lib/dates";
 import { PROPOSAL_MODALITY_LABELS, type EntryMode, type ProposalItemKind, type ProposalModality } from "@/lib/domain";
 import { formatNumber } from "@/lib/format";
-import { clientNumbers, lineTotalCents } from "./calc";
+import { clientNumbers, lineTotalCents, paymentsDifferenceCents } from "./calc";
 
 /** Dados de entrada: o que o painel carrega do banco (inclui campos internos, que serão descartados). */
 export type ProposalSource = {
@@ -124,6 +124,11 @@ export function toPublicProposal(source: ProposalSource): PublicProposal {
     entryCents: proposal.entryCents,
   });
   const ordered = [...source.items].sort((a, b) => a.sortOrder - b.sortOrder);
+  // Desconto ainda NÃO aprovado + parcelas que não fecham com o total público: o plano foi calculado com o
+  // desconto (ou está desatualizado) e a diferença entregaria o valor que não pode sair do painel. Nesse caso
+  // as parcelas ficam de fora — o PDF sai só com o texto das condições de pagamento — até o plano fechar.
+  const discountPending = proposal.discountCents > 0 && !proposal.discountApproved;
+  const hidePayments = discountPending && paymentsDifferenceCents(source.payments, numbers.totalCents) !== 0;
   const toItem = (item: ProposalSource["items"][number], showPrice: boolean): PublicProposalItem => {
     const total = lineTotalCents(item);
     return {
@@ -161,7 +166,7 @@ export function toPublicProposal(source: ProposalSource): PublicProposal {
     totalCents: numbers.totalCents,
     entry: numbers.entryCents > 0 ? { cents: numbers.entryCents, percent: numbers.entryPercent } : null,
     balanceCents: numbers.balanceCents,
-    payments: [...source.payments]
+    payments: (hidePayments ? [] : [...source.payments])
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((payment) => ({
         label: payment.label,

@@ -12,6 +12,7 @@ import {
   clients,
   contracts,
   financeEntries,
+  leads,
   projects,
   proposalItems,
   proposals,
@@ -486,10 +487,26 @@ export async function addInteraction(input: { clientId: number; userId: number; 
   });
 }
 
-/** Exclui o cliente. O histórico é apagado (cascata); orçamentos, projetos etc. ficam sem cliente (set null). */
-export async function deleteClient(id: number): Promise<{ id: number } | null> {
-  const [deleted] = await db.delete(clients).where(eq(clients.id, id)).returning({ id: clients.id });
-  return deleted ?? null;
+/** Quantos pedidos recebidos pelo site (leads) estão ligados a este cliente — eles guardam nome, WhatsApp, e-mail e mensagem. */
+export async function countClientLeads(clientId: number): Promise<number> {
+  const [row] = await db.select({ total: count() }).from(leads).where(eq(leads.clientId, clientId));
+  return row?.total ?? 0;
+}
+
+/**
+ * Exclui o cliente. O histórico é apagado (cascata); orçamentos, projetos etc. ficam sem cliente (set null).
+ * `withLeads`: apaga também os leads ligados ao cliente (os dados que a pessoa enviou pelo site) — necessário
+ * para atender a um pedido de eliminação (LGPD); sem isso eles continuam em Leads, só que sem vínculo.
+ */
+export async function deleteClient(id: number, options: { withLeads?: boolean } = {}): Promise<{ id: number; leadsDeleted: number } | null> {
+  return db.transaction(async (tx) => {
+    const [existing] = await tx.select({ id: clients.id }).from(clients).where(eq(clients.id, id));
+    if (!existing) return null;
+    // os leads primeiro: depois de excluir o cliente o vínculo (client_id) já teria virado nulo
+    const removedLeads = options.withLeads ? await tx.delete(leads).where(eq(leads.clientId, id)).returning({ id: leads.id }) : [];
+    await tx.delete(clients).where(eq(clients.id, id));
+    return { id, leadsDeleted: removedLeads.length };
+  });
 }
 
 /** Para a tela: sem prazo nem passo definido? (usado para sugerir "defina o próximo passo"). */

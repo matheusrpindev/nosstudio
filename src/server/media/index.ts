@@ -165,16 +165,18 @@ export async function updateMediaAlt(id: number, alt: string): Promise<Media | n
   return row ?? null;
 }
 
-/** Procura referências a `id` em propriedades terminadas em "mediaId" (qualquer profundidade). */
-function jsonReferencesMedia(value: unknown, id: number): boolean {
-  if (Array.isArray(value)) return value.some((item) => jsonReferencesMedia(item, id));
+/** Ids de mídia citados num JSON de conteúdo: propriedades terminadas em "mediaId", em qualquer profundidade. */
+export function collectMediaIds(value: unknown): number[] {
+  if (Array.isArray(value)) return value.flatMap((item) => collectMediaIds(item));
   if (value && typeof value === "object") {
-    return Object.entries(value).some(([key, inner]) =>
-      /mediaid$/i.test(key) && inner === id ? true : jsonReferencesMedia(inner, id),
+    return Object.entries(value).flatMap(([key, inner]) =>
+      /mediaid$/i.test(key) && typeof inner === "number" ? [inner] : collectMediaIds(inner),
     );
   }
-  return false;
+  return [];
 }
+
+const jsonReferencesMedia = (value: unknown, id: number) => collectMediaIds(value).includes(id);
 
 /** Onde a mídia está em uso (lista de descrições em pt-BR). Vazio = pode ser apagada. */
 export async function findMediaUsage(id: number): Promise<string[]> {
@@ -208,4 +210,32 @@ export async function deleteMedia(id: number): Promise<boolean> {
   const keys = [row.storageKey, ...(Array.isArray(row.variants) ? row.variants.map((variant) => variant.key) : [])];
   await Promise.allSettled(keys.map((key) => storage.delete(key)));
   return true;
+}
+
+/**
+ * Libera arquivos depois de um desvínculo (imagem trocada/removida num formulário) ou da exclusão do registro
+ * que os usava: apaga do disco e da tabela cada um que NÃO esteja mais em uso em lugar nenhum
+ * (`findMediaUsage` vazio). Chame DEPOIS de gravar a mudança no banco. Devolve os ids apagados.
+ *
+ * Por quê: sem isto, a foto de um cliente ou um comprovante continuaria guardado (e, se público, acessível pelo
+ * link) depois de excluído no painel — o que não atende a um pedido de eliminação (LGPD).
+ * Nunca derruba a operação principal: uma falha aqui só deixa o arquivo para trás.
+ */
+export async function releaseMedia(ids: Iterable<number | null | undefined>): Promise<number[]> {
+  const unique = [...new Set([...ids].filter((id): id is number => typeof id === "number" && id > 0))];
+  const released: number[] = [];
+  for (const id of unique) {
+    try {
+      if ((await findMediaUsage(id)).length === 0 && (await deleteMedia(id))) released.push(id);
+    } catch (error) {
+      console.error("[media] não foi possível liberar o arquivo", id, (error as Error)?.message);
+    }
+  }
+  return released;
+}
+
+/** Os ids de `before` que não aparecem mais em `after` (o que um formulário deixou de usar ao salvar). */
+export function droppedMediaIds(before: Iterable<number | null | undefined>, after: Iterable<number | null | undefined>): number[] {
+  const kept = new Set([...after].filter((id): id is number => typeof id === "number"));
+  return [...new Set([...before].filter((id): id is number => typeof id === "number" && !kept.has(id)))];
 }

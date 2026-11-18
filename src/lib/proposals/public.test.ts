@@ -96,6 +96,48 @@ describe("visão pública da proposta", () => {
     expect(p.totalCents).toBe(1000000);
   });
 
+  it("desconto pendente + parcelas calculadas com o desconto: o plano não sai (a diferença revelaria o desconto)", () => {
+    // parcelas geradas quando o desconto estava "aprovado": somam total − desconto
+    const discount = 123456;
+    const stale = source({ discountCents: discount, discountApproved: false });
+    stale.payments = [
+      { label: "Entrada (30%)", dueDate: null, dueLabel: "", amountCents: 289963, sortOrder: 1 },
+      { label: "Saldo restante", dueDate: "2027-04-10", dueLabel: "", amountCents: 676581, sortOrder: 2 },
+    ];
+    expect(stale.payments.reduce((sum, payment) => sum + payment.amountCents, 0)).toBe(1090000 - discount);
+    const p = toPublicProposal(stale);
+    expect(p.totalCents).toBe(1090000);
+    expect(p.discount).toBeNull();
+    expect(p.payments).toEqual([]);
+    // nenhum número do plano antigo (nem a diferença) aparece na saída
+    const json = JSON.stringify(p);
+    for (const secret of [discount, 289963, 676581, 1090000 - discount]) expect(json).not.toContain(String(secret));
+
+    // qualquer saída pública com parcelas fecha com o total — com desconto pendente, aprovado ou sem desconto
+    for (const proposal of [stale, source(), source({ discountApproved: true, discountCents: 90000 })]) {
+      const out = toPublicProposal(proposal);
+      const sum = out.payments.reduce((total, payment) => total + payment.amountCents, 0);
+      if (proposal.proposal.discountCents > 0 && !proposal.proposal.discountApproved) expect(out.payments.length === 0 || sum === out.totalCents).toBe(true);
+    }
+  });
+
+  it("depois de aprovado o desconto, o mesmo plano volta a sair (fecha com o total com desconto)", () => {
+    const approved = source({ discountCents: 123456, discountApproved: true });
+    approved.payments = [
+      { label: "Entrada (30%)", dueDate: null, dueLabel: "", amountCents: 289963, sortOrder: 1 },
+      { label: "Saldo restante", dueDate: "2027-04-10", dueLabel: "", amountCents: 676581, sortOrder: 2 },
+    ];
+    const p = toPublicProposal(approved);
+    expect(p.totalCents).toBe(1090000 - 123456);
+    expect(p.payments.map((payment) => payment.amountCents)).toEqual([289963, 676581]);
+  });
+
+  it("sem desconto pendente, o plano sai como foi cadastrado (mesmo que os sócios tenham deixado a soma diferente)", () => {
+    const custom = source({ discountCents: 0 });
+    custom.payments = [{ label: "Sinal", dueDate: null, dueLabel: "na assinatura", amountCents: 100000, sortOrder: 1 }];
+    expect(toPublicProposal(custom).payments).toEqual([{ label: "Sinal", dueText: "na assinatura", amountCents: 100000 }]);
+  });
+
   it("só mostra preço por item quando configurado (opcionais sempre, se tiverem valor)", () => {
     const hidden = toPublicProposal(source());
     expect(hidden.items.every((i) => i.totalCents === null)).toBe(true);

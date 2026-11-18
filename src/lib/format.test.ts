@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays, addMonths, diffDays, endOfMonth, formatDate, formatDateLong, isISODate, monthGrid, startOfWeek } from "./dates";
-import { formatBRL, formatPhone, parseBRL, safeHref, safeUrl, slugify, toWhatsAppNumber, videoEmbedUrl, whatsAppLink } from "./format";
+import { formatBRL, formatPhone, isValidEmail, mailtoHref, parseBRL, safeHref, safeUrl, slugify, toWhatsAppNumber, videoEmbedUrl, whatsAppLink } from "./format";
 
 describe("dinheiro", () => {
   it("formata centavos em reais", () => {
@@ -39,6 +39,44 @@ describe("links", () => {
     expect(safeHref("/contato")).toBe("/contato");
     expect(safeHref("//evil.com")).toBe("https://evil.com/");
     expect(safeHref("data:text/html,x")).toBe("");
+  });
+  it("não trata /\\host como link interno (o navegador leria como //host) nem aceita caracteres de controle", () => {
+    expect(safeHref("/\\evil.example/x")).toBe("");
+    expect(safeHref("/contato\\..\\x")).toBe("");
+    expect(safeHref("/\t/evil.example")).toBe("");
+    expect(safeHref("/contato\r\nx")).toBe("");
+    expect(safeHref("java\tscript:alert(1)")).toBe("");
+    expect(safeHref("/pacotes#planos")).toBe("/pacotes#planos");
+    expect(safeHref("#faq")).toBe("#faq");
+    expect(safeHref("https://instagram.com/nos")).toBe("https://instagram.com/nos");
+  });
+  it("e-mail de formulário não carrega parâmetros de mailto", () => {
+    for (const ok of ["ana@exemplo.com.br", "ana.silva+orcamento@exemplo.org", "o'brien@exemplo.ie", "joão@exemplo.com.br"]) {
+      expect(isValidEmail(ok)).toBe(true);
+      expect(mailtoHref(ok)).toBe(`mailto:${ok}`);
+    }
+    for (const bad of [
+      "vitima@exemplo.org?bcc=atacante%40evil.example&body=oi",
+      "vitima@exemplo.org?subject=x",
+      "a@b.com&cc=c@d.com",
+      "a@b.com,c@d.com",
+      "a@b.com;c@d.com",
+      "a@b.com#x",
+      "a%40b.com@c.com",
+      "a b@c.com",
+      "a@b",
+      "a@b.c",
+      "@b.com",
+      "a@@b.com",
+      "<a@b.com>",
+      "a@b.com\nbcc:x@y.com",
+      "",
+    ]) {
+      expect(isValidEmail(bad)).toBe(false);
+      expect(mailtoHref(bad)).toBe("");
+    }
+    expect(mailtoHref(null)).toBe("");
+    expect(mailtoHref("  ana@exemplo.com.br ")).toBe("mailto:ana@exemplo.com.br");
   });
   it("gera embeds de vídeo", () => {
     expect(videoEmbedUrl("https://youtu.be/abc123")).toBe("https://www.youtube-nocookie.com/embed/abc123");

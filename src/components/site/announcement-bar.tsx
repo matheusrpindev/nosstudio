@@ -21,6 +21,11 @@ export type AnnouncementView = {
   startsAt: string | null;
   endsAt: string | null;
   dismissible: boolean;
+  /**
+   * Agendado para os próximos minutos (calculado no servidor, quando a página foi gerada): sai ESCONDIDO no
+   * HTML e só o script/hidratação o revela na hora — sem JavaScript, um aviso nunca aparece antes do início.
+   */
+  pending?: boolean;
 };
 
 const storageKey = (item: Pick<AnnouncementView, "id" | "version">) => `nos:aviso:${item.id}:${item.version}`;
@@ -74,9 +79,9 @@ const PRE_PAINT = `(function(s){var r=s&&s.previousElementSibling;if(!r)return;v
  * por id + versão). Rola junto com a página — não ocupa espaço fixo no celular.
  */
 export function AnnouncementBar({ items, timeZone }: { items: AnnouncementView[]; timeZone: string }) {
-  // No servidor: o primeiro aviso. No navegador: a mesma conta que o script inline já aplicou ao HTML.
+  // No servidor: o primeiro aviso que já começou. No navegador: a conta que o script inline já aplicou ao HTML.
   const [activeId, setActiveId] = useState<number | null>(() =>
-    typeof window === "undefined" ? (items[0]?.id ?? null) : pickVisible(items, timeZone),
+    typeof window === "undefined" ? (items.find((item) => !item.pending)?.id ?? null) : pickVisible(items, timeZone),
   );
 
   if (items.length === 0) return null;

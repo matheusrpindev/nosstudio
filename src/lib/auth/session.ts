@@ -6,7 +6,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { sessions, users, type User } from "@/db/schema";
 import { env } from "@/lib/env";
-import { generateToken, hashToken } from "./tokens";
+import { deviceToken, generateToken, hasDeviceToken, hashToken, withDeviceToken } from "./tokens";
 
 const secureCookies = env.isProd || env.siteUrl.startsWith("https://");
 /** Prefixo __Host-: o navegador só aceita o cookie com Secure, Path=/ e sem Domain (bloqueia injeção por subdomínio). */
@@ -25,6 +25,28 @@ export const sessionCookieOptions = {
   path: "/",
   maxAge: IDLE_LIFETIME / 1000,
 };
+
+// ------------------------------------------------------------ aparelho conhecido
+/** Cookie de "aparelho conhecido" (ver `deviceToken` em ./tokens). Não é credencial: só afeta o limitador de login. */
+const DEVICE_COOKIE = secureCookies ? "__Host-nos_device" : "nos_device";
+const DEVICE_COOKIE_MAX_AGE = 400 * 24 * 60 * 60; // teto aceito pelos navegadores
+
+/** Este navegador já entrou nesta conta antes (ou redefiniu a senha dela pelo link do e-mail)? */
+export async function isKnownDevice(email: string): Promise<boolean> {
+  return hasDeviceToken((await cookies()).get(DEVICE_COOKIE)?.value, deviceToken(email));
+}
+
+/** Marca este navegador como aparelho conhecido da conta. Só em Server Action / Route Handler. */
+export async function rememberDevice(email: string): Promise<void> {
+  const store = await cookies();
+  store.set(DEVICE_COOKIE, withDeviceToken(store.get(DEVICE_COOKIE)?.value, deviceToken(email)), {
+    httpOnly: true,
+    secure: secureCookies,
+    sameSite: "lax",
+    path: "/",
+    maxAge: DEVICE_COOKIE_MAX_AGE,
+  });
+}
 
 /** Dados do usuário que podem circular pela aplicação (sem hash de senha). */
 export type CurrentUser = Pick<User, "id" | "name" | "email" | "role" | "mustChangePassword">;

@@ -1,11 +1,12 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { PANEL_HOME } from "./next-path";
 import { getSession, type CurrentUser } from "./session";
 
 export type { CurrentUser } from "./session";
 
 export const LOGIN_PATH = "/login";
-export const PANEL_HOME = "/painel";
+export { PANEL_HOME };
 export const FORCE_PASSWORD_PATH = "/painel/conta/senha";
 
 /** Usuário logado ou `null`. */
@@ -33,9 +34,4 @@ export async function requireAdmin(): Promise<CurrentUser> {
   return user;
 }
 
-/** Só aceita caminhos internos do painel como destino pós-login (evita open redirect). */
-export function safeNextPath(next: unknown): string {
-  if (typeof next !== "string") return PANEL_HOME;
-  if (!next.startsWith("/painel") || next.startsWith("//") || next.includes("\\") || next.includes("://")) return PANEL_HOME;
-  return next;
-}
+export { safeNextPath } from "./next-path";

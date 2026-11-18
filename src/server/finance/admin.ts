@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { clients, financeEntries, projects, proposalPayments, proposals, type FinanceEntry } from "@/db/schema";
 import { endOfMonth, startOfMonth, type ISODate } from "@/lib/dates";
 import type { FinanceCategory, FinanceType, PaymentMethod } from "@/lib/domain";
+import { droppedMediaIds, releaseMedia } from "@/server/media";
 import type { FinanceFilters, Scope } from "./filters";
 import { resolveScope } from "./filters";
 import { lastMonths, type EntryLike } from "./summary";
@@ -117,11 +118,14 @@ export async function createFinanceEntry(input: EntryInput, userId: number): Pro
 }
 
 export async function updateFinanceEntry(id: number, input: EntryInput): Promise<FinanceEntry | null> {
+  const previous = await getFinanceEntry(id);
   const [row] = await db
     .update(financeEntries)
     .set({ ...input, updatedAt: new Date() })
     .where(eq(financeEntries.id, id))
     .returning();
+  // comprovante trocado ou removido: o arquivo antigo é apagado (não fica órfão no disco e nos backups)
+  if (row && previous) await releaseMedia(droppedMediaIds([previous.receiptMediaId], [row.receiptMediaId]));
   return row ?? null;
 }
 
@@ -162,8 +166,10 @@ export async function duplicateFinanceEntry(id: number, dueDate: ISODate, userId
   return row;
 }
 
+/** Exclui o lançamento e apaga o comprovante dele (se nenhum outro registro usar o mesmo arquivo). */
 export async function deleteFinanceEntry(id: number): Promise<FinanceEntry | null> {
   const [row] = await db.delete(financeEntries).where(eq(financeEntries.id, id)).returning();
+  if (row) await releaseMedia([row.receiptMediaId]);
   return row ?? null;
 }
 

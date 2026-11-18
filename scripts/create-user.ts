@@ -5,6 +5,7 @@
  *   npm run user:create -- --name "Dev" --email dev@dominio.com.br --role tecnico
  *   npm run user:create -- --email pedro@dominio.com.br --reset        (gera nova senha temporária)
  *   npm run user:create -- --email dev@dominio.com.br --deactivate     (revoga o acesso)
+ *   npm run user:create -- --email pedro@dominio.com.br --unlock       (destrava o login após "Muitas tentativas")
  *
  * A senha temporária é mostrada UMA vez aqui no terminal; no primeiro login o sistema exige a troca.
  */
@@ -13,6 +14,8 @@ import { randomBytes } from "node:crypto";
 import { db } from "@/db";
 import { sessions, users } from "@/db/schema";
 import { hashPassword } from "@/lib/auth/password";
+import { unlockLogin } from "@/lib/auth/rate-limit";
+import { revokeResetTokens } from "@/lib/auth/reset-tokens";
 import { USER_ROLES, type UserRole } from "@/lib/domain";
 
 function arg(name: string): string | undefined {
@@ -40,7 +43,16 @@ async function main() {
     if (!existing) throw new Error("Conta não encontrada.");
     await db.update(users).set({ active: false }).where(eq(users.id, existing.id));
     await db.delete(sessions).where(eq(sessions.userId, existing.id));
+    await revokeResetTokens(existing.id);
     console.log(`✔ Acesso de ${email} revogado (conta desativada e sessões encerradas).`);
+    return;
+  }
+
+  if (flag("unlock")) {
+    if (!existing) throw new Error("Conta não encontrada.");
+    // Zera o limite de tentativas por e-mail (alguém pode tê-lo estourado de propósito). A senha não muda.
+    await unlockLogin(email);
+    console.log(`✔ Login de ${email} destravado. A senha continua a mesma.`);
     return;
   }
 
@@ -54,6 +66,8 @@ async function main() {
       .set({ passwordHash, mustChangePassword: true, active: true })
       .where(eq(users.id, existing.id));
     await db.delete(sessions).where(eq(sessions.userId, existing.id));
+    await revokeResetTokens(existing.id);
+    await unlockLogin(email);
     console.log(`✔ Senha de ${email} redefinida.`);
   } else {
     const name = arg("name")?.trim();

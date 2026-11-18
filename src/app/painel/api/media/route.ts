@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       alt,
       userId: user.id,
     });
-    await logAudit({ user, action: "upload", entity: "media", entityId: row.id, summary: `Enviou o arquivo "${row.originalName}"` });
+    await logAudit({ user, action: "upload", entity: "media", entityId: row.id, summary: `Enviou um arquivo ${row.visibility === "public" ? "público (imagem)" : "privado"}` });
     return json({ media: toMediaValue(row) }, 201);
   } catch (error) {
     if (error instanceof MediaError) return json({ error: error.message }, error.status);

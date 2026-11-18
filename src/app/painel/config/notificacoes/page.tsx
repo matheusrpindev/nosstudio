@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardHeader, CardSection } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { smtpConfigured } from "@/lib/env";
 import { listActiveRecipients } from "@/server/config/overview";
 import { getSetting } from "@/server/settings";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Notificações" };
 export const instant = false;
 
 export default async function NotificationsPage() {
-  await requireUser();
+  await requireAdmin();
   const [settings, activeUsers] = await Promise.all([getSetting("notifications"), listActiveRecipients()]);
   const configured = smtpConfigured();
   const recipients = settings.leadEmails.length > 0 ? settings.leadEmails : activeUsers.map((user) => user.email);
@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
       ) : (
         <Alert tone="alerta" title="O envio de e-mail ainda não está configurado" className="mb-5">
           <p>
-            Sem isso, os avisos <strong>não saem por e-mail</strong>: o texto aparece apenas no registro (log) do servidor. Os leads continuam chegando normalmente no painel.
+            Sem isso, os avisos <strong>não saem por e-mail</strong> e o link de &ldquo;Esqueci minha senha&rdquo; não é enviado (para trocar uma senha, use <em>Usuários → Nova senha</em>). Os leads continuam chegando normalmente no painel.
           </p>
           <p className="mt-1.5">
             Para ligar, quem cuida do servidor precisa preencher no arquivo <code>.env</code> as variáveis <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_SECURE</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code> e <code>MAIL_FROM</code> (o remetente) e reiniciar o site. Os dados vêm do provedor de e-mail (por exemplo, o do domínio da NÓS).

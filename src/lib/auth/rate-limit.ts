@@ -1,7 +1,8 @@
 import "server-only";
-import { eq, lt } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { db } from "@/db";
 import { rateLimits } from "@/db/schema";
+import { anonymize } from "./tokens";
 
 export type RateLimitRule = {
   /** Máximo de tentativas dentro da janela. */
@@ -20,6 +21,8 @@ export type RateLimitResult = { ok: true } | { ok: false; retryAfterSeconds: num
  */
 export async function consumeRateLimit(key: string, rule: RateLimitRule): Promise<RateLimitResult> {
   const now = Date.now();
+  // Limpeza oportunista (cerca de 1 a cada 50 chamadas): a tabela não cresce sem controle.
+  if (Math.random() < 0.02) await pruneRateLimits().catch(() => undefined);
   return db.transaction(async (tx) => {
     const [row] = await tx.select().from(rateLimits).where(eq(rateLimits.key, key));
     if (row?.blockedUntil && row.blockedUntil.getTime() > now) {
@@ -51,9 +54,33 @@ export async function resetRateLimit(key: string): Promise<void> {
   await db.delete(rateLimits).where(eq(rateLimits.key, key));
 }
 
-/** Limpeza ocasional de registros antigos (chamada de forma oportunista). */
-export async function pruneRateLimits(olderThanMs = 24 * 60 * 60 * 1000): Promise<void> {
-  await db.delete(rateLimits).where(lt(rateLimits.windowStart, new Date(Date.now() - olderThanMs)));
+/**
+ * Limpeza de registros antigos (chamada de forma oportunista por `consumeRateLimit`). Só apaga contadores cuja
+ * janela já venceu (a maior janela em uso é de 24 h) e que não estejam com bloqueio em vigor.
+ */
+export async function pruneRateLimits(olderThanMs = 25 * 60 * 60 * 1000): Promise<void> {
+  const now = Date.now();
+  await db
+    .delete(rateLimits)
+    .where(
+      and(
+        lt(rateLimits.windowStart, new Date(now - olderThanMs)),
+        or(isNull(rateLimits.blockedUntil), lt(rateLimits.blockedUntil, new Date(now))),
+      ),
+    );
+}
+
+/** Chave do contador de tentativas de login por e-mail (barreira contra ataque distribuído a uma conta). */
+export function loginEmailKey(email: string): string {
+  return `login:email:${anonymize(email.trim().toLowerCase())}`;
+}
+
+/**
+ * Destrava o login de uma conta: zera o contador por e-mail. Chamado quando a senha é redefinida por um caminho
+ * que prova quem é o dono (link do e-mail, senha gerada por um administrador, linha de comando).
+ */
+export async function unlockLogin(email: string): Promise<void> {
+  await resetRateLimit(loginEmailKey(email));
 }
 
 export function retryMessage(seconds: number): string {

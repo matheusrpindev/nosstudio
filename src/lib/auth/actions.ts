@@ -2,17 +2,20 @@
 
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { db } from "@/db";
 import { passwordResetTokens, users } from "@/db/schema";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
+import { rateLimitIp } from "@/lib/client-ip";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { getClientIp, getUserAgent } from "@/lib/request";
 import { FORCE_PASSWORD_PATH, LOGIN_PATH, PANEL_HOME, requireUser, safeNextPath } from "./index";
 import { hashPassword, passwordProblem, verifyAgainstDummy, verifyPassword } from "./password";
-import { consumeRateLimit, resetRateLimit, retryMessage } from "./rate-limit";
-import { createSession, destroyCurrentSession, destroyUserSessions, getSession } from "./session";
+import { consumeRateLimit, loginEmailKey, resetRateLimit, retryMessage, unlockLogin, type RateLimitRule } from "./rate-limit";
+import { revokeResetTokens } from "./reset-tokens";
+import { createSession, destroyCurrentSession, destroyUserSessions, getSession, isKnownDevice, rememberDevice } from "./session";
 import { anonymize, generateToken, hashToken } from "./tokens";
 
 const MINUTE = 60 * 1000;
@@ -23,6 +26,9 @@ function field(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
 }
+
+/** Chave do limitador para o par e-mail + IP (o IP já agrupado por `rateLimitIp`). */
+const loginPairKey = (email: string, ipBucket: string) => `login:par:${anonymize(`${email}|${ipBucket}`)}`;
 
 // --------------------------------------------------------------------- login
 export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -37,16 +43,21 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
   if (password.length > 200) return actionError("E-mail ou senha incorretos.", { values });
 
   const ip = await getClientIp();
-  const ipKey = `login:ip:${anonymize(ip)}`;
-  const pairKey = `login:par:${anonymize(`${email}|${ip}`)}`;
-  const emailKey = `login:email:${anonymize(email)}`;
+  const ipBucket = rateLimitIp(ip);
+  const ipKey = `login:ip:${anonymize(ipBucket)}`;
+  const pairKey = loginPairKey(email, ipBucket);
+  const emailKey = loginEmailKey(email);
 
   // Três barreiras: por IP, por e-mail+IP (força bruta comum) e por e-mail (ataque distribuído).
-  for (const [key, rule] of [
+  // A barreira por e-mail pode ser estourada de propósito por um estranho para trancar a conta de um sócio;
+  // por isso ela NÃO vale para um navegador que já entrou nessa conta (cookie de aparelho conhecido): o dono
+  // continua entrando com a senha certa, e quem ataca de fora continua limitado.
+  const barriers: [string, RateLimitRule][] = [
     [ipKey, { limit: 30, windowMs: 15 * MINUTE }],
     [pairKey, { limit: 8, windowMs: 15 * MINUTE }],
-    [emailKey, { limit: 40, windowMs: 60 * MINUTE }],
-  ] as const) {
+  ];
+  if (!(await isKnownDevice(email))) barriers.push([emailKey, { limit: 40, windowMs: 60 * MINUTE }]);
+  for (const [key, rule] of barriers) {
     const result = await consumeRateLimit(key, rule);
     if (!result.ok) return actionError(retryMessage(result.retryAfterSeconds), { values });
   }
@@ -64,6 +75,7 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
   await resetRateLimit(pairKey);
   await resetRateLimit(emailKey);
   await createSession(user.id, { ip, userAgent: await getUserAgent() });
+  await rememberDevice(email);
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
   await logAudit({ user, action: "login", entity: "user", entityId: user.id, summary: "Entrou no painel" });
 
@@ -88,47 +100,63 @@ export async function requestPasswordResetAction(_prev: ActionState, formData: F
   const email = field(formData, "email").trim().toLowerCase();
   if (!EMAIL_RE.test(email)) return actionError("Informe um e-mail válido.", { values: { email } });
 
-  const ip = await getClientIp();
-  const ipLimit = await consumeRateLimit(`reset:ip:${anonymize(ip)}`, { limit: 6, windowMs: 60 * MINUTE });
+  const ipBucket = rateLimitIp(await getClientIp());
+  const ipLimit = await consumeRateLimit(`reset:ip:${anonymize(ipBucket)}`, { limit: 6, windowMs: 60 * MINUTE });
   if (!ipLimit.ok) return actionError(retryMessage(ipLimit.retryAfterSeconds), { values: { email } });
-  // Limite por e-mail é silencioso: a resposta é sempre a mesma, exista ou não a conta.
-  const emailLimit = await consumeRateLimit(`reset:email:${anonymize(email)}`, { limit: 3, windowMs: 60 * MINUTE });
+  // Limites por e-mail são silenciosos: a resposta é sempre a mesma, exista ou não a conta.
+  // Por e-mail+IP (3/h): um estranho pedindo links para o e-mail de um sócio não gasta a cota do próprio sócio.
+  // Por e-mail (8/h): teto de mensagens na caixa de entrada mesmo que os pedidos venham de vários IPs.
+  const pairLimit = await consumeRateLimit(`reset:par:${anonymize(`${email}|${ipBucket}`)}`, { limit: 3, windowMs: 60 * MINUTE });
+  const emailLimit = await consumeRateLimit(`reset:email:${anonymize(email)}`, { limit: 8, windowMs: 60 * MINUTE });
 
+  // O link é criado e enviado DEPOIS da resposta: assim o tempo de resposta é o mesmo exista ou não a conta
+  // (esperar o envio do e-mail só quando a conta existe entregaria, pelo relógio, quais e-mails têm acesso).
+  if (pairLimit.ok && emailLimit.ok) {
+    after(async () => {
+      try {
+        await sendPasswordResetLink(email);
+      } catch (error) {
+        console.error("[auth] falha ao enviar o link de redefinição de senha", (error as Error)?.message);
+      }
+    });
+  }
+
+  return actionOk(RESET_GENERIC_MESSAGE);
+}
+
+async function sendPasswordResetLink(email: string): Promise<void> {
   const [user] = await db
     .select({ id: users.id, name: users.name, email: users.email })
     .from(users)
     .where(and(eq(users.email, email), eq(users.active, true)));
+  if (!user) return;
 
-  if (user && emailLimit.ok) {
-    const token = generateToken();
-    await db.transaction(async (tx) => {
-      // Um link válido por vez: pedidos anteriores deixam de funcionar.
-      await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
-      await tx.insert(passwordResetTokens).values({
-        id: hashToken(token),
-        userId: user.id,
-        expiresAt: new Date(Date.now() + RESET_TOKEN_LIFETIME),
-      });
+  const token = generateToken();
+  await db.transaction(async (tx) => {
+    // Um link válido por vez: pedidos anteriores deixam de funcionar.
+    await revokeResetTokens(user.id, tx);
+    await tx.insert(passwordResetTokens).values({
+      id: hashToken(token),
+      userId: user.id,
+      expiresAt: new Date(Date.now() + RESET_TOKEN_LIFETIME),
     });
-    const link = `${env.siteUrl}/redefinir-senha?token=${token}`;
-    await sendMail({
-      to: user.email,
-      subject: "Redefinição de senha — painel NÓS Studio",
-      text: [
-        `Olá, ${user.name.split(" ")[0]}!`,
-        "",
-        "Recebemos um pedido para redefinir a senha do seu acesso ao painel da NÓS Studio.",
-        "Para criar uma nova senha, abra o link abaixo (válido por 1 hora):",
-        "",
-        link,
-        "",
-        "Se não foi você, é só ignorar este e-mail — sua senha continua a mesma.",
-      ].join("\n"),
-    });
-    await logAudit({ user, action: "senha_reset_pedido", entity: "user", entityId: user.id, summary: "Pediu link de redefinição de senha" });
-  }
-
-  return actionOk(RESET_GENERIC_MESSAGE);
+  });
+  const link = `${env.siteUrl}/redefinir-senha?token=${token}`;
+  await sendMail({
+    to: user.email,
+    subject: "Redefinição de senha — painel NÓS Studio",
+    text: [
+      `Olá, ${user.name.split(" ")[0]}!`,
+      "",
+      "Recebemos um pedido para redefinir a senha do seu acesso ao painel da NÓS Studio.",
+      "Para criar uma nova senha, abra o link abaixo (válido por 1 hora):",
+      "",
+      link,
+      "",
+      "Se não foi você, é só ignorar este e-mail — sua senha continua a mesma.",
+    ].join("\n"),
+  });
+  await logAudit({ user, action: "senha_reset_pedido", entity: "user", entityId: user.id, summary: "Pediu link de redefinição de senha" });
 }
 
 export async function resetPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -136,8 +164,8 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
   const password = field(formData, "password");
   const confirm = field(formData, "confirm");
 
-  const ip = await getClientIp();
-  const limit = await consumeRateLimit(`reset-uso:ip:${anonymize(ip)}`, { limit: 10, windowMs: 15 * MINUTE });
+  const ipBucket = rateLimitIp(await getClientIp());
+  const limit = await consumeRateLimit(`reset-uso:ip:${anonymize(ipBucket)}`, { limit: 10, windowMs: 15 * MINUTE });
   if (!limit.ok) return actionError(retryMessage(limit.retryAfterSeconds));
 
   const problem = passwordProblem(password);
@@ -151,7 +179,7 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
 
   const tokenId = hashToken(token);
   const [row] = await db
-    .select({ userId: passwordResetTokens.userId, name: users.name })
+    .select({ userId: passwordResetTokens.userId, name: users.name, email: users.email })
     .from(passwordResetTokens)
     .innerJoin(users, eq(users.id, passwordResetTokens.userId))
     .where(
@@ -180,6 +208,11 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
 
   // Qualquer sessão aberta com a senha antiga é encerrada.
   await destroyUserSessions(row.userId);
+  // Quem abriu o link provou que controla o e-mail da conta: o login dela é destravado (um estranho pode ter
+  // estourado o limite de tentativas de propósito) e este navegador passa a ser um aparelho conhecido.
+  await unlockLogin(row.email);
+  await resetRateLimit(loginPairKey(row.email, ipBucket));
+  await rememberDevice(row.email);
   await logAudit({
     user: { id: row.userId, name: row.name },
     action: "senha_redefinida",
@@ -220,6 +253,8 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
     .where(eq(users.id, user.id));
   // Mantém só a sessão atual; os outros aparelhos precisam entrar de novo.
   await destroyUserSessions(user.id, session?.sessionId);
+  // Um link de redefinição pedido antes da troca deixa de valer (senão a troca não encerraria um incidente).
+  await revokeResetTokens(user.id);
   await logAudit({ user, action: "senha_alterada", entity: "user", entityId: user.id, summary: "Alterou a própria senha" });
 
   if (current.mustChangePassword) redirect(PANEL_HOME);

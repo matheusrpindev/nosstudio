@@ -37,7 +37,8 @@ export default async function PainelHomePage() {
       </header>
 
       <SummaryCards summary={summary} today={today} />
-      <Notices issues={issues} gaps={gaps} today={today} />
+      {/* a pendência de SMTP leva a Configurações > Notificações, que é área só de administradores */}
+      <Notices issues={issues} gaps={user.role === "admin" ? gaps : { ...gaps, smtp: false }} today={today} />
       <Shortcuts />
 
       <div className="grid items-start gap-6 lg:grid-cols-2">

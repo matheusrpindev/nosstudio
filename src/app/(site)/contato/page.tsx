@@ -4,7 +4,7 @@ import { LeadForm } from "@/components/site/lead-form";
 import { PageHeader, Section } from "@/components/site/layout";
 import { instagramLink, whatsAppLink } from "@/lib/format";
 import { buildMetadata } from "@/lib/site/seo";
-import { getSiteContent } from "@/server/site/queries";
+import { getPackages, getSiteContent } from "@/server/site/queries";
 import "./contact.css";
 
 export const generateMetadata = () => buildMetadata("contato");
@@ -14,7 +14,9 @@ export const generateMetadata = () => buildMetadata("contato");
  * <LeadForm> (pré-seleção do serviço, `packageName`) e por <ContactPackageNotice> (aviso "Pedido sobre").
  */
 export default async function ContactPage() {
-  const { contactPage, general, howItWorks, visibility } = await getSiteContent();
+  const [{ contactPage, general, howItWorks, visibility }, packages] = await Promise.all([getSiteContent(), getPackages()]);
+  // `?pacote=` só vale para nomes de pacotes publicados (nada de texto arbitrário exibido na página)
+  const packageNames = [...packages.plans, ...packages.standalone].map((pkg) => pkg.name);
 
   const whatsapp = whatsAppLink(general.whatsapp, general.whatsappMessage);
   const instagram = instagramLink(general.instagram);
@@ -29,13 +31,14 @@ export default async function ContactPage() {
       <Section id="contato-formulario" labelledBy={undefined}>
         <div className="contact__grid">
           <div className="contact__main">
-            <ContactPackageNotice />
+            <ContactPackageNotice options={packageNames} />
             <LeadForm
               id="formulario"
               variant="full"
               originPath="/contato"
               consentText={contactPage.consentText}
               submitLabel={contactPage.submitLabel}
+              packageOptions={packageNames}
               bordered
             />
           </div>

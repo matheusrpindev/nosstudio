@@ -46,6 +46,6 @@ export async function DELETE(request: Request, context: Context) {
     return json({ error: `Este arquivo está em uso em: ${usage.slice(0, 3).join(", ")}. Remova-o de lá antes de apagar.` }, 409);
   }
   await deleteMedia(id);
-  await logAudit({ user, action: "delete", entity: "media", entityId: id, summary: `Apagou o arquivo "${row.originalName}"` });
+  await logAudit({ user, action: "delete", entity: "media", entityId: id, summary: `Apagou um arquivo ${row.visibility === "public" ? "público (imagem)" : "privado"}` });
   return new Response(null, { status: 204 });
 }

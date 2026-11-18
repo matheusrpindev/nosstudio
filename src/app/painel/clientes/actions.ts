@@ -218,10 +218,11 @@ export async function deleteClientAction(_prev: ActionState, formData: FormData)
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
 
-  const deleted = await deleteClient(parsed.data.id);
+  const deleted = await deleteClient(parsed.data.id, { withLeads: formData.get("deleteLeads") === "on" });
   if (deleted) {
     // LGPD: a auditoria não repete os dados pessoais que acabaram de ser eliminados
-    await logAudit({ user, action: "delete", entity: "client", entityId: deleted.id, summary: "Excluiu um cliente e o histórico de atendimento" });
+    const leadsNote = deleted.leadsDeleted > 0 ? ` e ${deleted.leadsDeleted} pedido(s) recebido(s) pelo site` : "";
+    await logAudit({ user, action: "delete", entity: "client", entityId: deleted.id, summary: `Excluiu um cliente, o histórico de atendimento${leadsNote}` });
   }
   await flashToast("Cliente excluído.");
   redirect("/painel/clientes");

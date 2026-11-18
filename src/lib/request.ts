@@ -1,21 +1,15 @@
 import "server-only";
 import { headers } from "next/headers";
+import { resolveClientIp } from "@/lib/client-ip";
 import { env } from "@/lib/env";
 
-/** IP do visitante, considerando os proxies confiáveis à frente do app. */
+/**
+ * IP do visitante, considerando os proxies confiáveis à frente do app. Sempre um IP válido (ou "0.0.0.0"
+ * quando não dá para saber). Para chaves do limitador de tentativas, passe o resultado por `rateLimitIp()`.
+ */
 export async function getClientIp(): Promise<string> {
   const h = await headers();
-  const forwarded = h.get("x-forwarded-for");
-  if (forwarded) {
-    const parts = forwarded
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
-    // O último proxy confiável acrescenta o IP real ao final da lista.
-    const index = Math.max(0, parts.length - Math.max(1, env.trustedProxies));
-    if (parts[index]) return parts[index];
-  }
-  return h.get("x-real-ip") || "0.0.0.0";
+  return resolveClientIp(h.get("x-forwarded-for"), h.get("x-real-ip"), env.trustedProxies);
 }
 
 export async function getUserAgent(): Promise<string> {

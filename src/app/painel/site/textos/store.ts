@@ -3,6 +3,7 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { siteContent, users } from "@/db/schema";
 import type { SiteContentKey } from "@/lib/site/content";
+import { collectMediaIds, releaseMedia } from "@/server/media";
 
 export type SectionInfo = { customized: boolean; updatedAt: Date | null; updatedByName: string | null };
 
@@ -24,6 +25,8 @@ export async function getSectionInfos(keys: readonly SiteContentKey[]): Promise<
 
 /** Apaga o registro da seção: o site volta a usar os textos originais do briefing. Devolve `true` se havia algo. */
 export async function resetSiteContent(key: SiteContentKey): Promise<boolean> {
-  const deleted = await db.delete(siteContent).where(eq(siteContent.key, key)).returning({ key: siteContent.key });
+  const deleted = await db.delete(siteContent).where(eq(siteContent.key, key)).returning({ key: siteContent.key, value: siteContent.value });
+  // as fotos que só esta seção usava deixam de existir junto com o texto restaurado
+  await releaseMedia(deleted.flatMap((row) => collectMediaIds(row.value)));
   return deleted.length > 0;
 }

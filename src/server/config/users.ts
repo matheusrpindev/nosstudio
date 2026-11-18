@@ -7,6 +7,8 @@ import { and, asc, count, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { users, type User } from "@/db/schema";
 import { hashPassword } from "@/lib/auth/password";
+import { unlockLogin } from "@/lib/auth/rate-limit";
+import { revokeResetTokens } from "@/lib/auth/reset-tokens";
 import { destroyUserSessions } from "@/lib/auth/session";
 import type { UserRole } from "@/lib/domain";
 import { generateTemporaryPassword } from "./logic";
@@ -79,6 +81,8 @@ export async function updateUser(id: number, input: { name: string; email: strin
   const [updated] = await db.update(users).set(input).where(eq(users.id, id)).returning(columns);
   // mudou o e-mail ou o perfil: as sessões abertas dessa conta são encerradas para valerem os novos dados
   if (emailChanged || roleChanged) await destroyUserSessions(id);
+  // um link de redefinição enviado ao e-mail antigo não pode continuar valendo
+  if (emailChanged) await revokeResetTokens(id);
   return { ok: true, user: updated };
 }
 
@@ -92,11 +96,18 @@ export async function setUserActive(id: number, active: boolean): Promise<SetAct
     return { ok: false, error: "last_admin" };
   }
   const [updated] = await db.update(users).set({ active }).where(eq(users.id, id)).returning(columns);
-  if (!active) await destroyUserSessions(id);
+  if (!active) {
+    await destroyUserSessions(id);
+    await revokeResetTokens(id);
+  }
   return { ok: true, user: updated };
 }
 
-/** Nova senha temporária (a conta volta a exigir troca no próximo acesso) e todas as sessões encerradas. */
+/**
+ * Nova senha temporária (a conta volta a exigir troca no próximo acesso) e todas as sessões encerradas.
+ * Links de redefinição pendentes deixam de valer e o login da conta é destravado (caso alguém tenha estourado
+ * o limite de tentativas dela).
+ */
 export async function resetUserPassword(id: number): Promise<{ ok: true; user: UserRow; password: string } | { ok: false }> {
   const current = await getUser(id);
   if (!current) return { ok: false };
@@ -104,5 +115,7 @@ export async function resetUserPassword(id: number): Promise<{ ok: true; user: U
   const passwordHash = await hashPassword(password);
   const [updated] = await db.update(users).set({ passwordHash, mustChangePassword: true }).where(eq(users.id, id)).returning(columns);
   await destroyUserSessions(id);
+  await revokeResetTokens(id);
+  await unlockLogin(updated.email);
   return { ok: true, user: updated, password };
 }

@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DateText } from "@/components/ui/text";
 import { requireUser } from "@/lib/auth";
 import { CONTACT_SOURCE_LABELS, LEAD_STATUS_LABELS, SERVICE_INTEREST_LABELS } from "@/lib/domain";
-import { formatPhone, whatsAppLink } from "@/lib/format";
+import { formatPhone, mailtoHref, whatsAppLink } from "@/lib/format";
 import { getLead } from "@/server/leads/admin";
 import { convertLeadAction, deleteLeadAction, updateLeadStatusAction } from "../actions";
 import { LEAD_STATUS_TONES } from "../ui";
@@ -148,11 +148,14 @@ export default async function LeadPage({ params }: Props) {
                 { label: "WhatsApp", value: <span className="tabular-nums">{formatPhone(lead.whatsapp)}</span> },
                 {
                   label: "E-mail",
-                  value: lead.email ? (
-                    <a href={`mailto:${lead.email}`} className="link break-all">
+                  // só vira link se for um e-mail simples: nada de `?bcc=…` embutido pelo visitante
+                  value: !lead.email ? null : mailtoHref(lead.email) ? (
+                    <a href={mailtoHref(lead.email)} className="link break-all">
                       {lead.email}
                     </a>
-                  ) : null,
+                  ) : (
+                    <span className="break-all">{lead.email}</span>
+                  ),
                 },
                 { label: "Cidade", value: lead.city },
               ]}

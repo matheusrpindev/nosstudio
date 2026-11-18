@@ -3,6 +3,7 @@ import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { testimonials, type Testimonial } from "@/db/schema";
 import type { TestimonialKind } from "@/lib/domain";
+import { droppedMediaIds, releaseMedia } from "@/server/media";
 import { moveInOrder, nextSortOrder, type MoveDirection } from "./order";
 
 export type TestimonialInput = {
@@ -34,7 +35,10 @@ export async function saveTestimonial(id: number | null, input: TestimonialInput
     const [row] = await db.insert(testimonials).values({ ...values, sortOrder: await nextSortOrder(testimonials) }).returning();
     return row;
   }
+  const previous = await getTestimonial(id);
   const [row] = await db.update(testimonials).set(values).where(eq(testimonials.id, id)).returning();
+  // foto/print trocado ou removido: o arquivo antigo é apagado (não fica acessível pelo link)
+  if (row && previous) await releaseMedia(droppedMediaIds([previous.mediaId], [row.mediaId]));
   return row ?? null;
 }
 
@@ -48,7 +52,9 @@ export async function setTestimonialPublished(id: number, published: boolean): P
 
 export const moveTestimonial = (id: number, direction: MoveDirection) => moveInOrder(testimonials, id, direction, "desc");
 
+/** Exclui o depoimento e apaga a foto/print dele (se nenhum outro conteúdo usar o mesmo arquivo). */
 export async function deleteTestimonial(id: number): Promise<boolean> {
-  const rows = await db.delete(testimonials).where(eq(testimonials.id, id)).returning({ id: testimonials.id });
+  const rows = await db.delete(testimonials).where(eq(testimonials.id, id)).returning({ id: testimonials.id, mediaId: testimonials.mediaId });
+  await releaseMedia(rows.map((row) => row.mediaId));
   return rows.length > 0;
 }

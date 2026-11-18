@@ -130,12 +130,33 @@ export function safeUrl(value: string | null | undefined): string {
   }
 }
 
-/** Link interno (`/contato`) ou externo http(s); qualquer outra coisa vira vazio. */
+/**
+ * Link interno (`/contato`) ou externo http(s); qualquer outra coisa vira vazio.
+ * "Interno" é só `/caminho`: `//host` e `/\host` (que o navegador trata como `//host`) apontam para outro site,
+ * e caracteres de controle são removidos pelo navegador antes de interpretar o endereço — tudo isso é recusado.
+ */
 export function safeHref(value: string | null | undefined): string {
   if (!value) return "";
   const trimmed = value.trim();
+  if (/[\\\u0000-\u001f\u007f]/.test(trimmed)) return "";
   if (/^\/(?!\/)/.test(trimmed) || trimmed.startsWith("#")) return trimmed;
   return safeUrl(trimmed);
+}
+
+/**
+ * E-mail "simples" (`nome@dominio.tld`), sem nada que mude o sentido de um link `mailto:` — `?`, `&`, `#`, `%`,
+ * vírgula, ponto e vírgula, aspas ou espaços (ex.: `a@b.com?bcc=outro@x.com` abriria o programa de e-mail com
+ * cópia oculta para um terceiro). Use para validar e-mails vindos de formulário.
+ */
+export function isValidEmail(value: string): boolean {
+  return value.length <= 160 && SIMPLE_EMAIL_RE.test(value);
+}
+const SIMPLE_EMAIL_RE = /^[^\s@?&#%,;:<>"()[\]\\/\u0000-\u001f\u007f]+@[^\s@?&#%,;:<>"()[\]\\/\u0000-\u001f\u007f]+\.[^\s@?&#%,;:<>"()[\]\\/.\u0000-\u001f\u007f]{2,}$/;
+
+/** Link `mailto:` só para e-mails simples (ver `isValidEmail`); qualquer outra coisa vira vazio (sem link). */
+export function mailtoHref(email: string | null | undefined): string {
+  const trimmed = (email ?? "").trim();
+  return isValidEmail(trimmed) ? `mailto:${trimmed}` : "";
 }
 
 /** Extrai o embed de vídeos do YouTube/Vimeo a partir do link comum. Retorna `null` se não reconhecer. */

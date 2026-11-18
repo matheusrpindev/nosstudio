@@ -8,7 +8,7 @@ type Tab = { href: string; label: string; exact?: boolean; adminOnly?: boolean }
 const TABS: readonly Tab[] = [
   { href: "/painel/config", label: "Visão geral", exact: true },
   { href: "/painel/config/usuarios", label: "Usuários", adminOnly: true },
-  { href: "/painel/config/notificacoes", label: "Notificações" },
+  { href: "/painel/config/notificacoes", label: "Notificações", adminOnly: true },
   { href: "/painel/config/propostas", label: "Propostas" },
   { href: "/painel/config/dados", label: "Dados", adminOnly: true },
   { href: "/painel/config/auditoria", label: "Auditoria", adminOnly: true },

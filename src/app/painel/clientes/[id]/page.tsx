@@ -11,7 +11,7 @@ import { DescriptionList } from "@/components/ui/description-list";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ActionForm, Field, FieldRow, SubmitButton } from "@/components/ui/form";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { Checkbox, Input, Select, Textarea } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { TabPanel, Tabs } from "@/components/ui/tabs";
 import { DateText, Money } from "@/components/ui/text";
@@ -31,8 +31,8 @@ import {
   SERVICE_INTEREST_LABELS,
   TASK_PRIORITY_LABELS,
 } from "@/lib/domain";
-import { formatPhone, whatsAppLink } from "@/lib/format";
-import { formatDocument, getClient, getClientRelated, listInteractions, type ClientRelated } from "@/server/clients/admin";
+import { formatPhone, mailtoHref, whatsAppLink } from "@/lib/format";
+import { countClientLeads, formatDocument, getClient, getClientRelated, listInteractions, type ClientRelated } from "@/server/clients/admin";
 import { addInteractionAction, deleteClientAction, updateClientStatusAction } from "../actions";
 import { StatusFields } from "../status-fields";
 import { CLIENT_STATUS_TONES, INTERACTION_TONES, PROPOSAL_STATUS_TONES } from "../ui";
@@ -52,7 +52,7 @@ export default async function ClientPage({ params }: Props) {
   if (!client) notFound();
 
   const today = todayISO();
-  const [interactions, related] = await Promise.all([listInteractions(id), getClientRelated(id, today)]);
+  const [interactions, related, leadCount] = await Promise.all([listInteractions(id), getClientRelated(id, today), countClientLeads(id)]);
 
   const contactFirstName = (client.contactName || client.name).trim().split(/\s+/)[0];
   const whatsapp = whatsAppLink(client.whatsapp, `Olá, ${contactFirstName}! Aqui é ${user.name.split(" ")[0]}, da NÓS Studio. Tudo bem?`);
@@ -98,12 +98,23 @@ export default async function ClientPage({ params }: Props) {
                 <>
                   O cadastro de <strong className="text-grafite">{client.name}</strong> e todo o <strong className="text-grafite">histórico de atendimento</strong> serão apagados e não dá para desfazer.
                   <span className="mt-2 block">Orçamentos, projetos, contratos, lançamentos financeiros e compromissos continuam existindo, só que sem cliente vinculado.</span>
+                  <span className="mt-2 block">
+                    Se a pessoa pediu a <strong className="text-grafite">eliminação dos dados</strong> (LGPD), revise também esses registros e os arquivos enviados: eles podem citar o nome dela.
+                  </span>
                 </>
               }
               confirmLabel="Excluir cliente"
               action={deleteClientAction}
               hidden={{ id: client.id }}
-            />
+            >
+              {leadCount > 0 ? (
+                <Checkbox
+                  name="deleteLeads"
+                  label={leadCount === 1 ? "Excluir também o pedido que esta pessoa enviou pelo site" : `Excluir também os ${leadCount} pedidos que esta pessoa enviou pelo site`}
+                  hint="Fica em Leads, com nome, WhatsApp, e-mail e mensagem. Sem marcar, ele continua lá, só que sem cliente vinculado."
+                />
+              ) : null}
+            </ConfirmDialog>
           </>
         }
       />
@@ -156,11 +167,13 @@ export default async function ClientPage({ params }: Props) {
                     { label: "WhatsApp", value: client.whatsapp ? <span className="tabular-nums">{formatPhone(client.whatsapp)}</span> : null },
                     {
                       label: "E-mail",
-                      value: client.email ? (
-                        <a href={`mailto:${client.email}`} className="link break-all">
+                      value: !client.email ? null : mailtoHref(client.email) ? (
+                        <a href={mailtoHref(client.email)} className="link break-all">
                           {client.email}
                         </a>
-                      ) : null,
+                      ) : (
+                        <span className="break-all">{client.email}</span>
+                      ),
                     },
                     { label: "CPF/CNPJ", value: client.document ? <span className="tabular-nums">{formatDocument(client.document)}</span> : null },
                     { label: "Cidade", value: client.city },

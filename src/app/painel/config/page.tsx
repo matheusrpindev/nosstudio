@@ -33,6 +33,7 @@ export default async function ConfigPage() {
       icon: Bell,
       description: "Avisos por e-mail quando chega um lead novo pelo site.",
       status: notifications.notifyOnLead ? (smtpConfigured() ? "Aviso ligado" : "Aviso ligado, mas o e-mail não está configurado") : "Aviso desligado",
+      adminOnly: true,
     },
     {
       href: "/painel/config/propostas",
@@ -80,7 +81,7 @@ export default async function ConfigPage() {
             </li>
           ))}
       </ul>
-      {isAdmin ? null : <p className="hint mt-4">Contas, exportação de dados e auditoria são áreas só de administradores.</p>}
+      {isAdmin ? null : <p className="hint mt-4">Contas, notificações, exportação de dados e auditoria são áreas só de administradores.</p>}
     </>
   );
 }

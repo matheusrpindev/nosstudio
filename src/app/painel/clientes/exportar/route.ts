@@ -4,12 +4,17 @@ import { todayISO } from "@/lib/dates";
 import { exportClientsCsv } from "@/server/clients/admin";
 import { clientFiltersFromParams } from "../filters";
 
-/** GET /painel/clientes/exportar — CSV (";" + BOM UTF-8) com os mesmos filtros da lista (`?status=&q=&…`). */
+/**
+ * GET /painel/clientes/exportar — CSV (";" + BOM UTF-8) com os mesmos filtros da lista (`?status=&q=&…`).
+ * Só administradores: a conta de acesso técnico usa o painel, mas não exporta dados (mesma regra de
+ * /painel/config/dados/exportar).
+ */
 export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return new Response("Não autorizado.", { status: 401, headers: { "Cache-Control": "no-store" } });
 
   if (user.mustChangePassword) return new Response("Troque a senha antes de continuar.", { status: 403, headers: { "Cache-Control": "no-store" } });
+  if (user.role !== "admin") return new Response("Só administradores podem exportar os dados.", { status: 403, headers: { "Cache-Control": "no-store" } });
 
   const url = new URL(request.url);
   const params: Record<string, string | undefined> = {};
