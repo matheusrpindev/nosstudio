@@ -147,12 +147,14 @@ function LeadFormInner({
     );
   }
 
-  // Momento em que o formulário apareceu (anti-spam). Guardado uma vez e reaplicado depois de cada resposta,
-  // porque o React limpa campos não controlados ao concluir a action.
+  // Momento em que o formulário apareceu (sinal anti-spam). Guardado uma vez e reaplicado depois de CADA
+  // renderização (efeito sem lista de dependências, de propósito): num <input type="hidden"> o valor é o próprio
+  // atributo `value`, que o React regrava com o `defaultValue=""` toda vez que o formulário renderiza de novo
+  // (a cada tecla digitada) e ao concluir a action — sem isto o campo chegava vazio ao servidor.
   useEffect(() => {
     if (!startedAt.current) startedAt.current = String(Date.now());
-    if (startedAtInput.current) startedAtInput.current.value = startedAt.current;
-  }, [state.nonce]);
+    if (startedAtInput.current && startedAtInput.current.value !== startedAt.current) startedAtInput.current.value = startedAt.current;
+  });
 
   // Foco gerenciado depois de cada resposta: sucesso → título; erro → primeiro campo inválido (ou o aviso).
   useEffect(() => {
