@@ -150,7 +150,7 @@ export function MarkdownField({
 
   const tabClass = (active: boolean) =>
     cn(
-      "min-h-9 cursor-pointer rounded-md px-3 text-[0.8125rem] font-semibold transition-colors",
+      "min-h-11 sm:min-h-9 cursor-pointer rounded-md px-3 text-[0.8125rem] font-semibold transition-colors",
       active ? "text-roxo bg-white shadow-sm" : "text-cinza hover:text-grafite",
     );
 

@@ -24,6 +24,7 @@ import {
   leads,
   packages,
   projects,
+  proposalCosts,
   proposalItems,
   proposalPayments,
   proposals,
@@ -503,6 +504,11 @@ async function seedDemo() {
         entryMode: "percentual",
         entryPercent: 30,
         entryCents: 327000,
+        // Cálculo interno de exemplo (só painel): mostra a margem funcionando; os valores são fictícios.
+        overheadCents: 60000,
+        taxPercent: 6,
+        targetMarginPercent: 40,
+        internalNotes: "[Exemplo] Anotação interna: confirmar disponibilidade do segundo fotógrafo antes de fechar.",
         sentAt: new Date(),
         createdBy: owner(0),
       })
@@ -512,6 +518,12 @@ async function seedDemo() {
     await db.insert(proposalItems).values(items.map(({ id: _id, ...item }) => ({ ...item, proposalId: created.id })));
     const payments = await db.select().from(proposalPayments).where(eq(proposalPayments.proposalId, template.id));
     await db.insert(proposalPayments).values(payments.map(({ id: _id, ...p }) => ({ ...p, proposalId: created.id })));
+    await db.insert(proposalCosts).values([
+      { proposalId: created.id, category: "equipe", description: "[Exemplo] Segundo fotógrafo (diária)", amountCents: 80000, sortOrder: 0 },
+      { proposalId: created.id, category: "equipe", description: "[Exemplo] Storymaker", amountCents: 45000, sortOrder: 1 },
+      { proposalId: created.id, category: "deslocamento", description: "[Exemplo] Combustível e pedágio", amountCents: 18000, sortOrder: 2 },
+      { proposalId: created.id, category: "pos_producao", description: "[Exemplo] Trilha licenciada e armazenamento", amountCents: 22000, sortOrder: 3 },
+    ]);
   }
 
   const [project] = await db
@@ -565,6 +577,16 @@ async function seedDemo() {
       isTemplate: true,
       versionLabel: "rascunho",
       body: "Modelo de exemplo. A redação jurídica precisa ser revisada antes do uso.\n\n**Objeto:** prestação de serviço de captação em diária…",
+    },
+    {
+      title: "[Exemplo] Contrato de casamento — Ana & Bruno",
+      kind: "casamento",
+      status: "enviado",
+      versionLabel: "v1",
+      clientId: wedding,
+      proposalId,
+      validFrom: today,
+      body: "Contrato de exemplo, só para mostrar a tela. A redação jurídica precisa ser revisada por um(a) advogado(a) antes do uso.\n\n**Objeto:** cobertura de foto e filme do casamento, conforme a proposta aceita.",
     },
   ]);
   return true;

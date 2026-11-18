@@ -45,7 +45,11 @@ export default async function AccountPage() {
                 { label: "Conta criada em", value: <DateText value={details?.createdAt} /> },
               ]}
             />
-            <p className="hint mt-4">Para mudar o nome ou o e-mail da conta, use Configurações.</p>
+            <p className="hint mt-4">
+              {user.role === "admin"
+                ? "Nome e e-mail das contas são alterados em Configurações › Usuários."
+                : "Para mudar o nome ou o e-mail da conta, peça a um administrador."}
+            </p>
           </CardSection>
           <CardSection className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>

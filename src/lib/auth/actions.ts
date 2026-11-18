@@ -60,7 +60,9 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
     return actionError("E-mail ou senha incorretos.", { values });
   }
 
+  // Login certo zera os contadores ligados à conta: quem entra várias vezes ao dia não pode acabar bloqueado.
   await resetRateLimit(pairKey);
+  await resetRateLimit(emailKey);
   await createSession(user.id, { ip, userAgent: await getUserAgent() });
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
   await logAudit({ user, action: "login", entity: "user", entityId: user.id, summary: "Entrou no painel" });

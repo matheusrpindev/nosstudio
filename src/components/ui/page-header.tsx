@@ -21,7 +21,7 @@ export function PageHeader({ title, description, actions, back, badge, className
   return (
     <header className={cn("mb-6 sm:mb-8", className)}>
       {back ? (
-        <Link href={back.href} className="text-cinza hover:text-roxo -ml-1 mb-2 inline-flex min-h-9 items-center gap-1.5 rounded-md px-1 text-sm font-semibold">
+        <Link href={back.href} className="text-cinza hover:text-roxo -ml-1 mb-2 inline-flex min-h-11 sm:min-h-9 items-center gap-1.5 rounded-md px-1 text-sm font-semibold">
           <ArrowLeft aria-hidden="true" className="size-4" />
           {back.label}
         </Link>
