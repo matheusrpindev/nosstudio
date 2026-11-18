@@ -25,10 +25,18 @@ export type AgendaEntry = {
   href: string;
 };
 
-export type EventTimeInput = { allDay: boolean; startTime: string | null; endTime: string | null };
+export type EventTimeInput = {
+  allDay: boolean;
+  startTime: string | null;
+  endTime: string | null;
+};
 
 /** Erros de horário por campo (vazio = válido). Fim precisa ser depois do início; sem início não há fim. */
-export function validateEventTimes({ allDay, startTime, endTime }: EventTimeInput): Partial<Record<"startTime" | "endTime", string>> {
+export function validateEventTimes({
+  allDay,
+  startTime,
+  endTime,
+}: EventTimeInput): Partial<Record<"startTime" | "endTime", string>> {
   if (allDay) return {};
   const errors: Partial<Record<"startTime" | "endTime", string>> = {};
   if (!startTime || !isTime(startTime)) {
@@ -37,15 +45,23 @@ export function validateEventTimes({ allDay, startTime, endTime }: EventTimeInpu
   }
   if (endTime) {
     if (!isTime(endTime)) errors.endTime = "Horário inválido.";
-    else if (endTime <= startTime) errors.endTime = "O fim precisa ser depois do início.";
+    else if (endTime <= startTime)
+      errors.endTime = "O fim precisa ser depois do início.";
   }
   return errors;
 }
 
 /** Dia inteiro zera os horários gravados. */
-export function normalizeEventTimes({ allDay, startTime, endTime }: EventTimeInput): { startTime: string | null; endTime: string | null } {
+export function normalizeEventTimes({
+  allDay,
+  startTime,
+  endTime,
+}: EventTimeInput): { startTime: string | null; endTime: string | null } {
   if (allDay) return { startTime: null, endTime: null };
-  return { startTime: startTime || null, endTime: startTime && endTime ? endTime : null };
+  return {
+    startTime: startTime || null,
+    endTime: startTime && endTime ? endTime : null,
+  };
 }
 
 export type ProjectDeadlineRow = {
@@ -62,16 +78,41 @@ export type ProjectDeadlineRow = {
 };
 
 const DEADLINE_FIELDS = [
-  { field: "eventDate", kind: "evento", label: "Data do evento", slug: "evento" },
-  { field: "shootDeadline", kind: "gravacao", label: "Prazo de gravação", slug: "gravacao" },
-  { field: "deliveryDeadline", kind: "entrega", label: "Prazo de entrega", slug: "entrega" },
-] as const satisfies readonly { field: keyof ProjectDeadlineRow; kind: AgendaKind; label: string; slug: string }[];
+  {
+    field: "eventDate",
+    kind: "evento",
+    label: "Data do evento",
+    slug: "evento",
+  },
+  {
+    field: "shootDeadline",
+    kind: "gravacao",
+    label: "Prazo de gravação",
+    slug: "gravacao",
+  },
+  {
+    field: "deliveryDeadline",
+    kind: "entrega",
+    label: "Prazo de entrega",
+    slug: "entrega",
+  },
+] as const satisfies readonly {
+  field: keyof ProjectDeadlineRow;
+  kind: AgendaKind;
+  label: string;
+  slug: string;
+}[];
 
 /**
  * Prazos dos projetos como itens somente leitura. Projetos cancelados não aparecem; o prazo de entrega some
  * quando o projeto já foi entregue. Só entram datas dentro de `[from, to]` (e do tipo filtrado, se houver).
  */
-export function projectDeadlineEntries(rows: readonly ProjectDeadlineRow[], from: ISODate, to: ISODate, kind?: AgendaKind): AgendaEntry[] {
+export function projectDeadlineEntries(
+  rows: readonly ProjectDeadlineRow[],
+  from: ISODate,
+  to: ISODate,
+  kind?: AgendaKind,
+): AgendaEntry[] {
   const entries: AgendaEntry[] = [];
   for (const row of rows) {
     if (row.stage === "cancelado") continue;
@@ -79,7 +120,11 @@ export function projectDeadlineEntries(rows: readonly ProjectDeadlineRow[], from
       if (kind && def.kind !== kind) continue;
       const date = row[def.field];
       if (!date || date < from || date > to) continue;
-      if (def.field === "deliveryDeadline" && (row.stage === "entregue" || row.deliveredAt)) continue;
+      if (
+        def.field === "deliveryDeadline" &&
+        (row.stage === "entregue" || row.deliveredAt)
+      )
+        continue;
       entries.push({
         key: `p-${row.id}-${def.slug}`,
         source: "deadline",
@@ -112,7 +157,9 @@ export function sortAgenda(entries: readonly AgendaEntry[]): AgendaEntry[] {
 }
 
 /** Agrupa (já ordenado) por dia, preservando a ordem. */
-export function groupByDay(entries: readonly AgendaEntry[]): { date: ISODate; entries: AgendaEntry[] }[] {
+export function groupByDay(
+  entries: readonly AgendaEntry[],
+): { date: ISODate; entries: AgendaEntry[] }[] {
   const groups: { date: ISODate; entries: AgendaEntry[] }[] = [];
   for (const entry of entries) {
     const last = groups[groups.length - 1];

@@ -90,7 +90,7 @@ export default async function PortfolioAdminPage({ searchParams }: { searchParam
           </>
         }
       />
-      <SectionHiddenNotice hidden={!visibility.portfolio} section="O portfólio" />
+      <SectionHiddenNotice hidden={!visibility.portfolio} title="O portfólio está oculto no site" />
       <RealWorkNotice />
       <FilterBar
         search={{ placeholder: "Buscar por título ou cliente", label: "Buscar projetos" }}

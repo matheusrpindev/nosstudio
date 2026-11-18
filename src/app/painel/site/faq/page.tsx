@@ -11,7 +11,7 @@ import type { Faq } from "@/db/schema";
 import { listFaqs } from "@/server/site/admin/faqs";
 import { getSiteContentForEdit } from "@/server/site/content";
 import { SectionHiddenNotice } from "../_colecoes/hidden-notice";
-import { PUBLISHED_LABELS, PUBLISHED_TONES } from "../_colecoes/messages";
+import { PUBLISHED_TONES } from "../_colecoes/messages";
 import { MoveButtons, RowSwitch } from "../_colecoes/row-controls";
 import { moveFaqAction, toggleFaqAction } from "./actions";
 
@@ -86,7 +86,7 @@ export default async function FaqPage() {
           </>
         }
       />
-      <SectionHiddenNotice hidden={!visibility.faq} section="O FAQ" />
+      <SectionHiddenNotice hidden={!visibility.faq} title="O FAQ está oculto no site" />
       {suggestedDrafts > 0 ? (
         <Alert tone="info" title="Respostas sugeridas são rascunhos" className="mb-5">
           As {suggestedDrafts === 1 ? "resposta sugerida" : `${suggestedDrafts} respostas sugeridas`} que já vieram preenchidas são só um ponto de partida. Leia, ajuste com Pedro e Laura e só então publique.

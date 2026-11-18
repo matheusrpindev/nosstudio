@@ -5,27 +5,54 @@
 import "server-only";
 import { and, asc, between, eq, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { agendaEvents, clients, projects, users, type AgendaEvent } from "@/db/schema";
+import {
+  agendaEvents,
+  clients,
+  projects,
+  users,
+  type AgendaEvent,
+} from "@/db/schema";
 import type { AgendaKind } from "@/lib/domain";
 import type { ISODate } from "@/lib/dates";
-import { projectDeadlineEntries, sortAgenda, type AgendaEntry, type ProjectDeadlineRow } from "./logic";
+import {
+  projectDeadlineEntries,
+  sortAgenda,
+  type AgendaEntry,
+  type ProjectDeadlineRow,
+} from "./logic";
 
 export type AgendaFilters = { ownerId?: number; kind?: AgendaKind };
 
 /** Compromissos e prazos de projeto entre duas datas (inclusive), já ordenados. */
-export async function listAgenda(from: ISODate, to: ISODate, filters: AgendaFilters = {}): Promise<AgendaEntry[]> {
-  const eventConditions: (SQL | undefined)[] = [between(agendaEvents.date, from, to)];
-  if (filters.ownerId) eventConditions.push(eq(agendaEvents.ownerId, filters.ownerId));
+export async function listAgenda(
+  from: ISODate,
+  to: ISODate,
+  filters: AgendaFilters = {},
+): Promise<AgendaEntry[]> {
+  const eventConditions: (SQL | undefined)[] = [
+    between(agendaEvents.date, from, to),
+  ];
+  if (filters.ownerId)
+    eventConditions.push(eq(agendaEvents.ownerId, filters.ownerId));
   if (filters.kind) eventConditions.push(eq(agendaEvents.kind, filters.kind));
 
   const projectConditions: (SQL | undefined)[] = [
-    or(between(projects.eventDate, from, to), between(projects.shootDeadline, from, to), between(projects.deliveryDeadline, from, to)),
+    or(
+      between(projects.eventDate, from, to),
+      between(projects.shootDeadline, from, to),
+      between(projects.deliveryDeadline, from, to),
+    ),
   ];
-  if (filters.ownerId) projectConditions.push(eq(projects.ownerId, filters.ownerId));
+  if (filters.ownerId)
+    projectConditions.push(eq(projects.ownerId, filters.ownerId));
 
   const [eventRows, projectRows] = await Promise.all([
     db
-      .select({ event: agendaEvents, clientName: clients.name, ownerName: users.name })
+      .select({
+        event: agendaEvents,
+        clientName: clients.name,
+        ownerName: users.name,
+      })
       .from(agendaEvents)
       .leftJoin(clients, eq(clients.id, agendaEvents.clientId))
       .leftJoin(users, eq(users.id, agendaEvents.ownerId))
@@ -50,34 +77,54 @@ export async function listAgenda(from: ISODate, to: ISODate, filters: AgendaFilt
       .where(and(...projectConditions)),
   ]);
 
-  const events: AgendaEntry[] = eventRows.map(({ event, clientName, ownerName }) => ({
-    key: `e-${event.id}`,
-    source: "event",
-    id: event.id,
-    title: event.title,
-    kind: event.kind,
-    date: event.date,
-    startTime: event.startTime,
-    endTime: event.endTime,
-    location: event.location,
-    clientName,
-    ownerName,
-    href: `/painel/agenda/${event.id}`,
-  }));
-  const deadlines = projectDeadlineEntries(projectRows satisfies ProjectDeadlineRow[], from, to, filters.kind);
+  const events: AgendaEntry[] = eventRows.map(
+    ({ event, clientName, ownerName }) => ({
+      key: `e-${event.id}`,
+      source: "event",
+      id: event.id,
+      title: event.title,
+      kind: event.kind,
+      date: event.date,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      location: event.location,
+      clientName,
+      ownerName,
+      href: `/painel/agenda/${event.id}`,
+    }),
+  );
+  const deadlines = projectDeadlineEntries(
+    projectRows satisfies ProjectDeadlineRow[],
+    from,
+    to,
+    filters.kind,
+  );
   return sortAgenda([...events, ...deadlines]);
 }
 
-export type AgendaEventDetail = AgendaEvent & { clientName: string | null; projectTitle: string | null };
+export type AgendaEventDetail = AgendaEvent & {
+  clientName: string | null;
+  projectTitle: string | null;
+};
 
 export async function getEvent(id: number): Promise<AgendaEventDetail | null> {
   const [row] = await db
-    .select({ event: agendaEvents, clientName: clients.name, projectTitle: projects.title })
+    .select({
+      event: agendaEvents,
+      clientName: clients.name,
+      projectTitle: projects.title,
+    })
     .from(agendaEvents)
     .leftJoin(clients, eq(clients.id, agendaEvents.clientId))
     .leftJoin(projects, eq(projects.id, agendaEvents.projectId))
     .where(eq(agendaEvents.id, id));
-  return row ? { ...row.event, clientName: row.clientName, projectTitle: row.projectTitle } : null;
+  return row
+    ? {
+        ...row.event,
+        clientName: row.clientName,
+        projectTitle: row.projectTitle,
+      }
+    : null;
 }
 
 export type EventInput = {
@@ -94,17 +141,28 @@ export type EventInput = {
 };
 
 /** Confere se cliente, projeto e responsável ainda existem (evita erro de chave estrangeira). */
-export async function checkEventRefs(input: Pick<EventInput, "clientId" | "projectId" | "ownerId">): Promise<string | null> {
+export async function checkEventRefs(
+  input: Pick<EventInput, "clientId" | "projectId" | "ownerId">,
+): Promise<string | null> {
   if (input.clientId) {
-    const [row] = await db.select({ id: clients.id }).from(clients).where(eq(clients.id, input.clientId));
+    const [row] = await db
+      .select({ id: clients.id })
+      .from(clients)
+      .where(eq(clients.id, input.clientId));
     if (!row) return "O cliente selecionado não existe mais.";
   }
   if (input.projectId) {
-    const [row] = await db.select({ id: projects.id }).from(projects).where(eq(projects.id, input.projectId));
+    const [row] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.id, input.projectId));
     if (!row) return "O projeto selecionado não existe mais.";
   }
   if (input.ownerId) {
-    const [row] = await db.select({ id: users.id }).from(users).where(and(eq(users.id, input.ownerId), eq(users.active, true)));
+    const [row] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, input.ownerId), eq(users.active, true)));
     if (!row) return "O responsável selecionado não está disponível.";
   }
   return null;
@@ -115,18 +173,33 @@ export async function createEvent(input: EventInput): Promise<AgendaEvent> {
   return event;
 }
 
-export async function updateEvent(id: number, input: EventInput): Promise<AgendaEvent | null> {
-  const [event] = await db.update(agendaEvents).set({ ...input, updatedAt: new Date() }).where(eq(agendaEvents.id, id)).returning();
+export async function updateEvent(
+  id: number,
+  input: EventInput,
+): Promise<AgendaEvent | null> {
+  const [event] = await db
+    .update(agendaEvents)
+    .set({ ...input, updatedAt: new Date() })
+    .where(eq(agendaEvents.id, id))
+    .returning();
   return event ?? null;
 }
 
 export async function deleteEvent(id: number): Promise<AgendaEvent | null> {
-  const [event] = await db.delete(agendaEvents).where(eq(agendaEvents.id, id)).returning();
+  const [event] = await db
+    .delete(agendaEvents)
+    .where(eq(agendaEvents.id, id))
+    .returning();
   return event ?? null;
 }
 
 /** Cliente de um projeto (para pré-preencher "novo compromisso" vindo de um projeto). */
-export async function getProjectClientId(projectId: number): Promise<number | null> {
-  const [row] = await db.select({ clientId: projects.clientId }).from(projects).where(eq(projects.id, projectId));
+export async function getProjectClientId(
+  projectId: number,
+): Promise<number | null> {
+  const [row] = await db
+    .select({ clientId: projects.clientId })
+    .from(projects)
+    .where(eq(projects.id, projectId));
   return row?.clientId ?? null;
 }

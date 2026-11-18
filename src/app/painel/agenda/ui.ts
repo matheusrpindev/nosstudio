@@ -19,7 +19,11 @@ export const DEADLINE_TONE: CalendarTone = "perigo";
 export const DEADLINE_MARK = "◆";
 
 /** "Das 14:00 às 16:00" / "14:00" / "Dia inteiro". */
-export function timeLabel(entry: Pick<AgendaEntry, "startTime" | "endTime">): string {
+export function timeLabel(
+  entry: Pick<AgendaEntry, "startTime" | "endTime">,
+): string {
   if (!entry.startTime) return "Dia inteiro";
-  return entry.endTime ? `${entry.startTime} – ${entry.endTime}` : entry.startTime;
+  return entry.endTime
+    ? `${entry.startTime} – ${entry.endTime}`
+    : entry.startTime;
 }

@@ -4,9 +4,17 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filter-bar";
-import { MonthCalendar, parseMonthParam, type CalendarItem } from "@/components/ui/month-calendar";
+import {
+  MonthCalendar,
+  parseMonthParam,
+  type CalendarItem,
+} from "@/components/ui/month-calendar";
 import { PageHeader } from "@/components/ui/page-header";
-import { paramId, paramOneOf, type PageSearchParams } from "@/components/ui/search-params";
+import {
+  paramId,
+  paramOneOf,
+  type PageSearchParams,
+} from "@/components/ui/search-params";
 import { requireUser } from "@/lib/auth";
 import { addDays, endOfMonth, formatDate, todayISO } from "@/lib/dates";
 import { AGENDA_KIND_LABELS, AGENDA_KINDS } from "@/lib/domain";
@@ -22,12 +30,29 @@ export const instant = false;
 function toItem(entry: AgendaEntry): CalendarItem {
   if (entry.source === "deadline") {
     // prazos do projeto: somente leitura, em vermelho e com o losango (não depende só da cor)
-    return { id: entry.key, date: entry.date, title: `${DEADLINE_MARK} ${entry.deadlineLabel}: ${entry.title}`, tone: DEADLINE_TONE, href: entry.href };
+    return {
+      id: entry.key,
+      date: entry.date,
+      title: `${DEADLINE_MARK} ${entry.deadlineLabel}: ${entry.title}`,
+      tone: DEADLINE_TONE,
+      href: entry.href,
+    };
   }
-  return { id: entry.key, date: entry.date, time: entry.startTime, title: entry.title, tone: AGENDA_KIND_TONES[entry.kind], href: entry.href };
+  return {
+    id: entry.key,
+    date: entry.date,
+    time: entry.startTime,
+    title: entry.title,
+    tone: AGENDA_KIND_TONES[entry.kind],
+    href: entry.href,
+  };
 }
 
-export default async function AgendaPage({ searchParams }: { searchParams: PageSearchParams }) {
+export default async function AgendaPage({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
   await requireUser();
   const params = await searchParams;
   const today = todayISO();
@@ -35,7 +60,10 @@ export default async function AgendaPage({ searchParams }: { searchParams: PageS
   const users = await getUserOptions();
   // a URL é entrada do usuário: só vale responsável que existe e tipo que está no enum
   const ownerId = paramId(params.responsavel);
-  const filters = { ownerId: users.some((u) => u.value === ownerId) ? ownerId : undefined, kind: paramOneOf(AGENDA_KINDS, params.tipo) };
+  const filters = {
+    ownerId: users.some((u) => u.value === ownerId) ? ownerId : undefined,
+    kind: paramOneOf(AGENDA_KINDS, params.tipo),
+  };
 
   // A grade mostra dias dos meses vizinhos: busca uma semana a mais de cada lado.
   const [monthEntries, upcoming] = await Promise.all([
@@ -64,8 +92,18 @@ export default async function AgendaPage({ searchParams }: { searchParams: PageS
         search={false}
         preserve={["mes"]}
         filters={[
-          { name: "responsavel", label: "Responsável", options: users, allLabel: "Todos os responsáveis" },
-          { name: "tipo", label: "Tipo", options: AGENDA_KIND_LABELS, allLabel: "Todos os tipos" },
+          {
+            name: "responsavel",
+            label: "Responsável",
+            options: users,
+            allLabel: "Toda a equipe",
+          },
+          {
+            name: "tipo",
+            label: "Tipo",
+            options: AGENDA_KIND_LABELS,
+            allLabel: "Todos os tipos",
+          },
         ]}
       />
 

@@ -52,7 +52,7 @@ export default async function EditPortfolioPage({ params }: { params: Promise<{ 
           </>
         }
       />
-      <SectionHiddenNotice hidden={!visibility.portfolio} section="O portfólio" />
+      <SectionHiddenNotice hidden={!visibility.portfolio} title="O portfólio está oculto no site" />
       <RealWorkNotice />
       <Card>
         <PortfolioForm action={savePortfolioAction} project={project} cover={cover} gallery={gallery} />

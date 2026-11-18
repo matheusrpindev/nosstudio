@@ -5,12 +5,12 @@ import { ButtonLink } from "@/components/ui/button";
  * Avisa quando a seção inteira está desligada em "Visibilidade das seções" (Textos do site):
  * mesmo com itens publicados, o visitante não vê nada.
  */
-export function SectionHiddenNotice({ hidden, section }: { hidden: boolean; section: string }) {
+export function SectionHiddenNotice({ hidden, title }: { hidden: boolean; title: string }) {
   if (!hidden) return null;
   return (
     <Alert
       tone="alerta"
-      title={`${section} está oculto no site`}
+      title={title}
       className="mb-5"
       action={
         <ButtonLink href="/painel/site/textos/visibility" variant="secondary" size="sm">
