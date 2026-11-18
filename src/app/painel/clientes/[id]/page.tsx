@@ -1,4 +1,4 @@
-import { CalendarPlus, FilePlus2, FolderPlus, ListPlus, MessageCircle, Pencil, Trash2, Wallet } from "lucide-react";
+import { CalendarPlus, FileJson, FilePlus2, FolderPlus, ListPlus, MessageCircle, Pencil, Trash2, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -32,7 +32,8 @@ import {
   TASK_PRIORITY_LABELS,
 } from "@/lib/domain";
 import { formatPhone, mailtoHref, whatsAppLink } from "@/lib/format";
-import { countClientLeads, formatDocument, getClient, getClientRelated, listInteractions, type ClientRelated } from "@/server/clients/admin";
+import { formatDocument, getClient, getClientRelated, listInteractions, type ClientRelated } from "@/server/clients/admin";
+import { describeRemaining, getClientFootprint } from "@/server/clients/subject-data";
 import { addInteractionAction, deleteClientAction, updateClientStatusAction } from "../actions";
 import { StatusFields } from "../status-fields";
 import { CLIENT_STATUS_TONES, INTERACTION_TONES, PROPOSAL_STATUS_TONES } from "../ui";
@@ -52,7 +53,11 @@ export default async function ClientPage({ params }: Props) {
   if (!client) notFound();
 
   const today = todayISO();
-  const [interactions, related, leadCount] = await Promise.all([listInteractions(id), getClientRelated(id, today), countClientLeads(id)]);
+  const [interactions, related, footprint] = await Promise.all([listInteractions(id), getClientRelated(id, today), getClientFootprint(id)]);
+  if (!footprint) notFound();
+  // o que continua existindo depois de excluir o cliente (o diálogo de exclusão diz a verdade sobre isso)
+  const remaining = describeRemaining(footprint);
+  const isAdmin = user.role === "admin";
 
   const contactFirstName = (client.contactName || client.name).trim().split(/\s+/)[0];
   const whatsapp = whatsAppLink(client.whatsapp, `Olá, ${contactFirstName}! Aqui é ${user.name.split(" ")[0]}, da NÓS Studio. Tudo bem?`);
@@ -96,10 +101,21 @@ export default async function ClientPage({ params }: Props) {
               title="Excluir este cliente?"
               description={
                 <>
-                  O cadastro de <strong className="text-grafite">{client.name}</strong> e todo o <strong className="text-grafite">histórico de atendimento</strong> serão apagados e não dá para desfazer.
-                  <span className="mt-2 block">Orçamentos, projetos, contratos, lançamentos financeiros e compromissos continuam existindo, só que sem cliente vinculado.</span>
+                  O cadastro de <strong className="text-grafite">{client.name}</strong> e o <strong className="text-grafite">histórico de atendimento</strong>
+                  {footprint.interactions > 0 ? ` (${footprint.interactions} ${footprint.interactions === 1 ? "registro" : "registros"})` : ""}
+                  {footprint.contentItems > 0 ? `, além de ${footprint.contentItems} ${footprint.contentItems === 1 ? "item" : "itens"} do calendário de conteúdo deste cliente,` : ""} serão apagados e não dá para desfazer.
                   <span className="mt-2 block">
-                    Se a pessoa pediu a <strong className="text-grafite">eliminação dos dados</strong> (LGPD), revise também esses registros e os arquivos enviados: eles podem citar o nome dela.
+                    {remaining ? (
+                      <>
+                        <strong className="text-grafite">Continuam existindo</strong>, sem cliente vinculado: {remaining}. Eles podem citar o nome da pessoa no título, no texto ou em arquivos enviados.
+                      </>
+                    ) : (
+                      "Não há orçamentos, projetos, contratos, lançamentos, compromissos nem tarefas ligados a este cliente."
+                    )}
+                  </span>
+                  <span className="mt-2 block">
+                    Se a pessoa pediu a <strong className="text-grafite">eliminação dos dados</strong> (LGPD)
+                    {remaining ? ": antes de excluir, abra esses registros pelas abas desta ficha e apague ou edite os que a identificam." : ": marque também a opção abaixo, se aparecer."} As cópias de segurança (backups) antigas ainda guardam os dados até serem substituídas.
                   </span>
                 </>
               }
@@ -107,11 +123,11 @@ export default async function ClientPage({ params }: Props) {
               action={deleteClientAction}
               hidden={{ id: client.id }}
             >
-              {leadCount > 0 ? (
+              {footprint.leads > 0 ? (
                 <Checkbox
                   name="deleteLeads"
-                  label={leadCount === 1 ? "Excluir também o pedido que esta pessoa enviou pelo site" : `Excluir também os ${leadCount} pedidos que esta pessoa enviou pelo site`}
-                  hint="Fica em Leads, com nome, WhatsApp, e-mail e mensagem. Sem marcar, ele continua lá, só que sem cliente vinculado."
+                  label={footprint.leads === 1 ? "Excluir também o pedido que esta pessoa enviou pelo site" : `Excluir também os ${footprint.leads} pedidos que esta pessoa enviou pelo site`}
+                  hint="Ficam em Leads, com nome, WhatsApp, e-mail e mensagem (inclui pedidos com o mesmo WhatsApp ou e-mail). Sem marcar, continuam lá, sem cliente vinculado."
                 />
               ) : null}
             </ConfirmDialog>
@@ -183,6 +199,15 @@ export default async function ClientPage({ params }: Props) {
                     { label: "Primeiro contato", value: client.firstContactAt ? <DateText value={client.firstContactAt} format="long" /> : null },
                   ]}
                 />
+                {/* LGPD (acesso/portabilidade): só administradores exportam dados — a rota confere de novo e registra na auditoria */}
+                {isAdmin ? (
+                  <div className="border-areia mt-4 border-t pt-4">
+                    <ButtonLink href={`/painel/clientes/${client.id}/dados`} download prefetch={false} variant="secondary" size="sm" icon={<FileJson />}>
+                      Dados deste titular (JSON)
+                    </ButtonLink>
+                    <p className="hint mt-2">Baixa tudo o que o painel guarda ligado a este cadastro — para responder a um pedido de acesso aos dados (LGPD). Revise antes de entregar: inclui anotações internas.</p>
+                  </div>
+                ) : null}
               </Card>
 
               <Card as="section" aria-labelledby="notas-titulo">

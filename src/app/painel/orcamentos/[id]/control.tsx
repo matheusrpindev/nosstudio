@@ -1,7 +1,7 @@
 "use client";
 
-/** Etapa "PDF e controle": pré-visualização, status, projeto, contrato, versões e demais ações. */
-import { Check, Copy, Download, ExternalLink, FilePlus2, FolderKanban, LayoutTemplate, Link2, Send, Trash2, Undo2, X } from "lucide-react";
+/** Etapa "PDF e controle": pré-visualização, status, projeto, financeiro, contrato, versões e demais ações. */
+import { Check, Copy, Download, ExternalLink, FilePlus2, FolderKanban, LayoutTemplate, Link2, ListChecks, Send, Trash2, Undo2, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/badge";
@@ -11,7 +11,11 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { ActionForm, Field, FormActions, SubmitButton } from "@/components/ui/form";
 import { Input, Select } from "@/components/ui/input";
 import { DateText } from "@/components/ui/text";
-import { CONTRACT_STATUS_LABELS, PROPOSAL_STATUS_LABELS, type ContractStatus, type ProposalStatus } from "@/lib/domain";
+import { toast } from "@/components/ui/toast";
+import type { ActionState } from "@/lib/action-state";
+import { formatDate } from "@/lib/dates";
+import { CONTRACT_STATUS_LABELS, PROPOSAL_STATUS_LABELS, type ContractStatus, type FinanceType, type ProposalStatus } from "@/lib/domain";
+import { formatBRL } from "@/lib/format";
 import {
   convertToProjectAction,
   createVersionAction,
@@ -36,6 +40,15 @@ export type ControlData = {
   project: { id: number; title: string } | null;
   contractId: number | null;
   contracts: { id: number; title: string; status: ContractStatus }[];
+  /** Lançamentos do financeiro já ligados a esta proposta (`count` 0 = parcelas ainda não geradas). */
+  finance: {
+    count: number;
+    receivableCents: number;
+    receivedCents: number;
+    entries: { id: number; type: FinanceType; description: string; amountCents: number; dueDate: string; paidAt: string | null }[];
+  };
+  /** Hoje (`YYYY-MM-DD`, fuso do estúdio): para marcar lançamentos vencidos. */
+  today: string;
   defaultTemplateName: string;
 };
 
@@ -47,6 +60,41 @@ type Props = ControlData & {
 };
 
 const pdfUrl = (id: number) => `/painel/orcamentos/${id}/pdf`;
+
+/**
+ * Onde ver estes lançamentos no financeiro. A tela de lá não tem filtro por proposta: abrimos o histórico inteiro
+ * do cliente (o filtro por cliente não se limita ao mês). Sem cliente, cai na busca pelo número, que é como os
+ * lançamentos gerados a partir da proposta são descritos ("Proposta 2026-001 — Entrada").
+ * A lista exata desta proposta fica no próprio cartão (cada linha abre o lançamento).
+ */
+function financeListUrl(number: string, clientId: number | null): string {
+  const params = new URLSearchParams();
+  if (clientId) params.set("cliente", String(clientId));
+  else {
+    params.set("de", "2000-01-01"); // período livre: não cair só no mês atual
+    params.set("q", `Proposta ${number}`);
+  }
+  return `/painel/financeiro?${params.toString()}#lancamentos`;
+}
+
+/** "Recebido em 05/12/2026" · "Vencido em …" · "Vence em …" (despesas: "Pago em …"). */
+function entrySituation(entry: { type: FinanceType; dueDate: string; paidAt: string | null }, today: string): { text: string; tone: string } {
+  if (entry.paidAt) return { text: `${entry.type === "receita" ? "Recebido" : "Pago"} em ${formatDate(entry.paidAt)}`, tone: "text-sucesso" };
+  if (entry.dueDate < today) return { text: `Vencido em ${formatDate(entry.dueDate)}`, tone: "text-perigo" };
+  return { text: `Vence em ${formatDate(entry.dueDate)}`, tone: "text-cinza" };
+}
+
+/**
+ * A troca de status tira o próprio botão da tela (a resposta do servidor já traz a etapa com o status novo), e o
+ * aviso de sucesso do formulário se perdia junto com ele. Por isso o aviso é mostrado aqui, assim que a action
+ * responde — é nele que aparece "O cliente foi movido para … no funil".
+ */
+async function setStatusAndNotify(prev: ActionState, formData: FormData): Promise<ActionState> {
+  const state = await setProposalStatusAction(prev, formData);
+  if (!state.ok || !state.message) return state;
+  toast(state.message);
+  return { ...state, message: undefined }; // já avisado: o formulário não repete
+}
 
 function StatusButton({ id, status, children, title, description, confirmLabel, icon, variant = "secondary", disabled, tone = "primary" }: {
   id: number;
@@ -71,7 +119,7 @@ function StatusButton({ id, status, children, title, description, confirmLabel, 
       description={description}
       confirmLabel={confirmLabel}
       tone={tone}
-      action={setProposalStatusAction}
+      action={setStatusAndNotify}
       hidden={{ id, status }}
     />
   );
@@ -124,7 +172,7 @@ function TemplateControl({ id, defaultTemplateName }: Pick<Props, "id" | "defaul
 
 // ------------------------------------------------------------------ proposta
 export function ControlStep(props: Props) {
-  const { id, isTemplate, number, version, status, clientId, sentAt, respondedAt, versions, project, contractId, contracts, defaultTemplateName, dirty, pdfKey } = props;
+  const { id, isTemplate, number, version, status, clientId, sentAt, respondedAt, versions, project, contractId, contracts, finance, today, defaultTemplateName, dirty, pdfKey } = props;
   if (isTemplate) return <TemplateControl id={id} defaultTemplateName={defaultTemplateName} />;
 
   const label = proposalNumberLabel(number, version);
@@ -195,7 +243,7 @@ export function ControlStep(props: Props) {
               icon={<Send />}
               disabled={blocked || !clientId}
               title="Marcar como enviada?"
-              description="Registra a data de envio e anota no histórico do cliente. O PDF não é enviado por aqui: baixe e mande por WhatsApp ou e-mail."
+              description="Registra a data de envio e anota no histórico do cliente. Se ele ainda estiver como “Novo contato”, passa para “Em orçamento” no funil. O PDF não é enviado por aqui: baixe e mande por WhatsApp ou e-mail."
               confirmLabel="Marcar como enviada"
             >
               {status === "rascunho" ? "Marcar como enviada" : "Marcar como enviada de novo"}
@@ -211,7 +259,7 @@ export function ControlStep(props: Props) {
                 icon={<Check />}
                 disabled={blocked}
                 title="Cliente aceitou a proposta?"
-                description="Registra a resposta e anota no histórico do cliente. Depois você pode convertê-la em projeto."
+                description="Registra a resposta, anota no histórico e move o cliente para “Fechado” no funil. Depois você pode gerar as parcelas no financeiro e converter a proposta em projeto."
                 confirmLabel="Marcar como aceita"
               >
                 Aceita
@@ -254,7 +302,7 @@ export function ControlStep(props: Props) {
                   </Button>
                 }
                 title="Converter em projeto?"
-                description="Cria o projeto com o cliente, o título, o tipo de serviço, a data e o local desta proposta, e abre a tela dele."
+                description="Cria o projeto com o cliente, o título, o tipo de serviço, a data e o local desta proposta, e abre a tela dele. O cliente passa para “Em produção” no funil."
                 confirmLabel="Converter em projeto"
                 tone="primary"
                 action={convertToProjectAction}
@@ -271,7 +319,7 @@ export function ControlStep(props: Props) {
               icon={<Undo2 />}
               disabled={blocked}
               title="Voltar para rascunho?"
-              description="A proposta volta a ser rascunho (a data de envio anterior fica registrada no histórico do cliente)."
+              description="A proposta volta a ser rascunho (a data de envio anterior fica registrada no histórico do cliente). O cliente continua na etapa em que está no funil."
               confirmLabel="Voltar para rascunho"
             >
               Voltar para rascunho
@@ -283,6 +331,70 @@ export function ControlStep(props: Props) {
           <p className="text-cinza mt-3 text-sm">Para mudar valores de uma proposta já enviada sem perder o que o cliente recebeu, crie uma nova versão (abaixo).</p>
         ) : null}
       </Card>
+
+      {status === "aceita" ? (
+        <Card as="section" aria-labelledby="etapa-pdf-financeiro">
+          <CardHeader
+            id="etapa-pdf-financeiro"
+            title="Financeiro"
+            description={
+              finance.count === 0
+                ? "Proposta aceita: transforme as parcelas (etapa Preço ao cliente) em contas a receber. Você confere tudo antes de criar."
+                : "Os lançamentos desta proposta já estão no financeiro. Toque em um deles para abrir, dar baixa ou corrigir."
+            }
+          />
+          {finance.count === 0 ? (
+            <div className="flex flex-wrap gap-2 max-sm:[&>*]:w-full">
+              <ButtonLink href={`/painel/financeiro/novo/parcelas?proposta=${id}`} icon={<ListChecks />}>
+                Gerar parcelas no financeiro
+              </ButtonLink>
+            </div>
+          ) : (
+            <>
+              <p className="text-grafite mb-3 text-sm">
+                <strong className="tabular-nums">{finance.count}</strong> {finance.count === 1 ? "lançamento" : "lançamentos"}
+                {finance.receivableCents > 0 ? (
+                  <>
+                    {" "}
+                    · <span className="tabular-nums">{formatBRL(finance.receivableCents)}</span> a receber no total · <span className="tabular-nums">{formatBRL(finance.receivedCents)}</span> já recebido
+                  </>
+                ) : null}
+              </p>
+              <ul className="divide-areia border-areia rounded-campo mb-3 divide-y border">
+                {finance.entries.map((entry) => {
+                  const situation = entrySituation(entry, today);
+                  return (
+                    <li key={entry.id}>
+                      <Link href={`/painel/financeiro/${entry.id}`} className="hover:bg-offwhite flex min-h-11 flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3 py-2.5 text-sm">
+                        <span className="text-grafite min-w-0 flex-1 basis-48 font-semibold break-words">{entry.description}</span>
+                        <span className={`${situation.tone} text-[0.8125rem]`}>{situation.text}</span>
+                        <span className="text-grafite font-bold tabular-nums">
+                          {entry.type === "despesa" ? "− " : ""}
+                          {formatBRL(entry.amountCents)}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+              {finance.count > finance.entries.length ? <p className="text-cinza mb-3 text-sm">Mostrando os {finance.entries.length} primeiros por vencimento.</p> : null}
+              <div className="flex flex-wrap gap-2 max-sm:[&>*]:w-full">
+                <ButtonLink href={financeListUrl(number, clientId)} icon={<Wallet />}>
+                  Ver lançamentos desta proposta
+                </ButtonLink>
+                <ButtonLink href={`/painel/financeiro/novo?proposta=${id}`} variant="ghost" icon={<FilePlus2 />}>
+                  Novo lançamento desta proposta
+                </ButtonLink>
+              </div>
+            </>
+          )}
+          {finance.count > 0 ? (
+            <p className="text-cinza mt-3 text-sm">{clientId ? "O botão abre o financeiro com todos os lançamentos deste cliente." : "O botão abre o financeiro com a busca pelo número da proposta."}</p>
+          ) : dirty ? (
+            <p className="text-cinza mt-3 text-sm">As parcelas vêm da última versão salva da proposta.</p>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card as="section" aria-labelledby="etapa-pdf-contrato">
         <CardHeader id="etapa-pdf-contrato" title="Contrato" description="Vincule o contrato do cliente a esta proposta para achar tudo num lugar só." />

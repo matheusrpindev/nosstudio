@@ -89,7 +89,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Page
         <>
           {/* exportação é só de administradores (a rota confere de novo) */}
           {user.role === "admin" ? (
-            <ButtonLink href={`/painel/clientes/exportar${query}`} variant="secondary" icon={<Download />}>
+            <ButtonLink href={`/painel/clientes/exportar${query}`} download prefetch={false} variant="secondary" icon={<Download />}>
               Exportar CSV
             </ButtonLink>
           ) : null}

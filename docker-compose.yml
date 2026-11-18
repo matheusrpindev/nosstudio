@@ -1,10 +1,25 @@
 # Exemplo de implantação com Docker Compose (VPS). Coloque um proxy com HTTPS na frente (Caddy, Traefik, Nginx).
+#
+# A porta é publicada SÓ em 127.0.0.1: o app nunca deve ser alcançado direto da internet, apenas pelo proxy
+# (que roda no mesmo servidor e aponta para http://127.0.0.1:3000). Não troque por "3000:3000": o Docker abre a
+# porta para fora mesmo com firewall no servidor e, sem o proxy, qualquer pessoa forja o cabeçalho
+# X-Forwarded-For e burla os limites de tentativas de login e do formulário.
+#
+# O proxy precisa SOBRESCREVER os cabeçalhos de encaminhamento (não repassar os do visitante). Nginx:
+#   proxy_set_header Host $host;
+#   proxy_set_header X-Forwarded-For $remote_addr;
+#   proxy_set_header X-Forwarded-Proto $scheme;
+# (Caddy e Traefik já fazem isso por padrão.) Com Cloudflare na frente do Nginx, use no Nginx
+# "X-Forwarded-For $proxy_add_x_forwarded_for" e TRUSTED_PROXIES=2 no .env.
+#
+# Proxy em contêiner (Caddy/Traefik no mesmo compose)? Remova o bloco "ports" e aponte o proxy para
+# http://nos:3000 pela rede interna do compose.
 services:
   nos:
     build: .
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     env_file: .env
     volumes:
       - nos-data:/app/data

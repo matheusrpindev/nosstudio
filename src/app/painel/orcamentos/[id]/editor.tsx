@@ -135,7 +135,7 @@ export function ProposalEditor({ id, isTemplate, number, version, serverKey, ini
             <StepEscopo {...stepProps} />
           </TabPanel>
           <TabPanel value="interno">
-            <StepInterno {...stepProps} isTemplate={isTemplate} />
+            <StepInterno {...stepProps} isTemplate={isTemplate} onGoToScope={() => setTab("escopo")} />
           </TabPanel>
           <TabPanel value="preco">
             <StepPreco {...stepProps} />

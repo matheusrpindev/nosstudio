@@ -47,7 +47,6 @@ function toAnnouncementView(item: PublicAnnouncement): AnnouncementView {
     startsAt: item.startsAt,
     endsAt: item.endsAt,
     dismissible: item.dismissible,
-    pending: item.pending,
   };
 }
 

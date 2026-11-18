@@ -14,7 +14,7 @@ import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
 import { requireUser } from "@/lib/auth";
-import { PROPOSAL_MODALITIES, PROPOSAL_STATUS_LABELS, PROPOSAL_STATUSES } from "@/lib/domain";
+import { CLIENT_STATUS_LABELS, PROPOSAL_MODALITIES, PROPOSAL_STATUS_LABELS, PROPOSAL_STATUSES } from "@/lib/domain";
 import { isValidPhone } from "@/lib/format";
 import { f, jsonField, parseForm, zodFieldErrors } from "@/server/action";
 import {
@@ -29,6 +29,8 @@ import {
   saveProposalAsTemplate,
   setProposalStatus,
 } from "@/server/proposals/admin";
+import type { FunnelMove } from "@/server/proposals/funnel";
+import { funnelAdvanceNotice } from "@/server/proposals/funnel-logic";
 import { DEFAULT_TITLES, dropBlankRows, proposalDraftSchema, type ProposalDraft } from "./draft";
 
 const idSchema = z.object({ id: f.id("Proposta inválida.") });
@@ -204,6 +206,17 @@ export async function createVersionAction(_prev: ActionState, formData: FormData
 }
 
 // ------------------------------------------------------------------- status
+/** O avanço automático do cliente no funil também fica na auditoria (sem nome do cliente: só o id). */
+async function auditClientMove(user: Awaited<ReturnType<typeof requireUser>>, move: FunnelMove, cause: string) {
+  await logAudit({
+    user,
+    action: "status",
+    entity: "client",
+    entityId: move.clientId,
+    summary: `Status do cliente: ${CLIENT_STATUS_LABELS[move.from]} → ${CLIENT_STATUS_LABELS[move.to]} (automático, ${cause})`,
+  });
+}
+
 const statusSchema = z.object({ id: f.id("Proposta inválida."), status: z.enum(PROPOSAL_STATUSES, { error: "Status inválido." }) });
 
 export async function setProposalStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -216,7 +229,7 @@ export async function setProposalStatusAction(_prev: ActionState, formData: Form
     if (result.reason === "is_template") return actionError("Modelos não têm status.");
     return actionError("Esta proposta não existe mais.");
   }
-  const { proposal } = result;
+  const { proposal, clientMoved } = result;
   await logAudit({
     user,
     action: "status",
@@ -224,12 +237,11 @@ export async function setProposalStatusAction(_prev: ActionState, formData: Form
     entityId: proposal.id,
     summary: `Proposta ${numberLabel(proposal.number, proposal.version)}: ${PROPOSAL_STATUS_LABELS[proposal.status]}`,
   });
+  if (clientMoved) await auditClientMove(user, clientMoved, `proposta ${numberLabel(proposal.number, proposal.version)}`);
   refresh();
-  return actionOk(
-    proposal.status === "enviada"
-      ? "Marcada como enviada. O envio ficou registrado no histórico do cliente."
-      : `Status: ${PROPOSAL_STATUS_LABELS[proposal.status]}.`,
-  );
+  // com avanço no funil o aviso fica curto (o toast some em poucos segundos): o que importa é o cliente ter andado
+  if (clientMoved) return actionOk(`${proposal.status === "enviada" ? "Marcada como enviada." : `Status: ${PROPOSAL_STATUS_LABELS[proposal.status]}.`} ${funnelAdvanceNotice(clientMoved.to)}`);
+  return actionOk(proposal.status === "enviada" ? "Marcada como enviada. O envio ficou registrado no histórico do cliente." : `Status: ${PROPOSAL_STATUS_LABELS[proposal.status]}.`);
 }
 
 // ------------------------------------------------------- projeto e contrato
@@ -243,7 +255,8 @@ export async function convertToProjectAction(_prev: ActionState, formData: FormD
   }
   if (result.created) {
     await logAudit({ user, action: "create", entity: "project", entityId: result.projectId, summary: `Criou o projeto a partir da proposta #${parsed.data.id}` });
-    await flashToast("Projeto criado a partir da proposta.");
+    if (result.clientMoved) await auditClientMove(user, result.clientMoved, `projeto #${result.projectId}`);
+    await flashToast(result.clientMoved ? `Projeto criado a partir da proposta. ${funnelAdvanceNotice(result.clientMoved.to)}` : "Projeto criado a partir da proposta.");
   }
   redirect(`/painel/projetos/${result.projectId}`);
 }

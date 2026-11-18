@@ -8,12 +8,13 @@ import { passwordResetTokens, users } from "@/db/schema";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
 import { rateLimitIp } from "@/lib/client-ip";
-import { env } from "@/lib/env";
+import { env, smtpConfigured } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { getClientIp, getUserAgent } from "@/lib/request";
 import { FORCE_PASSWORD_PATH, LOGIN_PATH, PANEL_HOME, requireUser, safeNextPath } from "./index";
 import { hashPassword, passwordProblem, verifyAgainstDummy, verifyPassword } from "./password";
-import { consumeRateLimit, loginEmailKey, resetRateLimit, retryMessage, unlockLogin, type RateLimitRule } from "./rate-limit";
+import { checkLoginAttempt, clearLoginAttempts, loginGateMessage } from "./login-limits";
+import { consumeRateLimit, retryMessage, unlockLogin } from "./rate-limit";
 import { revokeResetTokens } from "./reset-tokens";
 import { createSession, destroyCurrentSession, destroyUserSessions, getSession, isKnownDevice, rememberDevice } from "./session";
 import { anonymize, generateToken, hashToken } from "./tokens";
@@ -26,9 +27,6 @@ function field(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
 }
-
-/** Chave do limitador para o par e-mail + IP (o IP já agrupado por `rateLimitIp`). */
-const loginPairKey = (email: string, ipBucket: string) => `login:par:${anonymize(`${email}|${ipBucket}`)}`;
 
 // --------------------------------------------------------------------- login
 export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -44,23 +42,11 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
 
   const ip = await getClientIp();
   const ipBucket = rateLimitIp(ip);
-  const ipKey = `login:ip:${anonymize(ipBucket)}`;
-  const pairKey = loginPairKey(email, ipBucket);
-  const emailKey = loginEmailKey(email);
-
-  // Três barreiras: por IP, por e-mail+IP (força bruta comum) e por e-mail (ataque distribuído).
-  // A barreira por e-mail pode ser estourada de propósito por um estranho para trancar a conta de um sócio;
-  // por isso ela NÃO vale para um navegador que já entrou nessa conta (cookie de aparelho conhecido): o dono
-  // continua entrando com a senha certa, e quem ataca de fora continua limitado.
-  const barriers: [string, RateLimitRule][] = [
-    [ipKey, { limit: 30, windowMs: 15 * MINUTE }],
-    [pairKey, { limit: 8, windowMs: 15 * MINUTE }],
-  ];
-  if (!(await isKnownDevice(email))) barriers.push([emailKey, { limit: 40, windowMs: 60 * MINUTE }]);
-  for (const [key, rule] of barriers) {
-    const result = await consumeRateLimit(key, rule);
-    if (!result.ok) return actionError(retryMessage(result.retryAfterSeconds), { values });
-  }
+  // Limitador de tentativas (regras e porquês em ./login-limits.ts). Tentativas erradas de terceiros nunca
+  // fazem a senha certa do dono ser recusada: aparelho conhecido não entra na barreira da conta, e aparelho
+  // novo mantém algumas tentativas por IP mesmo com a conta sob ataque.
+  const gate = await checkLoginAttempt({ email, ipBucket, knownDevice: await isKnownDevice(email) });
+  if (!gate.ok) return actionError(loginGateMessage(gate, smtpConfigured()), { values });
 
   const [user] = await db.select().from(users).where(eq(users.email, email));
   // Mesmo custo de tempo exista ou não a conta (evita descobrir e-mails cadastrados pelo tempo de resposta).
@@ -71,9 +57,7 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
     return actionError("E-mail ou senha incorretos.", { values });
   }
 
-  // Login certo zera os contadores ligados à conta: quem entra várias vezes ao dia não pode acabar bloqueado.
-  await resetRateLimit(pairKey);
-  await resetRateLimit(emailKey);
+  await clearLoginAttempts(email, ipBucket);
   await createSession(user.id, { ip, userAgent: await getUserAgent() });
   await rememberDevice(email);
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
@@ -107,11 +91,13 @@ export async function requestPasswordResetAction(_prev: ActionState, formData: F
   // Por e-mail+IP (3/h): um estranho pedindo links para o e-mail de um sócio não gasta a cota do próprio sócio.
   // Por e-mail (8/h): teto de mensagens na caixa de entrada mesmo que os pedidos venham de vários IPs.
   const pairLimit = await consumeRateLimit(`reset:par:${anonymize(`${email}|${ipBucket}`)}`, { limit: 3, windowMs: 60 * MINUTE });
+  // (o teto por e-mail não vale para um aparelho conhecido da conta: um estranho não consegue gastar a cota do dono)
   const emailLimit = await consumeRateLimit(`reset:email:${anonymize(email)}`, { limit: 8, windowMs: 60 * MINUTE });
+  const allowed = pairLimit.ok && (emailLimit.ok || (await isKnownDevice(email)));
 
   // O link é criado e enviado DEPOIS da resposta: assim o tempo de resposta é o mesmo exista ou não a conta
   // (esperar o envio do e-mail só quando a conta existe entregaria, pelo relógio, quais e-mails têm acesso).
-  if (pairLimit.ok && emailLimit.ok) {
+  if (allowed) {
     after(async () => {
       try {
         await sendPasswordResetLink(email);
@@ -211,7 +197,7 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
   // Quem abriu o link provou que controla o e-mail da conta: o login dela é destravado (um estranho pode ter
   // estourado o limite de tentativas de propósito) e este navegador passa a ser um aparelho conhecido.
   await unlockLogin(row.email);
-  await resetRateLimit(loginPairKey(row.email, ipBucket));
+  await clearLoginAttempts(row.email, ipBucket);
   await rememberDevice(row.email);
   await logAudit({
     user: { id: row.userId, name: row.name },

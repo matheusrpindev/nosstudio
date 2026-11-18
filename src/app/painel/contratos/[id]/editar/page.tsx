@@ -8,6 +8,7 @@ import { getMediaValue } from "@/server/media";
 import { getClientOptions, getProjectOptions, getProposalOptions } from "@/server/options";
 import { updateContractAction } from "../../actions";
 import { ContractForm } from "../../contract-form";
+import { UnfilledFieldsAlert } from "../../fields-help";
 import { LEGAL_REVIEW_NOTICE } from "../../ui";
 
 export const metadata: Metadata = { title: "Editar contrato" };
@@ -27,6 +28,9 @@ export default async function EditContractPage({ params }: { params: Promise<{ i
       <Alert tone="alerta" className="mb-4">
         {LEGAL_REVIEW_NOTICE}
       </Alert>
+      <UnfilledFieldsAlert body={contract.body} className="mb-4">
+        Complete o cadastro do cliente, da proposta ou do projeto e salve de novo (os campos são preenchidos ao salvar), ou escreva o texto direto no lugar do campo.
+      </UnfilledFieldsAlert>
       <ContractForm
         action={updateContractAction}
         id={contract.id}

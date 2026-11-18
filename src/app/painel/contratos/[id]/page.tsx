@@ -19,6 +19,7 @@ import { safeUrl } from "@/lib/format";
 import { getContract } from "@/server/contracts/admin";
 import { getMediaValue } from "@/server/media";
 import { deleteContractAction, updateContractStatusAction } from "../actions";
+import { UnfilledFieldsAlert } from "../fields-help";
 import { CONTRACT_STATUS_TONES, LEGAL_REVIEW_NOTICE } from "../ui";
 import { PrintButton } from "./print-button";
 
@@ -102,6 +103,13 @@ export default async function ContractPage({ params }: { params: Promise<{ id: s
               title="Texto do contrato"
               description="Visualização de leitura. O botão Imprimir gera uma página limpa, só com o texto."
             />
+            <UnfilledFieldsAlert body={contract.body} className="mb-4">
+              O cadastro não tinha esses dados quando o contrato foi salvo. Complete o cliente, a proposta ou o projeto e{" "}
+              <Link className="link" href={`/painel/contratos/${contract.id}/editar`}>
+                edite o contrato
+              </Link>{" "}
+              (salvar preenche de novo), ou escreva o texto direto no lugar do campo. Não envie nem imprima antes disso.
+            </UnfilledFieldsAlert>
             {hasBody ? (
               <article id="contrato-folha" aria-label="Texto do contrato" className="border-areia rounded-campo border bg-white p-5 sm:p-8">
                 <h2 className="text-grafite text-xl leading-snug font-extrabold">{contract.title}</h2>

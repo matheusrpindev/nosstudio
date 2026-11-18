@@ -28,7 +28,7 @@ import {
 } from "@/db/schema";
 import { toPublicImage, type PublicImage } from "@/lib/media";
 import { defaultSiteContent, resolveSiteContent, SITE_CONTENT_KEYS, type SiteContent } from "@/lib/site/content";
-import { servableAnnouncements } from "./admin/announcement-status";
+import { secondsToNextAnnouncementChange, servableAnnouncements } from "./admin/announcement-status";
 import { SITE_TAG } from "./cache";
 
 /** Durante o build o banco pode não existir ainda: registra e segue com o valor de fallback. */
@@ -116,27 +116,30 @@ export type PublicAnnouncement = Pick<
 > & {
   /** Muda quando o aviso é editado — um aviso fechado pelo visitante volta a aparecer se o texto mudar. */
   version: number;
-  /** O início está a poucos minutos: vai no HTML ESCONDIDO e só o script da barra o revela na hora. */
-  pending: boolean;
 };
 
+/** Os mesmos tempos do perfil "site" (next.config.ts), para montar um perfil com `revalidate` menor. */
+const SITE_CACHE = { stale: 300, revalidate: 300, expire: 3600 } as const;
+
 /**
- * Avisos ativados que estão no período — ou prestes a começar (ver `servableAnnouncements`). Um aviso agendado
- * para depois NÃO sai daqui: o texto não pode aparecer no código-fonte do site antes da data combinada.
- * A janela exata (início/fim) é conferida de novo no navegador pelo componente da barra, porque esta lista
- * fica em cache por alguns minutos.
+ * Avisos ativados que estão no período AGORA. Um aviso agendado NÃO sai daqui antes da hora: o texto não pode
+ * aparecer no código-fonte do site (nem escondido) antes da data combinada. Para ele entrar no ar na hora, este
+ * cache vence no instante do próximo início/fim: a primeira visita depois disso já dispara a página nova.
+ * A janela exata é conferida de novo no navegador pelo componente da barra (a página pode ter alguns minutos).
  */
 export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
   "use cache";
   cacheTag(SITE_TAG);
-  cacheLife("site");
-  return safely("avisos", [], async () => {
+  const { items, nextChange } = await safely("avisos", { items: [] as PublicAnnouncement[], nextChange: null as number | null }, async () => {
+    const now = new Date();
     const rows = await db
       .select()
       .from(announcements)
       .where(eq(announcements.enabled, true))
       .orderBy(asc(announcements.sortOrder), desc(announcements.id));
-    return servableAnnouncements(rows, new Date()).map((row) => ({
+    return {
+      nextChange: secondsToNextAnnouncementChange(rows, now),
+      items: servableAnnouncements(rows, now).map((row) => ({
         id: row.id,
         message: row.message,
         linkLabel: row.linkLabel,
@@ -147,9 +150,13 @@ export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
         endsAt: row.endsAt,
         dismissible: row.dismissible,
         version: row.updatedAt.getTime(),
-        pending: row.pending,
-      }));
+      })),
+    };
   });
+  // Mudança (início ou fim de um aviso) antes da próxima renovação normal? O cache vence junto com ela.
+  if (nextChange !== null && nextChange < SITE_CACHE.revalidate) cacheLife({ ...SITE_CACHE, revalidate: nextChange });
+  else cacheLife("site");
+  return items;
 }
 
 // ----------------------------------------------------------------- serviços

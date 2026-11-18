@@ -7,11 +7,14 @@ import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId, type PageSearchParams } from "@/components/ui/search-params";
 import { requireUser } from "@/lib/auth";
+import { todayISO } from "@/lib/dates";
 import { CONTRACT_KIND_LABELS } from "@/lib/domain";
-import { getLinkDefaults, getTemplate, listTemplates } from "@/server/contracts/admin";
+import { fillContractBody, getLinkDefaults, getTemplate, listTemplates } from "@/server/contracts/admin";
+import { findUnfilledFields } from "@/server/contracts/fields";
 import { getClientOptions, getProjectOptions, getProposalOptions } from "@/server/options";
 import { createContractAction } from "../actions";
 import { ContractForm } from "../contract-form";
+import { FieldToken } from "../fields-help";
 import { LEGAL_REVIEW_NOTICE } from "../ui";
 
 export const metadata: Metadata = { title: "Novo contrato" };
@@ -29,6 +32,18 @@ export default async function NewContractPage({ searchParams }: { searchParams: 
   const clientId = clients.some((c) => c.value === requestedClient) ? (requestedClient ?? null) : defaults.clientId;
   const modeloId = paramId(params.modelo);
   const template = modeloId ? await getTemplate(modeloId) : null;
+
+  // Campos automáticos ({{cliente}}, {{valor_total}}…): o que já dá para preencher com os vínculos que vieram na URL
+  // aparece preenchido no texto; o resto é preenchido ao cadastrar, com os vínculos escolhidos no formulário.
+  const links = { clientId, projectId: defaults.projectId, proposalId: defaults.proposalId };
+  const body = template ? await fillContractBody(template.body, links, todayISO()) : "";
+  const templateHasFields = template ? findUnfilledFields(template.body).length > 0 : false;
+  const pending = findUnfilledFields(body);
+  const linkedTo = [
+    clientId ? `cliente ${clients.find((c) => c.value === clientId)?.label ?? ""}`.trim() : null,
+    defaults.proposalId ? `proposta ${proposals.find((p) => p.value === defaults.proposalId)?.label ?? ""}`.trim() : null,
+    defaults.projectId ? `projeto ${projects.find((p) => p.value === defaults.projectId)?.label ?? ""}`.trim() : null,
+  ].filter((item): item is string => item !== null);
 
   return (
     <div className="max-w-3xl">
@@ -68,6 +83,25 @@ export default async function NewContractPage({ searchParams }: { searchParams: 
           </form>
         )}
         {template ? <p className="text-cinza mt-3 text-sm">Texto copiado do modelo “{template.title}”. Trocar o modelo recarrega o formulário com o texto dele.</p> : null}
+        {template && templateHasFields ? (
+          <div className="text-cinza mt-2 space-y-1.5 text-sm">
+            {linkedTo.length > 0 ? (
+              <p>
+                Campos automáticos preenchidos com os dados de: <span className="text-grafite font-semibold">{linkedTo.join(" · ")}</span>. Se mudar os vínculos abaixo, confira o texto.
+              </p>
+            ) : (
+              <p>Este modelo tem campos automáticos. Escolha o cliente (e a proposta ou o projeto) em Vínculos: os campos são preenchidos quando você cadastrar o contrato.</p>
+            )}
+            {pending.length > 0 ? (
+              <p className="flex flex-wrap items-center gap-1.5">
+                <span>{linkedTo.length > 0 ? "Sem dado no cadastro por enquanto:" : "Campos do modelo:"}</span>
+                {pending.map((field) => (
+                  <FieldToken key={field.token}>{field.token}</FieldToken>
+                ))}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </Card>
 
       <ContractForm
@@ -85,7 +119,7 @@ export default async function NewContractPage({ searchParams }: { searchParams: 
           validFrom: null,
           validUntil: null,
           externalUrl: "",
-          body: template?.body ?? "",
+          body,
           notes: "",
         }}
         file={null}

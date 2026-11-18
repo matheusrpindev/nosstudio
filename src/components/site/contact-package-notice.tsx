@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { knownPackageName } from "@/lib/site/lead-form";
+import { knownPackageName } from "@/lib/site/lead-form-fields";
 
 /**
  * Aviso discreto "Pedido sobre: <pacote>" quando a pessoa chega por `/contato?pacote=…` (botão de um pacote).

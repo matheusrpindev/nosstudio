@@ -108,7 +108,15 @@ export function ContractForm({
 
       <Card as="section" aria-labelledby="texto-titulo" className="space-y-5">
         <CardHeader id="texto-titulo" title="Texto do contrato" description="Escolha um modelo no topo da página para copiar o texto, ou escreva à mão. Dá para imprimir na tela do contrato." />
-        <MarkdownField name="body" label="Texto" defaultValue={values.body} rows={16} optional maxLength={80000} />
+        <MarkdownField
+          name="body"
+          label="Texto"
+          defaultValue={values.body}
+          rows={16}
+          optional
+          maxLength={80000}
+          hint="Campos entre chaves duplas, como {{cliente}} ou {{valor_total}}, são preenchidos ao salvar com os dados do cliente, da proposta e do projeto escolhidos em Vínculos."
+        />
         <Field name="notes" label="Observações internas" hint="Só você e seu sócio veem isto." optional>
           <Textarea rows={3} maxLength={4000} defaultValue={values.notes} />
         </Field>

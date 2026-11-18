@@ -63,7 +63,7 @@ export default async function AccountPage() {
         </Card>
 
         <Card flush as="section" aria-labelledby="sessoes-titulo">
-          <CardHeader id="sessoes-titulo" title="Sessões ativas" description="Aparelhos em que sua conta está conectada agora." />
+          <CardHeader id="sessoes-titulo" title="Sessões ativas" description="Aparelhos em que sua conta está conectada agora. Ficam no máximo 10: ao entrar em mais um, o que está há mais tempo sem uso é desconectado." />
           <ul className="divide-areia divide-y">
             {sessions.map((item) => (
               <li key={item.id} className="flex items-start gap-3 px-4 py-3.5 sm:px-6">

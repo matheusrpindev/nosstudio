@@ -9,7 +9,9 @@
  * - <FileField>    → id do arquivo privado (ou "")    → `f.optionalId()`
  *
  * Para preencher `defaultValue`, use `getMediaValue(id)` / `getMediaValues(ids)` de `@/server/media`.
- * Remover do campo NÃO apaga o arquivo no servidor: só desvincula (vale ao salvar o formulário).
+ * Remover/trocar no campo só desvincula; o que vale é o que for SALVO no formulário. O arquivo antigo é apagado
+ * pelo servidor quando nada mais o usa: ao salvar (ver `releaseMedia` em src/server/media) e, para um envio que
+ * nunca chegou a ser salvo, na hora em que sai do campo (`discardMedia`, abaixo).
  */
 import { useEffect, useEffectEvent, useId, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, ExternalLink, FileText, ImagePlus, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
@@ -101,6 +103,15 @@ export async function saveMediaAlt(id: number, alt: string): Promise<MediaValue>
     throw new Error(readError(body, "Não foi possível salvar o texto alternativo."));
   }
   return body.media as MediaValue;
+}
+
+/**
+ * Avisa o servidor que um arquivo saiu do campo. O servidor só o apaga se NENHUM registro salvo o usa (rota
+ * DELETE responde 409 e não faz nada quando está em uso) — ou seja, isto só elimina envios que nunca foram
+ * salvos, para não ficarem guardados para sempre. Sem espera e sem mensagem: falhar aqui não atrapalha ninguém.
+ */
+function discardMedia(id: number): void {
+  void fetch(`${MEDIA_ENDPOINT}/${id}`, { method: "DELETE", keepalive: true }).catch(() => undefined);
 }
 
 // ------------------------------------------------------------------ peças internas
@@ -365,6 +376,7 @@ export function ImageField({ name, label, defaultValue = null, hint, error, aspe
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const change = (next: MediaValue | null) => {
+    if (media && media.id !== next?.id) discardMedia(media.id);
     setMedia(next);
     onChange?.(next);
   };
@@ -483,6 +495,7 @@ export function GalleryField({ name, label, defaultValue = [], max, hint, error,
   });
 
   const change = (next: MediaValue[]) => {
+    for (const previous of itemsRef.current) if (!next.some((item) => item.id === previous.id)) discardMedia(previous.id);
     itemsRef.current = next;
     setItems(next);
     onChange?.(next);
@@ -652,6 +665,7 @@ export function FileField({ name, label, defaultValue = null, accept = FILE_ACCE
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const change = (next: MediaValue | null) => {
+    if (media && media.id !== next?.id) discardMedia(media.id);
     setMedia(next);
     onChange?.(next);
   };

@@ -175,7 +175,7 @@ function ToggleActiveDialog({ user }: UserActionsProps) {
     <ConfirmDialog
       trigger={<Button variant="danger-ghost" icon={<UserX />} aria-label={`Desativar ${user.name}`}>Desativar</Button>}
       title={`Desativar ${user.name}?`}
-      description="A pessoa não consegue mais entrar e é desconectada agora. Nada é apagado: dá para reativar a conta quando quiser."
+      description="A pessoa não consegue mais entrar e é desconectada agora. Nada é apagado: dá para reativar a conta quando quiser. Depois, confira em Notificações se o e-mail dela ainda recebe os avisos de novo lead."
       confirmLabel="Desativar conta"
       action={setUserActiveAction}
       hidden={{ id: user.id, active: "false" }}

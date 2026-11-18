@@ -14,6 +14,7 @@ import {
   clientInteractions,
   clients,
   contracts,
+  financeEntries,
   projects,
   proposalCosts,
   proposalItems,
@@ -30,6 +31,7 @@ import {
   PROPOSAL_STATUSES,
   type ContractStatus,
   type EntryMode,
+  type FinanceType,
   type ProposalCostCategory,
   type ProposalItemKind,
   type ProposalModality,
@@ -39,6 +41,7 @@ import {
 import { formatBRL, onlyDigits } from "@/lib/format";
 import { clientNumbers } from "@/lib/proposals/calc";
 import { getSetting } from "@/server/settings";
+import { advanceClientInFunnel, type FunnelMove } from "./funnel";
 import { nextProposalNumber } from "./source";
 
 export const PROPOSALS_PAGE_SIZE = 20;
@@ -222,6 +225,15 @@ export async function listTemplates(): Promise<TemplateListItem[]> {
 
 export type ProposalVersion = { id: number; version: number; status: ProposalStatus; createdAt: Date; sentAt: Date | null };
 export type ContractOption = { id: number; title: string; status: ContractStatus };
+/** Lançamentos do financeiro já ligados a esta proposta (parcelas geradas ou lançadas à mão). */
+export type ProposalFinanceSummary = {
+  count: number;
+  receivableCents: number;
+  receivedCents: number;
+  /** Os lançamentos em si, por vencimento (no máximo `FINANCE_PREVIEW_LIMIT`; `count` é o total). */
+  entries: { id: number; type: FinanceType; description: string; amountCents: number; dueDate: string; paidAt: string | null }[];
+};
+const FINANCE_PREVIEW_LIMIT = 12;
 
 export type ProposalEditorData = {
   proposal: Proposal;
@@ -235,6 +247,8 @@ export type ProposalEditorData = {
   project: { id: number; title: string } | null;
   /** Contratos do cliente (para vincular). */
   contracts: ContractOption[];
+  /** Resumo dos lançamentos do financeiro com esta proposta (`count` 0 = parcelas ainda não geradas). */
+  finance: ProposalFinanceSummary;
 };
 
 /** Tudo o que o editor precisa de uma proposta ou modelo (`null` se não existir). */
@@ -243,7 +257,7 @@ export async function getProposalEditorData(id: number): Promise<ProposalEditorD
   if (!proposal) return null;
   const rootId = proposal.rootId ?? proposal.id;
 
-  const [items, costs, payments, clientRows, versions, projectRows, contractRows] = await Promise.all([
+  const [items, costs, payments, clientRows, versions, projectRows, contractRows, financeRows] = await Promise.all([
     db.select().from(proposalItems).where(eq(proposalItems.proposalId, id)).orderBy(asc(proposalItems.sortOrder), asc(proposalItems.id)),
     db.select().from(proposalCosts).where(eq(proposalCosts.proposalId, id)).orderBy(asc(proposalCosts.sortOrder), asc(proposalCosts.id)),
     db.select().from(proposalPayments).where(eq(proposalPayments.proposalId, id)).orderBy(asc(proposalPayments.sortOrder), asc(proposalPayments.id)),
@@ -265,9 +279,24 @@ export async function getProposalEditorData(id: number): Promise<ProposalEditorD
           .where(and(eq(contracts.clientId, proposal.clientId), eq(contracts.isTemplate, false)))
           .orderBy(desc(contracts.id))
       : Promise.resolve([]),
+    proposal.isTemplate
+      ? Promise.resolve([])
+      : db
+          .select({ id: financeEntries.id, type: financeEntries.type, description: financeEntries.description, amountCents: financeEntries.amountCents, dueDate: financeEntries.dueDate, paidAt: financeEntries.paidAt })
+          .from(financeEntries)
+          .where(eq(financeEntries.proposalId, id))
+          .orderBy(asc(financeEntries.dueDate), asc(financeEntries.id)),
   ]);
 
-  return { proposal, items, costs, payments, client: clientRows[0] ?? null, versions, project: projectRows[0] ?? null, contracts: contractRows };
+  const receivables = financeRows.filter((entry) => entry.type === "receita");
+  const finance: ProposalFinanceSummary = {
+    count: financeRows.length,
+    receivableCents: receivables.reduce((total, entry) => total + entry.amountCents, 0),
+    receivedCents: receivables.filter((entry) => entry.paidAt !== null).reduce((total, entry) => total + entry.amountCents, 0),
+    entries: financeRows.slice(0, FINANCE_PREVIEW_LIMIT),
+  };
+
+  return { proposal, items, costs, payments, client: clientRows[0] ?? null, versions, project: projectRows[0] ?? null, contracts: contractRows, finance };
 }
 
 // ------------------------------------------------------------------ cópia
@@ -706,14 +735,19 @@ export async function saveProposalAsTemplate(id: number, templateName: string, u
 
 // ------------------------------------------------------------------ status
 export type StatusResult =
-  | { ok: true; proposal: Proposal }
+  | { ok: true; proposal: Proposal; /** O cliente andou no funil por causa desta mudança (`null` = ficou onde estava). */ clientMoved: FunnelMove | null }
   | { ok: false; reason: "not_found" | "is_template" | "needs_client" };
 
 const versionSuffix = (proposal: Pick<Proposal, "version">) => (proposal.version > 1 ? ` (versão ${proposal.version})` : "");
+/** "2026-001" ou "2026-001 v2" — como a proposta é citada no histórico do cliente. */
+const shortLabel = (proposal: Pick<Proposal, "number" | "version">) => `${proposal.number}${proposal.version > 1 ? ` v${proposal.version}` : ""}`;
 
 /**
  * Muda o status. "Enviada" grava `sentAt` e registra a interação no histórico do cliente; "Aceita" e "Recusada"
  * gravam `respondedAt` (e também ficam no histórico).
+ *
+ * "Enviada" e "Aceita" também fazem o cliente andar no funil ("Em orçamento" / "Fechado"), só para a frente e só
+ * se ele estiver no funil ativo — ver `funnel-logic.ts`. Voltar para rascunho, recusar ou expirar não mexe no cliente.
  */
 export async function setProposalStatus(id: number, status: ProposalStatus, userId: number): Promise<StatusResult> {
   return db.transaction(async (tx) => {
@@ -721,7 +755,7 @@ export async function setProposalStatus(id: number, status: ProposalStatus, user
     if (!current) return { ok: false, reason: "not_found" } as const;
     if (current.isTemplate) return { ok: false, reason: "is_template" } as const;
     if (status === "enviada" && !current.clientId) return { ok: false, reason: "needs_client" } as const;
-    if (current.status === status) return { ok: true, proposal: current } as const;
+    if (current.status === status) return { ok: true, proposal: current, clientMoved: null } as const;
 
     const now = new Date();
     const [proposal] = await tx
@@ -750,7 +784,17 @@ export async function setProposalStatus(id: number, status: ProposalStatus, user
             : `${name}: recusada pelo cliente.`;
       await tx.insert(clientInteractions).values({ clientId: proposal.clientId, userId, kind: "nota", content, occurredAt: now });
     }
-    return { ok: true, proposal } as const;
+    const clientMoved =
+      status === "enviada" || status === "aceita"
+        ? await advanceClientInFunnel(tx, {
+            clientId: proposal.clientId,
+            event: status === "enviada" ? "proposta_enviada" : "proposta_aceita",
+            reason: `proposta ${shortLabel(proposal)} ${status}`,
+            userId,
+            at: now,
+          })
+        : null;
+    return { ok: true, proposal, clientMoved } as const;
   });
 }
 
@@ -763,16 +807,21 @@ export const SERVICE_BY_MODALITY: Record<ProposalModality, ServiceInterest> = {
   personalizada: "outro",
 };
 
-export type ConvertResult = { ok: true; projectId: number; created: boolean } | { ok: false; reason: "not_found" | "not_accepted" };
+export type ConvertResult =
+  | { ok: true; projectId: number; created: boolean; /** O cliente andou no funil (`null` = ficou onde estava). */ clientMoved: FunnelMove | null }
+  | { ok: false; reason: "not_found" | "not_accepted" };
 
-/** Proposta aceita → projeto (uma vez só: se já existe projeto vinculado, devolve o mesmo). */
+/**
+ * Proposta aceita → projeto (uma vez só: se já existe projeto vinculado, devolve o mesmo).
+ * Ao criar o projeto, o cliente vai para "Em produção" no funil (só para a frente — ver `funnel-logic.ts`).
+ */
 export async function convertProposalToProject(id: number, userId: number): Promise<ConvertResult> {
   return db.transaction(async (tx) => {
     const [proposal] = await tx.select().from(proposals).where(eq(proposals.id, id));
     if (!proposal || proposal.isTemplate) return { ok: false, reason: "not_found" } as const;
     if (proposal.projectId) {
       const [existing] = await tx.select({ id: projects.id }).from(projects).where(eq(projects.id, proposal.projectId));
-      if (existing) return { ok: true, projectId: existing.id, created: false } as const;
+      if (existing) return { ok: true, projectId: existing.id, created: false, clientMoved: null } as const;
     }
     if (proposal.status !== "aceita") return { ok: false, reason: "not_accepted" } as const;
 
@@ -794,7 +843,13 @@ export async function convertProposalToProject(id: number, userId: number): Prom
       })
       .returning({ id: projects.id });
     await tx.update(proposals).set({ projectId: project.id, updatedAt: new Date() }).where(eq(proposals.id, id));
-    return { ok: true, projectId: project.id, created: true } as const;
+    const clientMoved = await advanceClientInFunnel(tx, {
+      clientId: proposal.clientId,
+      event: "projeto_criado",
+      reason: `projeto criado a partir da proposta ${shortLabel(proposal)}`,
+      userId,
+    });
+    return { ok: true, projectId: project.id, created: true, clientMoved } as const;
   });
 }
 

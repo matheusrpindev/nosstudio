@@ -6,8 +6,11 @@ import "server-only";
 import { and, count, desc, eq, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { clients, contracts, projects, proposals, type Contract } from "@/db/schema";
+import type { ISODate } from "@/lib/dates";
 import type { ContractKind, ContractStatus } from "@/lib/domain";
 import { deleteMedia, findMediaUsage, getMediaById } from "@/server/media";
+import { loadPublicProposal } from "@/server/proposals/source";
+import { buildContractFieldValues, fillContractFields, type ContractFieldValues } from "./fields";
 
 export const CONTRACTS_PAGE_SIZE = 20;
 
@@ -129,6 +132,34 @@ export async function getLinkDefaults(input: { projectId?: number; proposalId?: 
     }
   }
   return { clientId, projectId, proposalId, title };
+}
+
+// ------------------------------------------------------------- campos automáticos
+type ContractLinks = { clientId: number | null; projectId: number | null; proposalId: number | null };
+
+/**
+ * Valores dos campos `{{…}}` para os vínculos escolhidos (ver `fields.ts`).
+ * SEGURANÇA: a proposta entra só por `loadPublicProposal()` → `toPublicProposal()`, a mesma visão do PDF — custos,
+ * margem, notas internas e desconto não aprovado não chegam aqui.
+ */
+export async function loadContractFieldValues(links: ContractLinks, today: ISODate): Promise<ContractFieldValues> {
+  const [clientRows, projectRows, proposal] = await Promise.all([
+    links.clientId
+      ? db
+          .select({ name: clients.name, contactName: clients.contactName, document: clients.document, email: clients.email, whatsapp: clients.whatsapp, city: clients.city })
+          .from(clients)
+          .where(eq(clients.id, links.clientId))
+      : [],
+    links.projectId ? db.select({ title: projects.title, eventDate: projects.eventDate, location: projects.location }).from(projects).where(eq(projects.id, links.projectId)) : [],
+    links.proposalId ? loadPublicProposal(links.proposalId) : null,
+  ]);
+  return buildContractFieldValues({ client: clientRows[0] ?? null, project: projectRows[0] ?? null, proposal, today });
+}
+
+/** Preenche os campos `{{…}}` do texto com os dados dos vínculos. Texto sem campos volta igual, sem consultar o banco. */
+export async function fillContractBody(body: string, links: ContractLinks, today: ISODate): Promise<string> {
+  if (!body.includes("{{")) return body;
+  return fillContractFields(body, await loadContractFieldValues(links, today));
 }
 
 // ------------------------------------------------------------------ mutações

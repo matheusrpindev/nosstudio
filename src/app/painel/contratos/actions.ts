@@ -7,6 +7,7 @@ import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
 import { requireUser } from "@/lib/auth";
+import { todayISO } from "@/lib/dates";
 import { CONTRACT_STATUS_LABELS, CONTRACT_STATUSES } from "@/lib/domain";
 import { f, parseForm } from "@/server/action";
 import {
@@ -14,12 +15,14 @@ import {
   createTemplate,
   deleteContract,
   deleteTemplate,
+  fillContractBody,
   findMissingLinks,
   isPrivateMedia,
   setContractStatus,
   updateContract,
   updateTemplate,
 } from "@/server/contracts/admin";
+import { findUnfilledFields } from "@/server/contracts/fields";
 import { contractSchema, templateSchema } from "./schemas";
 
 const idSchema = z.object({ id: f.id("Registro inválido.") });
@@ -34,7 +37,18 @@ async function checkReferences(data: z.output<typeof contractSchema>, formData: 
   return actionError("Confira os campos destacados.", { fieldErrors, values });
 }
 
+/** Complemento do aviso de sucesso quando sobraram campos `{{…}}` no texto (sem dados pessoais: vai em cookie). */
+function unfilledNotice(body: string): string {
+  const count = findUnfilledFields(body).length;
+  if (count === 0) return "";
+  return count === 1 ? " Falta preencher 1 campo do texto." : ` Faltam preencher ${count} campos do texto.`;
+}
+
 // ------------------------------------------------------------------ contratos
+/**
+ * Os campos `{{…}}` do texto são preenchidos aqui, com o cliente, a proposta e o projeto escolhidos no formulário
+ * (o que não tiver dado fica no texto e a tela do contrato avisa).
+ */
 export async function createContractAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
   const parsed = parseForm(contractSchema, formData);
@@ -42,9 +56,11 @@ export async function createContractAction(_prev: ActionState, formData: FormDat
   const invalid = await checkReferences(parsed.data, formData);
   if (invalid) return invalid;
 
-  const contract = await createContract(parsed.data);
+  const body = await fillContractBody(parsed.data.body, parsed.data, todayISO());
+  const contract = await createContract({ ...parsed.data, body });
   await logAudit({ user, action: "create", entity: "contract", entityId: contract.id, summary: "Cadastrou um contrato" });
-  await flashToast("Contrato cadastrado.");
+  const missing = unfilledNotice(contract.body);
+  await flashToast(`Contrato cadastrado.${missing}`, missing ? "info" : "sucesso");
   redirect(`/painel/contratos/${contract.id}`);
 }
 
@@ -57,10 +73,13 @@ export async function updateContractAction(_prev: ActionState, formData: FormDat
   const invalid = await checkReferences(parsed.data, formData);
   if (invalid) return invalid;
 
-  const contract = await updateContract(id.data.id, parsed.data);
+  // campos `{{…}}` digitados (ou que tinham ficado sem dado) são preenchidos de novo com os vínculos atuais
+  const body = await fillContractBody(parsed.data.body, parsed.data, todayISO());
+  const contract = await updateContract(id.data.id, { ...parsed.data, body });
   if (!contract) return actionError("Este contrato não existe mais.");
   await logAudit({ user, action: "update", entity: "contract", entityId: contract.id, summary: "Editou um contrato" });
-  await flashToast("Contrato atualizado.");
+  const missing = unfilledNotice(contract.body);
+  await flashToast(`Contrato atualizado.${missing}`, missing ? "info" : "sucesso");
   redirect(`/painel/contratos/${contract.id}`);
 }
 

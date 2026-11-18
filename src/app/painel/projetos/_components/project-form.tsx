@@ -40,7 +40,7 @@ export function ProjectForm({ action, defaults, clients, users, projectId, cance
           <Input maxLength={160} defaultValue={defaults.title} placeholder="Ex.: Casamento Ana e Bruno" />
         </Field>
         <FieldRow>
-          <Field name="clientId" label="Cliente" optional>
+          <Field name="clientId" label="Cliente" hint={projectId ? undefined : "Ao criar o projeto, o cliente passa para “Em produção” no funil."} optional>
             <Select options={clients} placeholder="Sem cliente" defaultValue={defaults.clientId ? String(defaults.clientId) : ""} />
           </Field>
           <Field name="serviceType" label="Tipo de serviço" required>

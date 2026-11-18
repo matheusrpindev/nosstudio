@@ -1,24 +1,12 @@
 /**
- * Formulário público de contato/orçamento (e a variante de evento/casamento).
- * Arquivo puro: o mesmo schema valida no navegador e no servidor.
- *
- * Nomes dos campos (FormData): name, whatsapp, email, serviceInterest, eventDate, city, message, consent,
- * originPath + extras de evento: eventType, eventLocation, guests, startTime, endTime, coverage, storymaker,
- * packageName. Mais os dois campos anti-spam abaixo.
+ * Schema de validação do formulário público de contato/orçamento (e da variante de evento/casamento).
+ * Roda no SERVIDOR (`submitLeadAction`). Componentes do navegador não importam este arquivo (ele carrega o zod):
+ * constantes, tipos e helpers sem dependências ficam em ./lead-form-fields.ts.
  */
 import { z } from "zod";
 import { isISODate, isTime } from "@/lib/dates";
 import { SERVICE_INTERESTS } from "@/lib/domain";
 import { isValidEmail, isValidPhone } from "@/lib/format";
-
-/**
- * Campo-isca: fica fora da tela e do teclado (tabindex -1, aria-hidden, autocomplete off).
- * Pessoas não o preenchem; robôs que preenchem tudo, sim — e são descartados em silêncio.
- */
-export const LEAD_HONEYPOT_FIELD = "empresa_site";
-/** Momento (Date.now()) em que o formulário apareceu, preenchido por JS. Envio rápido demais = robô. */
-export const LEAD_STARTED_AT_FIELD = "startedAt";
-export const LEAD_MIN_FILL_MS = 2500;
 
 const optionalText = (max: number) =>
   z
@@ -65,27 +53,3 @@ export const leadFormSchema = z.object({
 });
 
 export type LeadFormData = z.infer<typeof leadFormSchema>;
-
-/**
- * O pacote/serviço de origem (`?pacote=…` na URL do formulário) só vale se for o nome de um pacote publicado.
- * Qualquer outro texto é ignorado: senão um link do próprio site exibiria uma frase arbitrária ("Pedido sobre:
- * promoção falsa…") com a identidade da NÓS e a gravaria no lead. Devolve o nome oficial ou "".
- */
-export function knownPackageName(value: string | null | undefined, publishedNames: readonly string[]): string {
-  const wanted = (value ?? "").trim();
-  if (!wanted) return "";
-  return publishedNames.find((name) => name.trim() === wanted)?.trim() ?? "";
-}
-
-/** O que a action devolve em caso de sucesso (para a tela de confirmação). */
-export type LeadSuccess = {
-  title: string;
-  text: string;
-  /** Link de WhatsApp com mensagem pronta para continuar a conversa (nulo se não houver número configurado). */
-  whatsappUrl: string | null;
-};
-
-/** Opções do campo "cobertura" do formulário de evento. */
-export const EVENT_COVERAGE_OPTIONS = ["Foto", "Vídeo", "Foto e vídeo", "Ainda não sei"] as const;
-export const EVENT_STORYMAKER_OPTIONS = ["Sim", "Não", "Talvez"] as const;
-export const EVENT_GUEST_OPTIONS = ["Até 50", "51 a 100", "101 a 200", "Mais de 200", "Ainda não sei"] as const;

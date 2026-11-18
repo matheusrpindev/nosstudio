@@ -27,7 +27,8 @@ import {
 } from "@/db/schema";
 import type { ISODate } from "@/lib/dates";
 import { PROJECT_OPEN_STAGES, type BackupStatus, type ProjectStage, type ServiceInterest, type TaskPriority } from "@/lib/domain";
-import { resolveDeliveredAt } from "./logic";
+import { advanceClientInFunnel, type FunnelMove } from "@/server/proposals/funnel";
+import { isOpenStage, resolveDeliveredAt } from "./logic";
 
 export const PROJECTS_PAGE_SIZE = 20;
 
@@ -270,19 +271,34 @@ export type ProjectInput = {
   notes: string;
 };
 
-export async function createProject(input: ProjectInput, today: ISODate): Promise<Project> {
-  const [project] = await db
-    .insert(projects)
-    .values({ ...input, deliveredAt: resolveDeliveredAt(input.stage, input.deliveredAt, today) })
-    .returning();
-  // a proposta passa a apontar para o projeto gerado (só se ainda não apontava para outro)
-  if (project.proposalId) {
-    await db
-      .update(proposals)
-      .set({ projectId: project.id })
-      .where(and(eq(proposals.id, project.proposalId), isNull(proposals.projectId)));
-  }
-  return project;
+export type CreateProjectResult = { project: Project; /** O cliente andou no funil (`null` = ficou onde estava). */ clientMoved: FunnelMove | null };
+
+/**
+ * Cria o projeto. Se ele nasce em andamento e tem cliente, o cliente vai para "Em produção" no funil — só para a
+ * frente e só se estiver no funil ativo (regras em `src/server/proposals/funnel-logic.ts`); a mudança fica no histórico dele.
+ */
+export async function createProject(input: ProjectInput, today: ISODate, userId: number | null = null): Promise<CreateProjectResult> {
+  return db.transaction(async (tx) => {
+    const [project] = await tx
+      .insert(projects)
+      .values({ ...input, deliveredAt: resolveDeliveredAt(input.stage, input.deliveredAt, today) })
+      .returning();
+    // a proposta passa a apontar para o projeto gerado (só se ainda não apontava para outro)
+    let origin = "";
+    if (project.proposalId) {
+      await tx
+        .update(proposals)
+        .set({ projectId: project.id })
+        .where(and(eq(proposals.id, project.proposalId), isNull(proposals.projectId)));
+      const [proposal] = await tx.select({ number: proposals.number, version: proposals.version }).from(proposals).where(eq(proposals.id, project.proposalId));
+      if (proposal) origin = ` a partir da proposta ${proposal.number}${proposal.version > 1 ? ` v${proposal.version}` : ""}`;
+    }
+    // projeto registrado já entregue ou cancelado não põe o cliente "em produção"
+    const clientMoved = isOpenStage(project.stage)
+      ? await advanceClientInFunnel(tx, { clientId: project.clientId, event: "projeto_criado", reason: `projeto “${project.title}” criado${origin}`, userId })
+      : null;
+    return { project, clientMoved };
+  });
 }
 
 /** Atualiza os dados do projeto. O checklist não passa por aqui (tem ações próprias). */

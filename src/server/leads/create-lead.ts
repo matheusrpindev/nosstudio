@@ -6,12 +6,20 @@ import { SERVICE_INTEREST_LABELS } from "@/lib/domain";
 import { onlyDigits, whatsAppLink } from "@/lib/format";
 import type { LeadFormData } from "@/lib/site/lead-form";
 
-/** Grava um lead vindo do site (dados já validados por `leadFormSchema`). */
-export async function createLead(data: LeadFormData, consentVersion: string): Promise<Lead> {
+/** Observação gravada no lead quando o formulário foi enviado rápido demais (aparece na ficha, em "Pedido"). */
+export const FAST_SUBMIT_NOTE = { label: "Atenção", value: "Enviado poucos segundos depois de abrir o formulário — pode ser automático. Confira antes de responder." } as const;
+
+/**
+ * Grava um lead vindo do site (dados já validados por `leadFormSchema`).
+ * `signals.tooFast`: o envio foi rápido demais para uma pessoa — o lead é gravado do mesmo jeito (nunca se perde
+ * um pedido de verdade), só leva uma observação para os sócios conferirem.
+ */
+export async function createLead(data: LeadFormData, consentVersion: string, signals: { tooFast?: boolean } = {}): Promise<Lead> {
   const details: LeadDetails = {};
   for (const key of ["eventType", "eventLocation", "guests", "startTime", "endTime", "coverage", "storymaker", "packageName"] as const) {
     if (data[key]) details[key] = data[key];
   }
+  if (signals.tooFast) details.extras = { [FAST_SUBMIT_NOTE.label]: FAST_SUBMIT_NOTE.value };
   const [lead] = await db
     .insert(leads)
     .values({
@@ -68,6 +76,7 @@ export function leadNotificationEmail(lead: Lead, panelUrl: string): { subject: 
     details.startTime || details.endTime ? `Horário: ${oneLine(details.startTime)}–${oneLine(details.endTime)}` : "",
     details.coverage ? `Cobertura: ${oneLine(details.coverage)}` : "",
     details.storymaker ? `Storymaker: ${oneLine(details.storymaker)}` : "",
+    ...Object.entries(details.extras ?? {}).map(([label, value]) => `${oneLine(label)}: ${oneLine(value)}`),
     lead.originPath ? `Página de origem: ${oneLine(lead.originPath)}` : "",
     "",
     lead.message ? `Mensagem:\n${lead.message}` : "(sem mensagem)",

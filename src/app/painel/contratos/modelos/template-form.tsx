@@ -4,6 +4,7 @@ import { ActionForm, Field, FieldRow, FormActions, SubmitButton, type FormAction
 import { Input, Select } from "@/components/ui/input";
 import { MarkdownField } from "@/components/ui/markdown-field";
 import { CONTRACT_KIND_LABELS, type ContractKind } from "@/lib/domain";
+import { ContractFieldsHelp } from "../fields-help";
 
 /** Formulário de modelo de contrato (criar e editar). */
 export function TemplateForm({
@@ -29,7 +30,8 @@ export function TemplateForm({
             <Input autoComplete="off" maxLength={40} defaultValue={template?.versionLabel} />
           </Field>
         </FieldRow>
-        <MarkdownField name="body" label="Texto do modelo" defaultValue={template?.body} rows={18} required maxLength={80000} hint="Use ## para títulos de cláusulas e listas para itens. Marque com [COLCHETES] o que muda a cada contrato." />
+        <MarkdownField name="body" label="Texto do modelo" defaultValue={template?.body} rows={18} required maxLength={80000} hint="Use ## para títulos de cláusulas e listas para itens. Para o que muda a cada contrato, use os campos automáticos abaixo, como {{cliente}} e {{valor_total}}." />
+        <ContractFieldsHelp />
         <FormActions>
           <SubmitButton pendingLabel="Salvando…">{submitLabel}</SubmitButton>
           <ButtonLink href="/painel/contratos/modelos" variant="ghost">

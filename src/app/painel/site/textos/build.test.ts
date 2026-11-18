@@ -137,6 +137,35 @@ describe("formulário → seção", () => {
   });
 });
 
+describe("botões (texto + link)", () => {
+  type Cta = { label: string; href: string };
+  const heroCta = (form: FormData) => {
+    const result = parseSectionForm("home", form);
+    return result.ok ? ((result.data.hero as { primaryCta: Cta }).primaryCta as Cta) : result.errors;
+  };
+
+  it("texto vazio esconde o botão: salva sem erro e guarda o link (como promete a dica do campo)", () => {
+    const form = encode("home", defaultSiteContent.home);
+    form.set("hero.primaryCta.label", "   ");
+    expect(heroCta(form)).toEqual({ label: "", href: "/servicos" });
+  });
+
+  it("texto vazio com link inválido também salva: o link inválido é descartado, sem mensagem de erro", () => {
+    const form = encode("home", defaultSiteContent.home);
+    form.set("hero.primaryCta.label", "");
+    form.set("hero.primaryCta.href", "javascript:alert(1)");
+    expect(heroCta(form)).toEqual({ label: "", href: "" });
+  });
+
+  it("com texto, o link continua sendo validado", () => {
+    const form = encode("home", defaultSiteContent.home);
+    form.set("hero.primaryCta.href", "contato");
+    const result = parseSectionForm("home", form);
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.errors["hero.primaryCta.href"]).toMatch(/Link inválido/);
+  });
+});
+
 describe("links e Instagram", () => {
   it("aceita caminhos do site, âncoras e endereços externos; recusa o resto", () => {
     expect(normalizeHref("")).toBe("");

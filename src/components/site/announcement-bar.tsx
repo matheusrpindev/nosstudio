@@ -21,11 +21,6 @@ export type AnnouncementView = {
   startsAt: string | null;
   endsAt: string | null;
   dismissible: boolean;
-  /**
-   * Agendado para os próximos minutos (calculado no servidor, quando a página foi gerada): sai ESCONDIDO no
-   * HTML e só o script/hidratação o revela na hora — sem JavaScript, um aviso nunca aparece antes do início.
-   */
-  pending?: boolean;
 };
 
 const storageKey = (item: Pick<AnnouncementView, "id" | "version">) => `nos:aviso:${item.id}:${item.version}`;
@@ -69,7 +64,8 @@ function pickVisible(items: AnnouncementView[], timeZone: string): number | null
 
 /**
  * A mesma regra de `pickVisible`, em JS puro, para rodar ANTES da primeira pintura: a página é estática
- * (cache), então o HTML traz todos os avisos candidatos e este script esconde os que não valem agora — sem
+ * (cache), então o HTML traz os avisos que estavam no ar quando ela foi gerada e este script esconde os que
+ * não valem mais agora (encerrados, fechados pelo visitante) — sem
  * piscar e sem erro de hidratação. Lê os dados dos atributos `data-*` do próprio HTML.
  */
 const PRE_PAINT = `(function(s){var r=s&&s.previousElementSibling;if(!r)return;var n="";try{var p=new Intl.DateTimeFormat("en-CA",{timeZone:r.getAttribute("data-tz"),year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()),g=function(t){for(var i=0;i<p.length;i++)if(p[i].type===t)return p[i].value;return"00"};n=g("year")+"-"+g("month")+"-"+g("day")+"T"+g("hour")+":"+g("minute")}catch(e){}var f=false,c=r.children;for(var i=0;i<c.length;i++){var a=c[i],b=a.getAttribute("data-start"),e=a.getAttribute("data-end"),k=a.getAttribute("data-key"),ok=!f;if(ok&&n&&b&&b>n)ok=false;if(ok&&n&&e&&e<=n)ok=false;if(ok&&k){try{if(localStorage.getItem(k)==="1")ok=false}catch(x){}}a.hidden=!ok;if(ok)f=true}})(document.currentScript)`;
@@ -79,9 +75,10 @@ const PRE_PAINT = `(function(s){var r=s&&s.previousElementSibling;if(!r)return;v
  * por id + versão). Rola junto com a página — não ocupa espaço fixo no celular.
  */
 export function AnnouncementBar({ items, timeZone }: { items: AnnouncementView[]; timeZone: string }) {
-  // No servidor: o primeiro aviso que já começou. No navegador: a conta que o script inline já aplicou ao HTML.
+  // No servidor: o primeiro aviso (a lista só traz avisos que já começaram — os agendados não saem do servidor
+  // antes da hora). No navegador: a mesma conta que o script inline já aplicou ao HTML.
   const [activeId, setActiveId] = useState<number | null>(() =>
-    typeof window === "undefined" ? (items.find((item) => !item.pending)?.id ?? null) : pickVisible(items, timeZone),
+    typeof window === "undefined" ? (items[0]?.id ?? null) : pickVisible(items, timeZone),
   );
 
   if (items.length === 0) return null;

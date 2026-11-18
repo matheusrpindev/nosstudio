@@ -198,8 +198,13 @@ export function parseSectionForm(key: SiteContentKey, formData: FormData): Parse
           const label = read(`${field.path}.label`).trim();
           const raw = read(`${field.path}.href`);
           const href = normalizeHref(raw);
+          if (!label) {
+            // Texto vazio = botão escondido no site (é o que a dica do campo promete). O link deixa de importar:
+            // fica guardado se for válido — para quando o texto voltar — e é descartado se não for.
+            setPath(data, field.path, { label: "", href: href ?? "" });
+            break;
+          }
           if (href === null) fail(`${field.path}.href`, HREF_ERROR);
-          if (href && !label) fail(`${field.path}.label`, "Escreva o texto do botão ou apague o link.");
           setPath(data, field.path, { label, href: href ?? raw.trim() });
           break;
         }

@@ -13,13 +13,14 @@ import {
   LEAD_STARTED_AT_FIELD,
   knownPackageName,
   type LeadSuccess,
-} from "@/lib/site/lead-form";
+} from "@/lib/site/lead-form-fields";
 import { submitLeadAction } from "@/server/leads/actions";
 import { Icon } from "./marks";
 
 /**
- * Formulário público de contato/orçamento. O contrato (nomes de campo, validação, anti-spam) está em
- * src/lib/site/lead-form.ts e a gravação em `submitLeadAction` — este componente só cuida da interface.
+ * Formulário público de contato/orçamento. O contrato está em src/lib/site/lead-form-fields.ts (nomes de campo,
+ * anti-spam) e src/lib/site/lead-form.ts (validação — só no servidor: este componente não importa o zod); a
+ * gravação, em `submitLeadAction`. Aqui fica só a interface.
  *
  * Variantes:
  * - "compact" (home): nome, WhatsApp, serviço de interesse, mensagem, consentimento.

@@ -27,9 +27,18 @@ type Props = { params: Promise<{ slug: string }> };
 const PLACEHOLDER_SLUG = "__sem-projetos__";
 
 /**
- * A página lê `params` fora de <Suspense> de propósito: assim um slug inexistente devolve um 404 de verdade
- * (com <Suspense>, o código de status já teria sido enviado como 200 quando `notFound()` rodasse). Os slugs
- * publicados saem pré-renderizados; por isso a validação "instant" é desligada para este segmento.
+ * A página lê `params` fora de <Suspense> de propósito: assim cada slug vira uma entrada própria no cache (ISR) e
+ * um slug inexistente é guardado como 404 de verdade. Os slugs publicados saem pré-renderizados; por isso a
+ * validação "instant" é desligada para este segmento.
+ *
+ * Limite conhecido do Next 16 com Cache Components (não é defeito desta página): a PRIMEIRA visita a um slug que
+ * ainda não está no cache — inexistente, ou de um projeto recém-despublicado/ocultado — é renderizada na hora, e
+ * nesse caso o Next já começou a resposta com status 200 quando `notFound()` roda (vale mesmo com a casca vazia e
+ * `instant = false`; ver "Status codes" em node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md).
+ * O corpo já é a página "não encontrada", com `<meta name="robots" content="noindex">`, e da segunda visita em
+ * diante a resposta sai do cache com 404. O único jeito documentado de devolver 404 já na primeira é checar o slug
+ * no Proxy (src/proxy.ts) antes da renderização — o que exigiria consultar o banco a cada visita, fora do cache de
+ * `src/server/site/queries.ts`. Por isso fica como está.
  */
 export const instant = false;
 

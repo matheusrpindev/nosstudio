@@ -47,7 +47,8 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
     await transporter.sendMail({ from: env.smtp.from, ...input });
     return { delivered: true };
   } catch (error) {
-    console.error("[mail] falha no envio", error);
+    // só a mensagem do erro: o objeto completo pode trazer o envelope (endereços) e a resposta do servidor
+    console.error("[mail] falha no envio:", (error as Error)?.message ?? "erro desconhecido");
     return { delivered: false, reason: "send_failed" };
   }
 }

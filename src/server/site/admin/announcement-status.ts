@@ -31,28 +31,40 @@ export function announcementStatuses(items: readonly AnnouncementTiming[], now: 
 }
 
 /**
- * Com quanta antecedência (minutos) um aviso agendado já pode entrar no HTML das páginas públicas — ainda
- * escondido. Precisa cobrir o tempo máximo que uma página fica em cache (`expire` do perfil "site" em
- * next.config.ts = 1 hora): assim o aviso aparece na hora marcada mesmo numa página gerada pouco antes, e
- * nunca vai para o código-fonte do site dias ou meses antes da data combinada.
+ * Quais avisos LIGADOS podem ser enviados ao navegador agora (lista para o cache das páginas públicas): só os
+ * que JÁ COMEÇARAM e ainda não terminaram. Um aviso agendado não sai do servidor nem um minuto antes — o
+ * texto, o link e a data não podem aparecer no código-fonte do site antes da hora combinada (nem escondidos).
+ * Para ele entrar no ar na hora, o cache das páginas é renovado no instante da próxima mudança
+ * (`secondsToNextAnnouncementChange`).
  */
-export const ANNOUNCEMENT_LEAD_MINUTES = 60;
+export function servableAnnouncements<T extends { startsAt: string | null; endsAt: string | null }>(rows: readonly T[], now: Date): T[] {
+  const current = nowLocal(now);
+  return rows.filter((row) => (!row.endsAt || row.endsAt > current) && (!row.startsAt || row.startsAt <= current));
+}
+
+/** Minutos entre dois horários locais `YYYY-MM-DDTHH:mm` (b − a), tratados como relógio de parede. */
+function localMinutesBetween(a: string, b: string): number {
+  return Math.round((Date.parse(`${b}:00Z`) - Date.parse(`${a}:00Z`)) / 60_000);
+}
 
 /**
- * Quais avisos LIGADOS podem ser enviados ao navegador agora (lista para o cache das páginas públicas):
- * - encerrados ficam de fora;
- * - agendados para além da antecedência ficam de fora (o texto não pode vazar antes da hora);
- * - agendados para os próximos minutos vão marcados com `pending: true`: o HTML os traz escondidos e só o
- *   script da barra (que confere o relógio do visitante no fuso do estúdio) os revela na hora certa.
+ * Em quantos segundos a lista de `servableAnnouncements` muda (o próximo início ou fim entre os avisos ligados).
+ * `null` = nenhuma mudança agendada. Usado para o cache das páginas públicas vencer na hora em que um aviso
+ * começa ou termina. (Conta pelo relógio de parede do estúdio; numa virada de horário de verão o valor pode
+ * errar por uma hora, mas ele é recalculado a cada renovação do cache, no máximo a cada 5 minutos.)
  */
-export function servableAnnouncements<T extends { startsAt: string | null; endsAt: string | null }>(
-  rows: readonly T[],
-  now: Date,
-  leadMinutes = ANNOUNCEMENT_LEAD_MINUTES,
-): (T & { pending: boolean })[] {
+export function secondsToNextAnnouncementChange(rows: readonly { startsAt: string | null; endsAt: string | null }[], now: Date): number | null {
   const current = nowLocal(now);
-  const horizon = nowLocal(new Date(now.getTime() + leadMinutes * 60_000));
-  return rows
-    .filter((row) => (!row.endsAt || row.endsAt > current) && (!row.startsAt || row.startsAt <= horizon))
-    .map((row) => ({ ...row, pending: Boolean(row.startsAt && row.startsAt > current) }));
+  let next: number | null = null;
+  for (const row of rows) {
+    if (row.endsAt && row.endsAt <= current) continue; // já encerrado: não muda mais
+    for (const boundary of [row.startsAt, row.endsAt]) {
+      if (!boundary || boundary <= current) continue;
+      const minutes = localMinutesBetween(current, boundary);
+      if (!Number.isFinite(minutes) || minutes <= 0) continue;
+      const seconds = minutes * 60 - now.getUTCSeconds();
+      if (next === null || seconds < next) next = seconds;
+    }
+  }
+  return next === null ? null : Math.max(1, next);
 }

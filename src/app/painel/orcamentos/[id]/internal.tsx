@@ -4,8 +4,9 @@
  * Etapa "Cálculo interno": custos, rateio, tributos, margem e notas. SÓ PAINEL — nada daqui vai para o PDF
  * (o PDF é gerado apenas a partir de `toPublicProposal()`, que nem recebe estes campos).
  */
-import { Lock, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowRight, Lock, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Field, FieldRow } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/input";
@@ -36,9 +37,19 @@ function PrivateBanner({ isTemplate }: { isTemplate: boolean }) {
   );
 }
 
-export function StepInterno({ draft, patch, numbers, errors, listsKey, isTemplate }: StepProps & { isTemplate: boolean }) {
+export function StepInterno({
+  draft,
+  patch,
+  numbers,
+  errors,
+  listsKey,
+  isTemplate,
+  onGoToScope,
+}: StepProps & { isTemplate: boolean; /** Abre a etapa Escopo (atalho do aviso "sem preço"). */ onGoToScope?: () => void }) {
   const { client, internal } = numbers;
+  // sem preço ao cliente não existe resultado nem margem: mostrar "R$ 0,00" e "—" só confunde
   const priceKnown = client.totalCents > 0;
+  const hasPricedItems = client.itemsTotalCents > 0;
 
   const byCategory = PROPOSAL_COST_CATEGORIES.map((category) => ({
     category,
@@ -46,6 +57,18 @@ export function StepInterno({ draft, patch, numbers, errors, listsKey, isTemplat
   })).filter((entry) => entry.cents > 0);
 
   const profitTone = internal.profitCents < 0 ? "text-perigo" : "text-sucesso";
+  const suggestedRow = (
+    <SumRow
+      label={
+        <span className="inline-flex items-center gap-1.5">
+          <Target aria-hidden="true" className="text-roxo size-4" />
+          Preço sugerido para a meta
+        </span>
+      }
+      value={internal.suggestedPriceCents !== null ? formatBRL(internal.suggestedPriceCents) : "—"}
+      hint={internal.suggestedPriceCents !== null ? `margem líquida de ${formatPercent(internal.targetMarginPercent)} com os custos atuais` : "defina uma margem-alvo maior que zero"}
+    />
+  );
 
   return (
     <div className="space-y-4">
@@ -126,62 +149,78 @@ export function StepInterno({ draft, patch, numbers, errors, listsKey, isTemplat
       <Card as="section" aria-labelledby="etapa-interno-resultado" className="border-roxo/25 border-2 border-dashed">
         <CardHeader id="etapa-interno-resultado" title="Resultado estimado" description="Atualiza enquanto você digita. Usa o preço ao cliente da etapa Preço." />
 
-        {!priceKnown ? (
-          <Alert tone="info" className="mb-3">
-            Ainda não há preço ao cliente (itens inclusos sem valor). Preencha o escopo para ver resultado e margem.
-          </Alert>
-        ) : null}
+        {priceKnown ? (
+          <>
+            {internal.belowTarget ? (
+              <Alert tone="alerta" role="status" className="mb-3" title="Abaixo da margem-alvo">
+                A margem líquida estimada é <strong>{pct(internal.netMarginPercent)}</strong> e a meta é <strong>{formatPercent(internal.targetMarginPercent)}</strong>.
+                {internal.suggestedPriceCents !== null ? (
+                  <>
+                    {" "}
+                    Para chegar na meta com estes custos, o preço seria <strong>{formatBRL(internal.suggestedPriceCents)}</strong>.
+                  </>
+                ) : (
+                  " Com estes tributos e esta meta somando 100% ou mais, nenhum preço atinge a meta."
+                )}
+              </Alert>
+            ) : null}
+            {internal.belowTarget === false ? (
+              <Alert tone="sucesso" className="mb-3">
+                Dentro da meta: margem líquida estimada de <strong>{pct(internal.netMarginPercent)}</strong> (meta {formatPercent(internal.targetMarginPercent)}).
+              </Alert>
+            ) : null}
 
-        {priceKnown && internal.belowTarget ? (
-          <Alert tone="alerta" role="status" className="mb-3" title="Abaixo da margem-alvo">
-            A margem líquida estimada é <strong>{pct(internal.netMarginPercent)}</strong> e a meta é <strong>{formatPercent(internal.targetMarginPercent)}</strong>.
-            {internal.suggestedPriceCents !== null ? (
-              <>
-                {" "}
-                Para chegar na meta com estes custos, o preço seria <strong>{formatBRL(internal.suggestedPriceCents)}</strong>.
-              </>
-            ) : (
-              " Com estes tributos e esta meta somando 100% ou mais, nenhum preço atinge a meta."
-            )}
-          </Alert>
-        ) : null}
-        {priceKnown && internal.belowTarget === false ? (
-          <Alert tone="sucesso" className="mb-3">
-            Dentro da meta: margem líquida estimada de <strong>{pct(internal.netMarginPercent)}</strong> (meta {formatPercent(internal.targetMarginPercent)}).
-          </Alert>
-        ) : null}
-
-        <dl className="divide-areia divide-y">
-          <SumRow label="Preço ao cliente" value={formatBRL(client.totalCents)} />
-          <SumRow label="Custo direto" value={formatBRL(internal.directCostCents)} />
-          <SumRow label="Rateio de despesas" value={formatBRL(internal.overheadCents)} />
-          <SumRow label="Tributos estimados" value={formatBRL(internal.taxCents)} hint={`${formatPercent(draft.taxPercent)} do preço`} />
-          <SumRow label="Custo total" value={formatBRL(internal.totalCostCents)} hint="direto + rateio + tributos" />
-          <SumRow
-            strong
-            label={
-              <span className="inline-flex items-center gap-1.5">
-                {internal.profitCents < 0 ? <TrendingDown aria-hidden="true" className="text-perigo size-4" /> : <TrendingUp aria-hidden="true" className="text-sucesso size-4" />}
-                Resultado estimado
-              </span>
-            }
-            value={<span className={profitTone}>{formatBRL(internal.profitCents)}</span>}
-            hint="preço − custo total"
-          />
-          <SumRow label="Margem de contribuição" value={pct(internal.contributionMarginPercent)} hint="(preço − custos diretos − tributos) ÷ preço" />
-          <SumRow label="Margem líquida" value={<span className={profitTone}>{pct(internal.netMarginPercent)}</span>} hint="resultado ÷ preço" />
-          <SumRow label="Markup" value={pct(internal.markupPercent)} hint="resultado ÷ custo total" />
-          <SumRow
-            label={
-              <span className="inline-flex items-center gap-1.5">
-                <Target aria-hidden="true" className="text-roxo size-4" />
-                Preço sugerido para a meta
-              </span>
-            }
-            value={internal.suggestedPriceCents !== null ? formatBRL(internal.suggestedPriceCents) : "—"}
-            hint={internal.suggestedPriceCents !== null ? `margem líquida de ${formatPercent(internal.targetMarginPercent)} com os custos atuais` : "defina uma margem-alvo maior que zero"}
-          />
-        </dl>
+            <dl className="divide-areia divide-y">
+              <SumRow label="Preço ao cliente" value={formatBRL(client.totalCents)} />
+              <SumRow label="Custo direto" value={formatBRL(internal.directCostCents)} />
+              <SumRow label="Rateio de despesas" value={formatBRL(internal.overheadCents)} />
+              <SumRow label="Tributos estimados" value={formatBRL(internal.taxCents)} hint={`${formatPercent(draft.taxPercent)} do preço`} />
+              <SumRow label="Custo total" value={formatBRL(internal.totalCostCents)} hint="direto + rateio + tributos" />
+              <SumRow
+                strong
+                label={
+                  <span className="inline-flex items-center gap-1.5">
+                    {internal.profitCents < 0 ? <TrendingDown aria-hidden="true" className="text-perigo size-4" /> : <TrendingUp aria-hidden="true" className="text-sucesso size-4" />}
+                    Resultado estimado
+                  </span>
+                }
+                value={<span className={profitTone}>{formatBRL(internal.profitCents)}</span>}
+                hint="preço − custo total"
+              />
+              <SumRow label="Margem de contribuição" value={pct(internal.contributionMarginPercent)} hint="(preço − custos diretos − tributos) ÷ preço" />
+              <SumRow label="Margem líquida" value={<span className={profitTone}>{pct(internal.netMarginPercent)}</span>} hint="resultado ÷ preço" />
+              <SumRow label="Markup" value={pct(internal.markupPercent)} hint="resultado ÷ custo total" />
+              {suggestedRow}
+            </dl>
+          </>
+        ) : (
+          <>
+            <Alert
+              tone="info"
+              role="status"
+              className="mb-3"
+              title={hasPricedItems ? "O preço ao cliente está zerado" : "Preencha os itens na etapa Escopo para ver o resultado"}
+              action={
+                onGoToScope && !hasPricedItems ? (
+                  <Button variant="secondary" iconRight={<ArrowRight />} onClick={onGoToScope}>
+                    Ir para Escopo
+                  </Button>
+                ) : undefined
+              }
+            >
+              {hasPricedItems
+                ? "O desconto está igual ao valor dos itens. Ajuste o desconto na etapa Preço ao cliente para ver resultado, margem e markup."
+                : "Resultado, margem e markup dependem do preço ao cliente, que é a soma dos itens inclusos. Enquanto os itens estiverem sem valor, não há o que calcular."}
+            </Alert>
+            {internal.directCostCents + internal.overheadCents > 0 ? (
+              <dl className="divide-areia divide-y">
+                <SumRow label="Custo direto" value={formatBRL(internal.directCostCents)} />
+                <SumRow label="Rateio de despesas" value={formatBRL(internal.overheadCents)} />
+                {suggestedRow}
+              </dl>
+            ) : null}
+          </>
+        )}
 
         <p className="bg-lavanda-claro rounded-campo text-grafite mt-4 px-4 py-3 text-sm leading-relaxed">
           <strong>Margem não é markup.</strong> A margem é o lucro dividido pelo <em>preço</em>; o markup é o lucro dividido pelo <em>custo</em>. Um markup de 50% equivale a

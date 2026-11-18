@@ -30,7 +30,7 @@ export default async function ContractTemplatesPage() {
     <>
       <PageHeader
         title="Modelos de contrato"
-        description="Textos prontos por tipo de contrato. Ao criar um contrato, você escolhe um modelo e o texto é copiado para ajustar."
+        description="Textos prontos por tipo de contrato. Ao criar um contrato, você escolhe um modelo: o texto é copiado e os campos automáticos (como {{cliente}} e {{valor_total}}) são preenchidos com os dados do cliente e da proposta."
         back={{ href: "/painel/contratos", label: "Contratos" }}
         actions={
           <ButtonLink href="/painel/contratos/modelos/novo" icon={<Plus />}>

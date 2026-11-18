@@ -9,6 +9,7 @@ import { requireAdmin } from "@/lib/auth";
 import { USER_ROLE_LABELS, USER_ROLES } from "@/lib/domain";
 import { f, formToObject, parseForm } from "@/server/action";
 import { createUser, resetUserPassword, setUserActive, updateUser } from "@/server/config/users";
+import { getSetting } from "@/server/settings";
 
 /** O que a tela recebe depois de criar/redefinir: a senha temporária, mostrada uma única vez. */
 export type TemporaryCredentials = { name: string; email: string; password: string };
@@ -97,5 +98,8 @@ export async function setUserActiveAction(_prev: ActionState, formData: FormData
     summary: active ? `Reativou a conta de ${result.user.name}` : `Desativou a conta de ${result.user.name} e encerrou as sessões`,
   });
   refresh();
-  return actionOk(active ? "Conta reativada." : "Conta desativada.");
+  if (active) return actionOk("Conta reativada.");
+  // A lista de avisos de novo lead é separada das contas: desativar a conta não tira o e-mail de lá.
+  const stillNotified = (await getSetting("notifications")).leadEmails.some((email) => email.toLowerCase() === result.user.email.toLowerCase());
+  return actionOk(stillNotified ? "Conta desativada. O e-mail dela ainda recebe os avisos de novo lead: tire-o em Configurações › Notificações." : "Conta desativada.");
 }

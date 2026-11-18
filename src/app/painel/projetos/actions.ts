@@ -9,7 +9,7 @@ import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
 import { requireUser } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
-import { BACKUP_STATUSES, PROJECT_STAGE_LABELS, PROJECT_STAGES, SERVICE_INTERESTS } from "@/lib/domain";
+import { BACKUP_STATUSES, CLIENT_STATUS_LABELS, PROJECT_STAGE_LABELS, PROJECT_STAGES, SERVICE_INTERESTS } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
 import { f, formToObject, jsonField, parseForm, parseInput } from "@/server/action";
 import {
@@ -24,6 +24,7 @@ import {
   toggleChecklistItem,
   updateProject,
 } from "@/server/projects/admin";
+import { funnelAdvanceNotice } from "@/server/proposals/funnel-logic";
 
 const MAX_CHECKLIST_ITEMS = 100;
 
@@ -96,7 +97,7 @@ export async function createProjectAction(_prev: ActionState, formData: FormData
   if (Object.keys(refErrors).length > 0) {
     return actionError(refErrors._form ?? "Confira os campos destacados.", { fieldErrors: refErrors, values });
   }
-  const project = await createProject(parsed.data, todayISO());
+  const { project, clientMoved } = await createProject(parsed.data, todayISO(), user.id);
   await logAudit({
     user,
     action: "create",
@@ -104,7 +105,16 @@ export async function createProjectAction(_prev: ActionState, formData: FormData
     entityId: project.id,
     summary: project.proposalId ? `Criou um projeto a partir da proposta #${project.proposalId}` : "Criou um projeto",
   });
-  await flashToast("Projeto criado.");
+  if (clientMoved) {
+    await logAudit({
+      user,
+      action: "status",
+      entity: "client",
+      entityId: clientMoved.clientId,
+      summary: `Status do cliente: ${CLIENT_STATUS_LABELS[clientMoved.from]} → ${CLIENT_STATUS_LABELS[clientMoved.to]} (automático, projeto #${project.id})`,
+    });
+  }
+  await flashToast(clientMoved ? `Projeto criado. ${funnelAdvanceNotice(clientMoved.to)}` : "Projeto criado.");
   redirect(`/painel/projetos/${project.id}`);
 }
 

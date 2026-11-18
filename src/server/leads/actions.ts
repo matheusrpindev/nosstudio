@@ -7,11 +7,12 @@ import { users } from "@/db/schema";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { consumeRateLimit } from "@/lib/auth/rate-limit";
 import { anonymize } from "@/lib/auth/tokens";
+import { rateLimitIp } from "@/lib/client-ip";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { getClientIp } from "@/lib/request";
-import { rateLimitIp } from "@/lib/client-ip";
-import { knownPackageName, LEAD_HONEYPOT_FIELD, LEAD_MIN_FILL_MS, LEAD_STARTED_AT_FIELD, leadFormSchema, type LeadSuccess } from "@/lib/site/lead-form";
+import { leadFormSchema } from "@/lib/site/lead-form";
+import { knownPackageName, leadSpamSignals, type LeadSuccess } from "@/lib/site/lead-form-fields";
 import { parseForm } from "@/server/action";
 import { getSetting } from "@/server/settings";
 import { getPackages, getSiteContent } from "@/server/site/queries";
@@ -21,7 +22,8 @@ const MINUTE = 60 * 1000;
 
 /**
  * Envio do formulário público de contato/orçamento. Não exige login (é a porta de entrada do site).
- * Proteções: campo-isca, tempo mínimo de preenchimento, limite por IP, validação e limites de tamanho.
+ * Proteções: campo-isca, validação e limites de tamanho, limite por IP. Envio rápido demais NÃO é descartado
+ * (uma pessoa com preenchimento automático consegue ser rápida): é gravado e sinalizado na ficha do lead.
  */
 export async function submitLeadAction(_prev: ActionState<LeadSuccess>, formData: FormData): Promise<ActionState<LeadSuccess>> {
   const content = await getSiteContent();
@@ -32,12 +34,11 @@ export async function submitLeadAction(_prev: ActionState<LeadSuccess>, formData
       whatsappUrl,
     });
 
-  // Robôs: resposta de "sucesso" sem gravar nada (não damos pista de que foram detectados).
-  const honeypot = formData.get(LEAD_HONEYPOT_FIELD);
-  const startedAt = Number(formData.get(LEAD_STARTED_AT_FIELD));
-  const tooFast = Number.isFinite(startedAt) && startedAt > 0 && Date.now() - startedAt < LEAD_MIN_FILL_MS;
-  if ((typeof honeypot === "string" && honeypot.trim() !== "") || tooFast) return success(null);
+  // Campo-isca preenchido = robô: resposta de "sucesso" sem gravar nada (não damos pista de que foi detectado).
+  const signals = leadSpamSignals(formData, Date.now());
+  if (signals.honeypot) return success(null);
 
+  // Validação ANTES de qualquer outra decisão: quem errou um campo (ou enviou vazio) sempre vê os erros.
   const parsed = parseForm(leadFormSchema, formData);
   if (!parsed.ok) return parsed.state as ActionState<LeadSuccess>;
 
@@ -59,7 +60,7 @@ export async function submitLeadAction(_prev: ActionState<LeadSuccess>, formData
   const packages = await getPackages();
   const packageName = knownPackageName(parsed.data.packageName, [...packages.plans, ...packages.standalone].map((pkg) => pkg.name));
 
-  const lead = await createLead({ ...parsed.data, packageName }, content.privacyPage.version);
+  const lead = await createLead({ ...parsed.data, packageName }, content.privacyPage.version, { tooFast: signals.tooFast });
 
   // Aviso por e-mail aos sócios, depois da resposta ao visitante (o lead já está salvo; falha aqui não o perde).
   after(async () => {

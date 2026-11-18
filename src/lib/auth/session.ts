@@ -1,11 +1,12 @@
 import "server-only";
-import { and, eq, gt, lt, ne } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, lt, ne } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { cache } from "react";
 import { db } from "@/db";
 import { sessions, users, type User } from "@/db/schema";
 import { env } from "@/lib/env";
+import { pruneRateLimits } from "./rate-limit";
 import { deviceToken, generateToken, hasDeviceToken, hashToken, withDeviceToken } from "./tokens";
 
 const secureCookies = env.isProd || env.siteUrl.startsWith("https://");
@@ -17,6 +18,8 @@ const DAY = 24 * 60 * 60 * 1000;
 const IDLE_LIFETIME = 30 * DAY;
 /** …e é renovada quando faltar menos da metade disso. */
 const RENEW_THRESHOLD = 15 * DAY;
+/** Máximo de sessões abertas por conta: ao entrar, as mais antigas além deste número são encerradas. */
+export const MAX_SESSIONS_PER_USER = 10;
 
 export const sessionCookieOptions = {
   httpOnly: true,
@@ -53,8 +56,12 @@ export type CurrentUser = Pick<User, "id" | "name" | "email" | "role" | "mustCha
 
 /** Cria a sessão no banco e grava o cookie. Só pode ser chamado em Server Action / Route Handler. */
 export async function createSession(userId: number, meta: { ip?: string; userAgent?: string } = {}) {
+  const store = await cookies();
   const token = generateToken();
   const now = new Date();
+  // Entrou de novo no mesmo navegador: a sessão do cookie antigo é substituída (não fica uma linha por login).
+  const previous = store.get(SESSION_COOKIE)?.value;
+  if (previous && previous.length <= 200) await db.delete(sessions).where(eq(sessions.id, hashToken(previous)));
   await db.insert(sessions).values({
     id: hashToken(token),
     userId,
@@ -63,9 +70,29 @@ export async function createSession(userId: number, meta: { ip?: string; userAge
     ip: meta.ip ?? null,
     userAgent: meta.userAgent ?? null,
   });
-  (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions);
-  // limpeza oportunista de sessões vencidas
+  store.set(SESSION_COOKIE, token, sessionCookieOptions);
+  // Faxina oportunista a cada login; nenhuma falha aqui pode atrapalhar a entrada.
+  await pruneSessions(userId, now).catch(() => undefined);
+  await pruneRateLimits().catch(() => undefined);
+}
+
+/**
+ * Faxina das sessões: apaga as vencidas (de todas as contas) e, para `userId`, mantém só as
+ * `MAX_SESSIONS_PER_USER` usadas mais recentemente — as mais antigas são encerradas. Assim "Minha conta ›
+ * Sessões ativas" não cresce sem fim. Devolve quantas sessões desta conta foram encerradas pelo limite.
+ */
+export async function pruneSessions(userId: number, now: Date = new Date(), keep = MAX_SESSIONS_PER_USER): Promise<number> {
   await db.delete(sessions).where(lt(sessions.expiresAt, now));
+  const extra = await db
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(eq(sessions.userId, userId))
+    .orderBy(desc(sessions.lastSeenAt), desc(sessions.createdAt))
+    .limit(1000)
+    .offset(Math.max(1, keep));
+  if (extra.length === 0) return 0;
+  await db.delete(sessions).where(inArray(sessions.id, extra.map((row) => row.id)));
+  return extra.length;
 }
 
 /**

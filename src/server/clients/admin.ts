@@ -36,6 +36,7 @@ import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatPhone, onlyDigits } from "@/lib/format";
 import { clientNumbers } from "@/lib/proposals/calc";
 import { buildCsv } from "./csv";
+import { subjectLeadsWhere } from "./subject-data";
 
 export const CLIENTS_PAGE_SIZE = 20;
 /** Teto de cartões no funil (o quadro não pagina). */
@@ -487,23 +488,19 @@ export async function addInteraction(input: { clientId: number; userId: number; 
   });
 }
 
-/** Quantos pedidos recebidos pelo site (leads) estão ligados a este cliente — eles guardam nome, WhatsApp, e-mail e mensagem. */
-export async function countClientLeads(clientId: number): Promise<number> {
-  const [row] = await db.select({ total: count() }).from(leads).where(eq(leads.clientId, clientId));
-  return row?.total ?? 0;
-}
-
 /**
- * Exclui o cliente. O histórico é apagado (cascata); orçamentos, projetos etc. ficam sem cliente (set null).
- * `withLeads`: apaga também os leads ligados ao cliente (os dados que a pessoa enviou pelo site) — necessário
- * para atender a um pedido de eliminação (LGPD); sem isso eles continuam em Leads, só que sem vínculo.
+ * Exclui o cliente. O histórico de atendimento e os itens do calendário de conteúdo dele são apagados (cascata);
+ * orçamentos, projetos, contratos, lançamentos, compromissos e tarefas ficam sem cliente (set null).
+ * `withLeads`: apaga também os pedidos que a pessoa enviou pelo site (leads ligados ao cadastro ou com o mesmo
+ * WhatsApp/e-mail — ver `subjectLeadsWhere`) — necessário para atender a um pedido de eliminação (LGPD); sem
+ * isso eles continuam em Leads, só que sem vínculo.
  */
 export async function deleteClient(id: number, options: { withLeads?: boolean } = {}): Promise<{ id: number; leadsDeleted: number } | null> {
   return db.transaction(async (tx) => {
-    const [existing] = await tx.select({ id: clients.id }).from(clients).where(eq(clients.id, id));
+    const [existing] = await tx.select({ id: clients.id, whatsapp: clients.whatsapp, email: clients.email }).from(clients).where(eq(clients.id, id));
     if (!existing) return null;
     // os leads primeiro: depois de excluir o cliente o vínculo (client_id) já teria virado nulo
-    const removedLeads = options.withLeads ? await tx.delete(leads).where(eq(leads.clientId, id)).returning({ id: leads.id }) : [];
+    const removedLeads = options.withLeads ? await tx.delete(leads).where(subjectLeadsWhere(existing)).returning({ id: leads.id }) : [];
     await tx.delete(clients).where(eq(clients.id, id));
     return { id, leadsDeleted: removedLeads.length };
   });

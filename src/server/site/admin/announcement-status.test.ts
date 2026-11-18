@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANNOUNCEMENT_LEAD_MINUTES, announcementStatuses, servableAnnouncements } from "./announcement-status";
+import { announcementStatuses, secondsToNextAnnouncementChange, servableAnnouncements } from "./announcement-status";
 
 const NOW = "2026-11-18T10:00";
 const item = (id: number, over: Partial<{ enabled: boolean; startsAt: string | null; endsAt: string | null }> = {}) => ({
@@ -37,31 +37,20 @@ describe("announcementStatuses", () => {
 });
 
 describe("servableAnnouncements (o que pode ir para o HTML público)", () => {
-  // 18/11/2026 10:00 em São Paulo (UTC-3)
-  const now = new Date("2026-11-18T13:00:00Z");
+  // 18/11/2026 10:00:20 em São Paulo (UTC-3)
+  const now = new Date("2026-11-18T13:00:20Z");
   const row = (id: number, startsAt: string | null, endsAt: string | null = null) => ({ id, startsAt, endsAt, message: `aviso ${id}` });
 
-  it("aviso agendado para o futuro NÃO sai do servidor (nem texto, nem data)", () => {
-    const result = servableAnnouncements([row(1, "2027-06-01T09:00"), row(2, "2026-11-18T11:01"), row(3, "2026-11-19T10:00")], now);
+  it("aviso agendado NÃO sai do servidor — nem meses, nem horas, nem um minuto antes", () => {
+    const result = servableAnnouncements([row(1, "2027-06-01T09:00"), row(2, "2026-11-18T11:00"), row(3, "2026-11-19T10:00"), row(4, "2026-11-18T10:01")], now);
     expect(result).toEqual([]);
   });
 
-  it("aviso sem período ou já iniciado sai normalmente, sem marca de pendente", () => {
+  it("aviso sem período ou já iniciado sai normalmente (inclusive no minuto exato do início)", () => {
     const result = servableAnnouncements([row(1, null), row(2, "2026-11-18T10:00"), row(3, "2026-11-01T00:00", "2026-12-01T00:00")], now);
-    expect(result.map((item) => [item.id, item.pending])).toEqual([
-      [1, false],
-      [2, false],
-      [3, false],
-    ]);
-  });
-
-  it("aviso que começa dentro da antecedência sai marcado como pendente (o HTML o traz escondido)", () => {
-    expect(ANNOUNCEMENT_LEAD_MINUTES).toBe(60);
-    const result = servableAnnouncements([row(1, "2026-11-18T10:01"), row(2, "2026-11-18T11:00")], now);
-    expect(result.map((item) => [item.id, item.pending])).toEqual([
-      [1, true],
-      [2, true],
-    ]);
+    expect(result.map((item) => item.id)).toEqual([1, 2, 3]);
+    // a saída não ganha campos extras
+    expect(result[0]).toEqual(row(1, null));
   });
 
   it("aviso encerrado fica de fora", () => {
@@ -70,7 +59,33 @@ describe("servableAnnouncements (o que pode ir para o HTML público)", () => {
   });
 
   it("mantém a ordem recebida", () => {
-    const result = servableAnnouncements([row(5, null), row(2, "2027-01-01T00:00"), row(9, "2026-11-18T10:30"), row(1, null)], now);
+    const result = servableAnnouncements([row(5, null), row(2, "2027-01-01T00:00"), row(9, "2026-11-18T09:30"), row(1, null)], now);
     expect(result.map((item) => item.id)).toEqual([5, 9, 1]);
+  });
+});
+
+describe("secondsToNextAnnouncementChange (quando o cache das páginas precisa vencer)", () => {
+  const now = new Date("2026-11-18T13:00:20Z"); // 10:00:20 em São Paulo
+  const row = (startsAt: string | null, endsAt: string | null = null) => ({ startsAt, endsAt });
+
+  it("sem agendamento nem fim marcado: nada a esperar", () => {
+    expect(secondsToNextAnnouncementChange([], now)).toBeNull();
+    expect(secondsToNextAnnouncementChange([row(null), row("2026-11-01T00:00")], now)).toBeNull();
+  });
+
+  it("devolve os segundos até o próximo início", () => {
+    expect(secondsToNextAnnouncementChange([row("2026-11-18T10:02")], now)).toBe(100);
+    expect(secondsToNextAnnouncementChange([row("2026-11-18T10:01")], now)).toBe(40);
+    expect(secondsToNextAnnouncementChange([row("2026-11-19T10:00")], now)).toBe(24 * 3600 - 20);
+  });
+
+  it("considera também o fim de um aviso no ar e escolhe o que vier primeiro", () => {
+    expect(secondsToNextAnnouncementChange([row(null, "2026-11-18T10:05"), row("2026-11-18T10:30")], now)).toBe(280);
+    expect(secondsToNextAnnouncementChange([row("2026-11-18T10:03", "2026-11-18T12:00"), row(null, "2026-11-18T10:05")], now)).toBe(160);
+  });
+
+  it("aviso já encerrado não conta; nunca devolve zero ou negativo", () => {
+    expect(secondsToNextAnnouncementChange([row("2026-11-01T00:00", "2026-11-18T10:00")], now)).toBeNull();
+    expect(secondsToNextAnnouncementChange([row("2026-11-18T10:01")], new Date("2026-11-18T13:00:59.900Z"))).toBe(1);
   });
 });

@@ -48,6 +48,8 @@ export default async function ProposalEditorPage({ params }: { params: Promise<{
     project: data.project,
     contractId: proposal.contractId,
     contracts: data.contracts,
+    finance: data.finance,
+    today: todayISO(),
     defaultTemplateName: isTemplate ? templateName : `${proposal.title}${data.client ? ` — ${data.client.name}` : ""}`.slice(0, 120),
   };
 

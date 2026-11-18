@@ -1,4 +1,8 @@
-/** Rótulos em português da trilha de auditoria. Valores desconhecidos aparecem como estão. */
+/**
+ * Rótulos em português da trilha de auditoria. Toda ação e entidade gravada por `logAudit()` precisa estar aqui
+ * (labels.test.ts varre o código e falha se aparecer uma sem rótulo). Valores desconhecidos — registros antigos,
+ * por exemplo — aparecem como estão.
+ */
 export const ACTION_LABELS: Record<string, string> = {
   activate: "Reativou",
   create: "Criou",
@@ -6,12 +10,19 @@ export const ACTION_LABELS: Record<string, string> = {
   delete: "Excluiu",
   export: "Exportou",
   login: "Entrou",
+  login_falhou: "Login recusado",
   logout: "Saiu",
   password_change: "Trocou a senha",
-  password_reset: "Redefiniu a senha",
+  password_reset: "Gerou nova senha",
   pdf: "Gerou PDF",
+  restore: "Restaurou o padrão",
+  senha_alterada: "Trocou a senha",
+  senha_redefinida: "Redefiniu a senha",
+  senha_reset_pedido: "Pediu redefinição de senha",
+  sessoes_encerradas: "Encerrou sessões",
   status: "Mudou o status",
   update: "Alterou",
+  upload: "Enviou arquivo",
 };
 
 export const ENTITY_LABELS: Record<string, string> = {
@@ -21,18 +32,23 @@ export const ENTITY_LABELS: Record<string, string> = {
   brand: "Marca",
   brand_asset: "Marca",
   client: "Cliente",
+  client_interaction: "Atendimento",
   content: "Conteúdo",
   content_item: "Conteúdo",
   contract: "Contrato",
+  contract_template: "Modelo de contrato",
   dados: "Dados",
   faq: "FAQ",
   finance: "Financeiro",
   finance_entry: "Financeiro",
+  finance_reserve: "Reserva de caixa",
   lead: "Lead",
+  media: "Arquivo",
   package: "Pacote",
   portfolio: "Portfólio",
   project: "Projeto",
   proposal: "Orçamento",
+  proposal_template: "Modelo de orçamento",
   service: "Serviço",
   settings: "Configurações",
   site_content: "Texto do site",

@@ -103,7 +103,7 @@ function LinkControl({ field, ctx }: { field: Extract<FieldSpec, { type: "link" 
     <fieldset className="border-areia rounded-campo min-w-0 border p-4">
       <legend className="label px-1">{field.label}</legend>
       <div className="grid gap-4 sm:grid-cols-[1fr_1.2fr]">
-        <Field name={`${field.path}.label`} label="Texto do botão" hint={`Até ${maxLengthAt(ctx.sectionKey, `${field.path}.label`) ?? 80} caracteres. Deixe vazio para esconder o botão.`}>
+        <Field name={`${field.path}.label`} label="Texto do botão" hint={`Até ${maxLengthAt(ctx.sectionKey, `${field.path}.label`) ?? 80} caracteres. Deixe vazio para esconder o botão (o link abaixo fica guardado, mas não aparece no site).`}>
           <Input defaultValue={asText(value.label)} autoComplete="off" />
         </Field>
         <Field name={`${field.path}.href`} label="Para onde leva" hint="Escolha uma página da lista ou escreva um endereço (https://…).">
@@ -345,7 +345,7 @@ export function SectionForm({
         <SubmitButton icon={<Save />} pendingLabel="Salvando…">
           Salvar alterações
         </SubmitButton>
-        <p className="text-cinza hidden text-sm sm:block">As mudanças aparecem no site assim que você salva.</p>
+        <p className="text-cinza min-w-0 text-[0.8125rem] leading-snug sm:text-sm">As mudanças aparecem no site assim que você salva.</p>
       </div>
     </ActionForm>
   );
