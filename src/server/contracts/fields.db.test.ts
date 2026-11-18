@@ -3,7 +3,7 @@ import { inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { clients, projects, proposalCosts, proposalItems, proposalPayments, proposals } from "@/db/schema";
-import { fillContractBody, loadContractFieldValues } from "./admin";
+import { fillContractBody, getLinkDefaults, loadContractFieldValues } from "./admin";
 
 const clientIds: number[] = [];
 const proposalIds: number[] = [];
@@ -92,5 +92,23 @@ describe("campos automáticos do contrato (banco)", () => {
     expect(await fillContractBody("{{cliente}} em {{data_hoje}}", { clientId: null, proposalId: null, projectId: null }, "2026-11-18")).toBe("{{cliente}} em 18/11/2026");
     expect(await fillContractBody("{{cliente}}", { clientId: 999_999, proposalId: 999_999, projectId: 999_999 }, "2026-11-18")).toBe("{{cliente}}");
     expect(await fillContractBody("Texto sem campos.", { clientId: client.id, proposalId: null, projectId: null }, "2026-11-18")).toBe("Texto sem campos.");
+  });
+
+  it("vínculos sugeridos: a proposta puxa o projeto dela e o projeto puxa a proposta de origem (só do mesmo cliente)", async () => {
+    const { client, proposal, project } = await scenario();
+    await db.update(proposals).set({ projectId: project.id }).where(inArray(proposals.id, [proposal.id]));
+
+    expect(await getLinkDefaults({ proposalId: proposal.id })).toEqual({ clientId: client.id, proposalId: proposal.id, projectId: project.id, title: "Pacote mensal de conteúdo" });
+    expect(await getLinkDefaults({ projectId: project.id })).toEqual({ clientId: client.id, proposalId: proposal.id, projectId: project.id, title: "[Teste] Conteúdo Aurora" });
+    expect(await getLinkDefaults({})).toEqual({ clientId: null, proposalId: null, projectId: null, title: "" });
+
+    // projeto de OUTRO cliente apontando para a proposta: não é sugerido junto
+    const [other] = await db.insert(clients).values({ name: "[Teste] Outro cliente" }).returning();
+    clientIds.push(other.id);
+    const [foreign] = await db.insert(projects).values({ title: "[Teste] Projeto de outro cliente", clientId: other.id, proposalId: proposal.id }).returning();
+    projectIds.push(foreign.id);
+    expect(await getLinkDefaults({ projectId: foreign.id })).toEqual({ clientId: other.id, proposalId: null, projectId: foreign.id, title: "[Teste] Projeto de outro cliente" });
+    // proposta inexistente / projeto apagado: sem vínculo extra, sem erro
+    expect(await getLinkDefaults({ proposalId: 999_999, projectId: 999_999 })).toEqual({ clientId: null, proposalId: null, projectId: null, title: "" });
   });
 });
