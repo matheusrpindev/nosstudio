@@ -58,7 +58,19 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      { source: "/:path*", headers: securityHeaders },
+      // Tudo, exceto os arquivos enviados (que têm política própria logo abaixo).
+      { source: "/((?!media/).*)", headers: securityHeaders },
+      // Uploads: nada servido daqui pode executar como página (os cabeçalhos do next.config têm
+      // precedência sobre os da rota, então a política dos arquivos é definida aqui).
+      {
+        source: "/media/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
       // Nada do painel (nem login) deve ser indexado ou guardado em cache compartilhado.
       {
         source: "/painel/:path*",

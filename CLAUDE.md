@@ -48,7 +48,9 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
   - **Site público**: nunca consulte o banco direto na página. Use as funções de `src/server/site/queries.ts`
     (todas `"use cache"` + tag `site`). As páginas ficam estáticas e o painel as atualiza com `invalidateSite()`.
   - **Painel**: `src/app/painel/layout.tsx` já envolve tudo em `<Suspense>` e exporta `instant = false`. As páginas
-    do painel são `async`, começam com `await requireUser()` e leem o banco direto (sem cache).
+    do painel são `async`, começam com `await requireUser()` e leem o banco direto (sem cache). `requireUser()`
+    já chama `connection()` por dentro (a sessão depende do horário), então depois dele `todayISO()`/`new Date()`
+    são seguros. Ler só `cookies()` NÃO basta: o Next pré-renderiza a "casca" por sessão e acusa `new Date()`.
   - Não use `export const dynamic/revalidate/fetchCache` (não existem com Cache Components) nem `unstable_cache`.
 - Depois de uma mutação numa Server Action: `refresh()` (de `next/cache`) para atualizar a tela atual, ou
   `redirect()`. Se a mudança aparece no site público: `invalidateSite()` (de `@/server/site/cache`).
@@ -67,7 +69,9 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
 
 - **Toda** página, Server Action e Route Handler do painel começa com `await requireUser()` (ou `requireAdmin()`),
   de `@/lib/auth`. O proxy não é barreira de segurança. Actions revalidam tudo que vem do cliente com zod.
-- Route Handlers que alteram dados conferem `isSameOrigin(request)` (`@/lib/request`).
+- Route Handlers do painel ficam em `src/app/painel/api/**` e começam com `authorize(request)` de
+  `src/app/painel/api/media/guard.ts` (sessão + mesma origem; responde 401/403 em JSON — `requireUser` redireciona
+  e não serve para APIs). Os de leitura (ex.: PDF) usam `getCurrentUser()` e respondem 401/404 sem sessão.
 - **Custos internos, margens, notas internas e descontos não aprovados de propostas nunca saem do painel** — o PDF
   e qualquer página pública recebem apenas um objeto "público" montado por uma função única e testada.
 - Nada de `dangerouslySetInnerHTML` com conteúdo vindo do banco. Texto rico = markdown via `<Markdown>`.

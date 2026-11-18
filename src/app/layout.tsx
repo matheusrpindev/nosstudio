@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { env } from "@/lib/env";
 import "./globals.css";
 
 const montserrat = localFont({
@@ -12,8 +13,17 @@ const montserrat = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(env.siteUrl),
   title: "NÓS Studio",
   description: "Marketing, conteúdo e audiovisual. Sua história, nosso olhar.",
+  applicationName: "NÓS Studio",
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#3B1F8E",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

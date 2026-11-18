@@ -1,6 +1,7 @@
 import "server-only";
 import { and, eq, gt, lt, ne } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { cache } from "react";
 import { db } from "@/db";
 import { sessions, users, type User } from "@/db/schema";
@@ -52,6 +53,9 @@ export async function createSession(userId: number, meta: { ip?: string; userAge
 export const getSession = cache(async (): Promise<{ sessionId: string; user: CurrentUser } | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token || token.length > 200) return null;
+  // A validade da sessão depende do horário atual: com Cache Components isso precisa ser explicitamente
+  // dinâmico (connection()), senão o Next tenta pré-renderizar a casca do painel e acusa `new Date()`.
+  await connection();
   const sessionId = hashToken(token);
   const now = new Date();
   const [row] = await db

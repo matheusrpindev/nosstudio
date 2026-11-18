@@ -12,6 +12,10 @@ export function proxy(request: NextRequest) {
   const cookie = COOKIE_NAMES.map((name) => request.cookies.get(name)).find(Boolean);
 
   if (!cookie?.value) {
+    // Chamadas de API do painel recebem 401 em JSON (um redirecionamento viraria HTML de login no fetch).
+    if (request.nextUrl.pathname.startsWith("/painel/api/")) {
+      return NextResponse.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401 });
+    }
     const login = new URL("/login", request.url);
     const next = request.nextUrl.pathname + request.nextUrl.search;
     if (next !== "/painel") login.searchParams.set("next", next);
