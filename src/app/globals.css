@@ -209,3 +209,109 @@
     @apply border-lavanda border-l-4 pl-4 italic;
   }
 }
+
+/* painel */
+/* ==========================================================================
+   Complementos do painel e do kit (src/components/ui). Só acréscimos — os tokens e as classes base ficam acima.
+   ========================================================================== */
+@layer components {
+  /* ícone dentro de .btn (Button/IconButton): tamanho único, sem depender de quem passa o ícone */
+  .btn-icone {
+    @apply inline-flex shrink-0;
+  }
+  .btn-icone > svg {
+    @apply size-[1.125rem];
+  }
+  .btn-lg .btn-icone > svg,
+  .btn-icon:not(.btn-sm) .btn-icone > svg {
+    @apply size-5;
+  }
+
+  /* Card flush: cabeçalho e seções com padding e divisórias próprios */
+  .card-cabecalho {
+    @apply mb-4;
+  }
+  .card:not(.card-pad) > .card-cabecalho {
+    @apply border-areia mb-0 border-b px-4 py-4 sm:px-6;
+  }
+  .card-secao {
+    @apply px-4 py-4 sm:px-6 sm:py-5;
+  }
+  .card-secao + .card-secao {
+    @apply border-areia border-t;
+  }
+
+  /* RadioCards: o cartão marcado ganha a cor da marca */
+  .radio-card:hover {
+    @apply border-roxo/60;
+  }
+  .radio-card:has(input:checked) {
+    @apply border-roxo bg-lavanda-claro;
+    box-shadow: inset 0 0 0 1px var(--color-roxo);
+  }
+  .radio-card:has(input:focus-visible) {
+    outline: 2px solid var(--color-roxo);
+    outline-offset: 2px;
+  }
+  .radio-card input:focus-visible {
+    outline: none;
+  }
+
+  /* campos de data/hora nativos: mesma altura dos outros no iOS */
+  input[type="date"].input,
+  input[type="time"].input {
+    @apply appearance-none;
+    min-width: 0;
+  }
+  input[type="search"].input::-webkit-search-cancel-button {
+    display: none;
+  }
+}
+
+/* Entradas de sobreposições (Dialog, Drawer, menus, toasts). `prefers-reduced-motion` já zera as durações. */
+@keyframes painel-aparecer {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes painel-subir {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+@keyframes painel-da-direita {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes painel-da-esquerda {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes painel-de-baixo {
+  from {
+    transform: translateY(100%);
+  }
+}
+.sobreposicao-fundo {
+  animation: painel-aparecer 160ms ease-out;
+}
+.dialogo-entrada,
+.toast-entrada {
+  animation: painel-subir 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.flutuante-entrada {
+  animation: painel-aparecer 120ms ease-out;
+}
+.gaveta-direita {
+  animation: painel-da-direita 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gaveta-esquerda {
+  animation: painel-da-esquerda 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gaveta-baixo {
+  animation: painel-de-baixo 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* fim do bloco painel */

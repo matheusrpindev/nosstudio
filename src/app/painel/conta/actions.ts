@@ -1,0 +1,18 @@
+"use server";
+
+import { refresh } from "next/cache";
+import { actionOk, type ActionState } from "@/lib/action-state";
+import { logAudit } from "@/lib/audit";
+import { requireUser } from "@/lib/auth";
+import { destroyUserSessions, getSession } from "@/lib/auth/session";
+
+/** Encerra as sessões do usuário em outros aparelhos (mantém a atual). */
+export async function endOtherSessionsAction(_prev: ActionState, _formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  const session = await getSession();
+  if (!session) return actionOk();
+  await destroyUserSessions(user.id, session.sessionId);
+  await logAudit({ user, action: "sessoes_encerradas", entity: "user", entityId: user.id, summary: "Encerrou as sessões em outros aparelhos" });
+  refresh();
+  return actionOk("Outras sessões encerradas.");
+}
