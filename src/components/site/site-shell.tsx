@@ -19,6 +19,7 @@ import { OrganizationJsonLd } from "./json-ld";
 import { Icon } from "./marks";
 import { RevealObserver } from "./reveal-observer";
 import { SiteHeader } from "./site-header";
+import { WhatsAppFloat } from "./whatsapp-float";
 
 /** Ano corrente no fuso do estúdio. Em cache: `new Date()` solto quebraria o pré-render (Cache Components). */
 async function currentYear(): Promise<string> {
@@ -155,11 +156,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-      {visibility.whatsappFloat && whatsapp ? (
-        <a className="s-wa" href={whatsapp} target="_blank" rel="noopener noreferrer" aria-label={contactPage.whatsappLabel}>
-          <Icon name="whatsapp" />
-        </a>
-      ) : null}
+      {visibility.whatsappFloat && whatsapp ? <WhatsAppFloat href={whatsapp} label={contactPage.whatsappLabel} /> : null}
 
       <RevealObserver />
     </div>
