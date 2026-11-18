@@ -1,0 +1,13 @@
+# Exemplo de implantação com Docker Compose (VPS). Coloque um proxy com HTTPS na frente (Caddy, Traefik, Nginx).
+services:
+  nos:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - nos-data:/app/data
+
+volumes:
+  nos-data:
