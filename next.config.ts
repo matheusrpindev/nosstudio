@@ -31,6 +31,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Permite gerar o build em outra pasta (ex.: testes de ponta a ponta) sem mexer no build principal.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   partialPrefetching: true,
   // Perfil de cache do conteúdo público (usado com `cacheLife("site")`): o painel invalida na hora com
