@@ -1,0 +1,305 @@
+/* Página Quem Somos. Prefixo `about__`. Tudo em @layer components (utilitários do Tailwind vencem). */
+@layer components {
+  /* ---- abertura: história + foto do casal ---- */
+  .about__opening {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    margin-top: clamp(1.75rem, 1rem + 3vw, 3.5rem);
+  }
+  .about__lead {
+    max-width: 34rem;
+    font-size: var(--s-fs-lead);
+    font-weight: 500;
+    line-height: 1.42;
+    letter-spacing: -0.012em;
+    text-wrap: pretty;
+  }
+  .about__intro {
+    max-width: 34rem;
+    color: var(--s-fg-2);
+  }
+  /* a última frase da abertura fecha em destaque */
+  .about__intro > p:last-child:not(:first-child) {
+    color: var(--s-fg);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  /* estado vazio da foto do casal: "nós" gigante, cortado pela borda como os monogramas */
+  .about__couple .s-photo__symbol {
+    place-items: end start;
+  }
+  .about__nos {
+    margin: 0 0 -0.215em -0.04em;
+    font-size: 46vw;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.06em;
+    white-space: nowrap;
+    user-select: none;
+  }
+  @supports (font-size: 1cqw) {
+    .about__nos {
+      font-size: 51cqw;
+    }
+  }
+  @media (min-width: 1024px) {
+    .about__opening {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: auto 1fr;
+      column-gap: var(--s-gutter);
+      row-gap: 1.5rem;
+    }
+    .about__lead {
+      grid-column: 1 / 6;
+      grid-row: 1;
+    }
+    .about__intro {
+      grid-column: 1 / 6;
+      grid-row: 2;
+    }
+    .about__couple {
+      grid-column: 7 / -1;
+      grid-row: 1 / span 2;
+    }
+  }
+
+  /* ---- fundadores ---- */
+  .about__founders {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(3rem, 2rem + 5vw, 4.5rem);
+  }
+  .about__founder-id {
+    margin-top: 1.25rem;
+    padding-bottom: 1.125rem;
+    border-bottom: 1px solid var(--s-line-strong);
+  }
+  .about__founder-name {
+    font-size: clamp(1.875rem, 1.4rem + 2vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .about__founder-role {
+    margin-top: 0.625rem;
+    font-size: var(--s-fs-meta);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--s-fg-2);
+  }
+  .about__founder-bio {
+    margin-top: 1.25rem;
+    color: var(--s-fg-2);
+  }
+  .about__founder-bio > p:first-child {
+    color: var(--s-fg);
+    font-weight: 500;
+  }
+  @media (min-width: 768px) {
+    .about__founders {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: clamp(2rem, 6vw, 5rem);
+      align-items: start;
+    }
+  }
+  @media (min-width: 1024px) {
+    .about__founders {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+    }
+    .about__founder {
+      grid-column: span 5;
+    }
+    .about__founder:nth-child(even) {
+      grid-column: 8 / -1;
+      /* o segundo retrato desce um degrau, como no díptico da home */
+      margin-top: clamp(3rem, 6vw, 5.5rem);
+    }
+  }
+
+  /* ---- por que nasceu a NÓS ---- */
+  .about__why {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    margin-top: var(--s-head);
+  }
+  .about__why-mark {
+    display: none;
+  }
+  .about__why-text > p:first-child {
+    font-size: var(--s-fs-lead);
+    font-weight: 500;
+    line-height: 1.42;
+    letter-spacing: -0.012em;
+  }
+  .about__why-text > p + p {
+    color: var(--s-fg-2);
+  }
+  .about__why-text > p:last-child:not(:first-child) {
+    color: var(--s-fg);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  @media (min-width: 1024px) {
+    .about__why {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      align-items: start;
+    }
+    .about__why-head {
+      grid-column: 1 / 7;
+      position: sticky;
+      top: calc(var(--s-header-h) + 2rem);
+    }
+    .about__why-mark {
+      display: block;
+      width: clamp(9rem, 14vw, 13rem);
+      height: auto;
+      margin-top: clamp(2rem, 4vw, 3.5rem);
+      margin-left: -0.5rem;
+      color: var(--color-roxo);
+      --ring-2: var(--color-grafite);
+    }
+    .about__why-text {
+      grid-column: 8 / -1;
+    }
+  }
+
+  /* ---- manifesto ---- */
+  .about__manifesto {
+    margin-top: var(--s-head);
+    max-width: 62rem;
+  }
+  .about__manifesto .prosa {
+    line-height: 1.16;
+  }
+  .about__manifesto p {
+    font-size: clamp(1.5rem, 1.05rem + 2.1vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.16;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .about__manifesto .prosa > p + p {
+    margin-top: 0.85em;
+  }
+  @media (min-width: 1024px) {
+    /* no desktop o texto ocupa as colunas 4–12: a margem esquerda fica para o fio numerado */
+    .about__manifesto {
+      max-width: none;
+      margin-left: calc((100% + var(--s-gutter)) / 12 * 3);
+    }
+  }
+  /* a última frase do manifesto leva a cor-sinal (lima sobre grafite: contraste > 12:1) */
+  .about__manifesto p:last-child:not(:first-child) {
+    color: var(--color-lima);
+  }
+
+  /* ---- valores ---- */
+  .about__values {
+    border-bottom: 1px solid var(--s-line-strong);
+  }
+  .about__value {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    padding: 1.25rem 0 1.5rem;
+    border-top: 1px solid var(--s-line-strong);
+  }
+  .about__value-n {
+    padding-top: 0.45em;
+    font-size: var(--s-fs-meta);
+    font-weight: 700;
+    color: var(--s-idx);
+    font-variant-numeric: tabular-nums;
+  }
+  .about__value-title {
+    font-size: clamp(2rem, 1.3rem + 3.4vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.045em;
+    overflow-wrap: break-word;
+  }
+  .about__value-text {
+    grid-column: 2;
+    margin-top: 0.625rem;
+    max-width: 30rem;
+    color: var(--s-fg-2);
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+  @media (min-width: 1024px) {
+    .about__value {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      align-items: baseline;
+      padding: 1.5rem 0 1.875rem;
+    }
+    .about__value-n {
+      grid-column: 1;
+      padding-top: 0;
+    }
+    .about__value-title {
+      grid-column: 2 / 8;
+    }
+    .about__value-text {
+      grid-column: 8 / -1;
+      margin-top: 0;
+      font-size: 1.0625rem;
+    }
+  }
+
+  /* ---- essência + chamada final ---- */
+  .about__essence-title {
+    margin-top: var(--s-head);
+  }
+  .about__essence-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
+    margin-top: var(--s-cab);
+  }
+  .about__essence-text {
+    color: var(--s-fg-2);
+  }
+  .about__essence-text strong {
+    color: var(--s-fg);
+    font-weight: 800;
+  }
+  .about__signature {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.875rem;
+    font-size: var(--s-fs-lead);
+    font-weight: 600;
+    line-height: 1.38;
+    letter-spacing: -0.015em;
+    text-wrap: pretty;
+  }
+  .about__signature-mark {
+    width: 1.125rem;
+    height: auto;
+    margin-top: 0.45em;
+    color: var(--color-lima);
+  }
+  .about__essence-actions {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+  @media (min-width: 1024px) {
+    .about__essence-body {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      align-items: end;
+    }
+    .about__essence-text {
+      grid-column: 1 / 7;
+    }
+    .about__essence-close {
+      grid-column: 9 / -1;
+    }
+  }
+}

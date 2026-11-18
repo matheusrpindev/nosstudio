@@ -1,0 +1,162 @@
+/* Portfólio e página de projeto. Prefixos `portfolio` e `portfolio-`. Tudo em @layer components. */
+@layer components {
+  /* ---- filtro ---- */
+  .portfolio {
+    margin-top: var(--s-head);
+  }
+  .portfolio__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: clamp(1.75rem, 1rem + 3vw, 3rem);
+  }
+  .portfolio__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--s-line-strong);
+    background: transparent;
+    color: var(--s-fg);
+    font: inherit;
+    font-size: var(--s-fs-sm);
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .portfolio__chip small {
+    font-size: var(--s-fs-meta);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--s-soft);
+  }
+  .portfolio__chip:hover {
+    background: var(--color-lavanda);
+  }
+  .portfolio__chip.is-active {
+    background: var(--color-grafite);
+    border-color: var(--color-grafite);
+    color: var(--color-offwhite);
+  }
+  .portfolio__chip.is-active small {
+    color: var(--color-lavanda);
+  }
+  /* categorias fixas (PORTFOLIO_CATEGORIES): esconde o que não combina com o filtro ativo */
+  .portfolio[data-filter="marketing"] .portfolio__item:not([data-category="marketing"]),
+  .portfolio[data-filter="fotografia"] .portfolio__item:not([data-category="fotografia"]),
+  .portfolio[data-filter="videos"] .portfolio__item:not([data-category="videos"]),
+  .portfolio[data-filter="eventos"] .portfolio__item:not([data-category="eventos"]),
+  .portfolio[data-filter="casamentos"] .portfolio__item:not([data-category="casamentos"]) {
+    display: none;
+  }
+  /* o "degrau" da grade só faz sentido com a lista completa */
+  .portfolio:not([data-filter="all"]) .portfolio__grid > li {
+    margin-top: 0;
+  }
+
+  /* ---- página do projeto ---- */
+  .portfolio-project__cover {
+    margin-top: clamp(2rem, 1rem + 4vw, 4rem);
+  }
+  .portfolio-project__cover .s-photo__field {
+    aspect-ratio: 4 / 3;
+  }
+  @media (min-width: 768px) {
+    .portfolio-project__cover .s-photo__field {
+      aspect-ratio: 16 / 9;
+    }
+  }
+  .portfolio-project__body {
+    display: grid;
+    gap: 2.5rem;
+    margin-top: var(--s-cab);
+  }
+  .portfolio-facts {
+    display: grid;
+    gap: 0;
+    align-content: start;
+    border-top: 1px solid var(--s-line-strong);
+  }
+  .portfolio-facts > div {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--s-line);
+  }
+  .portfolio-facts dt {
+    color: var(--s-soft);
+    font-size: var(--s-fs-meta);
+    font-weight: 600;
+  }
+  .portfolio-facts dd {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.35;
+  }
+  .portfolio-facts ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+  @media (min-width: 1024px) {
+    .portfolio-project__body {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      align-items: start;
+    }
+    .portfolio-facts {
+      grid-column: 1 / 5;
+    }
+    .portfolio-project__text {
+      grid-column: 6 / -1;
+    }
+  }
+  .portfolio-project__video {
+    max-width: 62rem;
+    margin-top: var(--s-cab);
+  }
+
+  /* ---- galeria ---- */
+  .portfolio-gallery {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--s-gutter);
+    margin-top: var(--s-cab);
+  }
+  .portfolio-gallery__item figure {
+    position: relative;
+    margin: 0;
+    color: var(--color-offwhite);
+    background: var(--color-lavanda);
+    overflow: hidden;
+  }
+  .portfolio-gallery__item img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .portfolio-gallery__item .s-frame {
+    inset: 0.875rem;
+    --arm: 1.5rem;
+    z-index: 1;
+    pointer-events: none;
+  }
+  @media (min-width: 768px) {
+    .portfolio-gallery {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+    .portfolio-gallery__item[data-wide] {
+      grid-column: 1 / -1;
+    }
+    .portfolio-gallery__item .s-frame {
+      inset: 1.25rem;
+      --arm: 2.5rem;
+    }
+  }
+}

@@ -4,6 +4,7 @@
  * `proposalDraftSchema` e o servidor recalcula tudo antes de gravar (fonte da verdade).
  */
 import { z } from "zod";
+import type { Proposal, ProposalCost, ProposalItem, ProposalPayment } from "@/db/schema";
 import { isISODate } from "@/lib/dates";
 import { ENTRY_MODES, PROPOSAL_COST_CATEGORIES, PROPOSAL_ITEM_KINDS, PROPOSAL_MODALITIES, type ProposalModality } from "@/lib/domain";
 import { clientNumbers, internalNumbers, paymentsDifferenceCents, type ClientNumbers, type InternalNumbers } from "@/lib/proposals/calc";
@@ -163,4 +164,47 @@ export function stepOfField(path: string): EditorStep {
   if (["discountCents", "discountLabel", "discountApproved", "showItemPrices", "entryMode", "entryPercent", "entryCents", "payments"].includes(field)) return "preco";
   if (["paymentNotes", "conditions"].includes(field)) return "textos";
   return "dados";
+}
+
+/** Rascunho inicial do editor a partir do que está gravado (datas vazias como `null`). */
+export function buildDraft(source: { proposal: Proposal; items: ProposalItem[]; costs: ProposalCost[]; payments: ProposalPayment[] }): ProposalDraft {
+  const { proposal } = source;
+  return {
+    templateName: proposal.templateName,
+    modality: proposal.modality,
+    clientId: proposal.clientId,
+    clientDisplayName: proposal.clientDisplayName,
+    contactName: proposal.contactName,
+    ownerId: proposal.ownerId,
+    title: proposal.title,
+    eventDate: proposal.eventDate,
+    eventLocation: proposal.eventLocation,
+    validUntil: proposal.validUntil,
+    intro: proposal.intro,
+    scheduleText: proposal.scheduleText,
+    exclusions: proposal.exclusions,
+    paymentNotes: proposal.paymentNotes,
+    conditions: proposal.conditions,
+    items: source.items.map((item) => ({
+      kind: item.kind,
+      title: item.title,
+      description: item.description,
+      quantity: item.quantity,
+      unit: item.unit,
+      unitPriceCents: item.unitPriceCents,
+    })),
+    discountCents: proposal.discountCents,
+    discountLabel: proposal.discountLabel,
+    discountApproved: proposal.discountApproved,
+    showItemPrices: proposal.showItemPrices,
+    entryMode: proposal.entryMode,
+    entryPercent: proposal.entryPercent,
+    entryCents: proposal.entryCents,
+    payments: source.payments.map((payment) => ({ label: payment.label, dueDate: payment.dueDate, dueLabel: payment.dueLabel, amountCents: payment.amountCents })),
+    costs: source.costs.map((cost) => ({ category: cost.category, description: cost.description, amountCents: cost.amountCents })),
+    overheadCents: proposal.overheadCents,
+    taxPercent: proposal.taxPercent,
+    targetMarginPercent: proposal.targetMarginPercent,
+    internalNotes: proposal.internalNotes,
+  };
 }

@@ -14,7 +14,7 @@ import { requireUser } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { PROPOSAL_MODALITY_LABELS, PROPOSAL_STATUS_LABELS, PROPOSAL_STATUSES, type ProposalStatus } from "@/lib/domain";
 import { countProposalsByStatus, listProposals, type ProposalListItem } from "@/server/proposals/admin";
-import { PROPOSAL_STATUS_TONES, proposalNumberLabel } from "./ui";
+import { PROPOSAL_STATUS_TONES } from "./ui";
 
 export const metadata: Metadata = { title: "Orçamentos" };
 export const instant = false;

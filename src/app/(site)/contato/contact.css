@@ -1,0 +1,108 @@
+/* Página de contato — formulário + coluna de canais. Prefixo `contact__`. */
+@layer components {
+  .contact__head {
+    --s-head: clamp(1.5rem, 0.75rem + 2.5vw, 2.75rem);
+    --s-cab: clamp(1.75rem, 1rem + 2.2vw, 3rem);
+  }
+  .contact__head .s-pagehead__body {
+    margin-top: clamp(1.25rem, 0.75rem + 1.6vw, 2rem);
+  }
+  .contact__grid {
+    display: grid;
+    gap: 3rem;
+  }
+  .contact__main {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+    min-width: 0;
+  }
+  .contact__ref {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    justify-self: start;
+    padding: 0.5rem 0.875rem;
+    background: var(--color-lavanda);
+    color: var(--color-grafite);
+  }
+  .contact__ref strong {
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+  .contact__aside {
+    display: grid;
+    gap: 2.75rem;
+    align-content: start;
+    min-width: 0;
+  }
+  .contact__label {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--s-line-strong);
+    color: var(--s-fg-2);
+  }
+  .contact__buttons {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+  .contact__buttons .s-btn {
+    justify-content: space-between;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+  .contact__handle {
+    margin-top: 0.75rem;
+  }
+  .contact__steps {
+    list-style: none;
+    padding: 0;
+  }
+  .contact__steps li {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--s-line);
+  }
+  .contact__step-n {
+    color: var(--s-idx);
+    font-size: var(--s-fs-meta);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.9;
+  }
+  .contact__steps h3 {
+    font-size: 1.0625rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+  .contact__steps p {
+    margin-top: 0.25rem;
+    color: var(--s-fg-2);
+    font-size: var(--s-fs-sm);
+    line-height: 1.5;
+  }
+  @media (min-width: 640px) and (max-width: 1023.98px) {
+    .contact__aside {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--s-gutter);
+    }
+  }
+  @media (min-width: 1024px) {
+    .contact__grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      align-items: start;
+    }
+    .contact__main {
+      grid-column: 1 / 8;
+    }
+    .contact__aside {
+      grid-column: 9 / -1;
+      position: sticky;
+      top: 6rem;
+    }
+  }
+}

@@ -1,0 +1,153 @@
+/* Página de casamentos. Prefixos `weddings` e `weddings-` (componentes). Tudo em @layer components. */
+@layer components {
+  /* ---- hero ---- */
+  .weddings__hero-media {
+    margin-top: clamp(2rem, 1rem + 4vw, 4rem);
+  }
+  .weddings__hero-media .s-photo__field {
+    aspect-ratio: 16 / 10;
+  }
+  .weddings__hero-media .s-photo__symbol svg {
+    width: min(46%, 22rem);
+    height: auto;
+  }
+  @media (min-width: 768px) {
+    .weddings__hero-media .s-photo__field {
+      aspect-ratio: 21 / 9;
+    }
+  }
+
+  /* ---- abordagem ---- */
+  .weddings__approach-text {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 38rem;
+  }
+  .weddings__approach-text p + p {
+    color: var(--s-fg-2);
+    text-wrap: pretty;
+  }
+  @media (min-width: 1024px) {
+    .weddings__approach-text {
+      margin-left: calc(4 * (var(--s-colw) + var(--s-gutter)));
+    }
+  }
+
+  /* ---- cobertura ---- */
+  .weddings-coverage__list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    border-top: 1px solid var(--s-line-strong);
+  }
+  .weddings-coverage__item {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    column-gap: 0.5rem;
+    row-gap: 0.5rem;
+    align-content: start;
+    padding: 1.5rem 0 1.75rem;
+    border-bottom: 1px solid var(--s-line);
+  }
+  .weddings-coverage__n {
+    grid-row: 1 / span 2;
+    padding-top: 0.45em;
+    color: var(--s-idx);
+    font-size: var(--s-fs-meta);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .weddings-coverage__title {
+    font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  }
+  .weddings-coverage__text {
+    color: var(--s-fg-2);
+    font-size: var(--s-fs-sm);
+    line-height: 1.55;
+    max-width: 26rem;
+  }
+  .weddings-coverage__note {
+    max-width: 40rem;
+    margin-top: 1.5rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--s-idx);
+    color: var(--s-fg);
+    font-size: var(--s-fs-sm);
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  @media (min-width: 768px) {
+    .weddings-coverage__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+    }
+  }
+  @media (min-width: 1024px) {
+    .weddings-coverage__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .weddings-coverage__item {
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 12rem;
+      padding: 1.25rem 0 2rem;
+    }
+    .weddings-coverage__n {
+      grid-row: auto;
+      padding-top: 0;
+      margin-bottom: 2.5rem;
+    }
+  }
+
+  /* ---- quem estará no dia ---- */
+  .weddings-crew {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 2.5rem var(--s-gutter);
+  }
+  .weddings-crew__text {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    max-width: 30rem;
+  }
+  .weddings-crew__role {
+    color: var(--s-soft);
+  }
+  .weddings__crew-foot {
+    margin-top: 2.5rem;
+  }
+  @media (min-width: 640px) {
+    .weddings-crew {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .weddings-crew__item:nth-child(even) {
+      margin-top: clamp(1.5rem, 4vw, 3.5rem);
+    }
+  }
+  @media (min-width: 1024px) {
+    .weddings-crew {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-left: calc(4 * (var(--s-colw) + var(--s-gutter)));
+    }
+  }
+
+  /* ---- formulário ---- */
+  .weddings__form-call .s-contact__lead {
+    margin-top: 1.5rem;
+    max-width: 28em;
+  }
+  .weddings__form-call .s-contact__title {
+    margin-top: 0;
+  }
+  .weddings__form-call .s-channels {
+    margin-top: clamp(2rem, 4vw, 3rem);
+  }
+  @media (min-width: 1024px) {
+    /* o formulário é longo: o convite acompanha a leitura */
+    .weddings__form-call {
+      position: sticky;
+      top: 7rem;
+    }
+  }
+}
