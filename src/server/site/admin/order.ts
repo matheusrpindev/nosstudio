@@ -22,13 +22,14 @@ export async function nextSortOrder(table: OrderedTable): Promise<number> {
 /**
  * Troca o item de lugar com o vizinho. A ordem exibida (`sortOrder`, depois `id`) é renumerada de 0 a N-1,
  * então itens que tinham o mesmo número (ex.: criados pelo seed) passam a ter posições distintas.
- * Devolve `false` se o item não existe ou já está na ponta.
+ * `scope`: restringe a lista a um grupo (ex.: só os planos mensais). Devolve `false` se o item não existe ou já está na ponta.
  */
-export async function moveInOrder(table: OrderedTable, id: number, direction: MoveDirection, tiebreak: "asc" | "desc" = "asc"): Promise<boolean> {
+export async function moveInOrder(table: OrderedTable, id: number, direction: MoveDirection, tiebreak: "asc" | "desc" = "asc", scope?: SQL): Promise<boolean> {
   return db.transaction(async (tx) => {
     const rows = await tx
       .select({ id: table.id })
       .from(table)
+      .where(scope)
       .orderBy(asc(table.sortOrder), tiebreak === "asc" ? asc(table.id) : sql`${table.id} desc`);
     const ids = rows.map((row) => Number(row.id));
     const from = ids.indexOf(id);

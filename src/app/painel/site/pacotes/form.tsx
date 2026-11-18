@@ -1,0 +1,59 @@
+import { ButtonLink } from "@/components/ui/button";
+import { ActionForm, Field, FieldRow, FormActions, SubmitButton, type FormAction } from "@/components/ui/form";
+import { Input, Select, Textarea } from "@/components/ui/input";
+import { StringListField } from "@/components/ui/list-fields";
+import { Switch } from "@/components/ui/switch";
+import { PACKAGE_KIND_LABELS } from "@/lib/domain";
+import type { Package } from "@/db/schema";
+import { DeliverablesField, PriceFields } from "./fields";
+
+/** Formulário de pacote. `pkg` nulo = novo. */
+export function PackageForm({ action, pkg, defaultKind }: { action: FormAction; pkg: Package | null; defaultKind?: "plano" | "avulso" }) {
+  return (
+    <ActionForm action={action} hidden={{ id: pkg?.id }}>
+      <FieldRow>
+        <Field name="kind" label="Tipo" required hint="Planos mensais e serviços avulsos aparecem em blocos separados.">
+          <Select options={PACKAGE_KIND_LABELS} defaultValue={pkg?.kind ?? defaultKind ?? "plano"} />
+        </Field>
+        <Field name="name" label="Nome" required>
+          <Input maxLength={120} autoComplete="off" defaultValue={pkg?.name} />
+        </Field>
+      </FieldRow>
+      <Field name="tagline" label="Chamada" optional hint="Uma frase curta, como “Para marcas que querem constância”.">
+        <Input maxLength={200} defaultValue={pkg?.tagline} />
+      </Field>
+      <Field name="description" label="Descrição" optional>
+        <Textarea rows={3} maxLength={2000} defaultValue={pkg?.description} />
+      </Field>
+      <StringListField name="includes" label="Serviços incluídos" defaultValue={pkg?.includes ?? []} placeholder="Ex.: Planejamento de conteúdo" addLabel="Adicionar serviço" max={30} maxLength={160} emptyLabel="Nenhum serviço listado ainda." />
+      <DeliverablesField defaultValue={pkg?.deliverables ?? []} />
+
+      <FieldRow>
+        <Field name="recordingDuration" label="Duração das gravações" optional hint="Só se estiver definido. Ex.: até 4 horas por diária.">
+          <Input maxLength={120} defaultValue={pkg?.recordingDuration} />
+        </Field>
+        <Field name="revisionLimit" label="Limite de revisões" optional hint="Só se estiver definido. Ex.: 2 rodadas.">
+          <Input maxLength={120} defaultValue={pkg?.revisionLimit} />
+        </Field>
+      </FieldRow>
+
+      <PriceFields mode={pkg?.priceMode ?? "sob_consulta"} priceCents={pkg?.priceCents ?? null} suffix={pkg?.priceSuffix ?? ""} />
+
+      <Field name="ctaLabel" label="Texto do botão" required>
+        <Input maxLength={40} defaultValue={pkg?.ctaLabel ?? "Solicitar orçamento"} />
+      </Field>
+
+      <div className="space-y-1">
+        <Switch name="recommended" label="Pacote recomendado" hint="Ganha um destaque visual na lista." defaultChecked={pkg?.recommended ?? false} />
+        <Switch name="visible" label="Mostrar no site" hint="Desligado, o pacote fica guardado e não aparece para os visitantes." defaultChecked={pkg?.visible ?? true} />
+      </div>
+
+      <FormActions>
+        <SubmitButton pendingLabel="Salvando…">{pkg ? "Salvar pacote" : "Criar pacote"}</SubmitButton>
+        <ButtonLink href="/painel/site/pacotes" variant="ghost">
+          Cancelar
+        </ButtonLink>
+      </FormActions>
+    </ActionForm>
+  );
+}

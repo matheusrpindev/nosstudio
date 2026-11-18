@@ -47,7 +47,12 @@ export async function setPackageVisible(id: number, visible: boolean): Promise<P
   return row ?? null;
 }
 
-export const movePackage = (id: number, direction: MoveDirection) => moveInOrder(packages, id, direction);
+/** Planos e avulsos aparecem em blocos separados no site: a ordem vale dentro de cada grupo. */
+export async function movePackage(id: number, direction: MoveDirection): Promise<boolean> {
+  const current = await getPackage(id);
+  if (!current) return false;
+  return moveInOrder(packages, id, direction, "asc", eq(packages.kind, current.kind));
+}
 
 export async function deletePackage(id: number): Promise<Package | null> {
   const [row] = await db.delete(packages).where(eq(packages.id, id)).returning();
