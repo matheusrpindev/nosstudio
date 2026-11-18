@@ -29,10 +29,18 @@ function buttonClass({ variant = "primary", size = "md", block }: ButtonLook, cl
 
 type AnchorProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">;
 
-/** Link "inteligente": interno → <Link>, externo → <a target="_blank">. Devolve `null` se o href for inválido. */
+/** Rótulo vazio (texto em branco vindo do painel): o botão/link não deve aparecer como uma caixa muda. */
+function isBlank(children: ReactNode): boolean {
+  return children === null || children === undefined || children === false || (typeof children === "string" && children.trim() === "");
+}
+
+/**
+ * Link "inteligente": interno → <Link>, externo → <a target="_blank">.
+ * Devolve `null` se o href for inválido ou se o rótulo (texto) estiver vazio.
+ */
 export function SmartLink({ href, children, ...rest }: AnchorProps & { href: string | null | undefined; children: ReactNode }) {
   const safe = safeHref(href);
-  if (!safe) return null;
+  if (!safe || isBlank(children)) return null;
   if (/^https?:/i.test(safe)) {
     return (
       <a href={safe} target="_blank" rel="noopener noreferrer" {...rest}>
@@ -58,6 +66,7 @@ export function SiteButtonLink({
   children,
   ...rest
 }: ButtonLook & AnchorProps & { href: string | null | undefined; children: ReactNode }) {
+  if (isBlank(children)) return null;
   return (
     <SmartLink href={href} className={buttonClass({ variant, size, block }, className)} {...rest}>
       <span>{children}</span>
@@ -93,6 +102,7 @@ export function SiteLink({
   children,
   ...rest
 }: AnchorProps & { href: string | null | undefined; icon?: IconName | null; children: ReactNode }) {
+  if (isBlank(children)) return null;
   return (
     <SmartLink href={href} className={cn("s-link", className)} {...rest}>
       <span>{children}</span>

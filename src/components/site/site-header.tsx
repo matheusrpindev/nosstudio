@@ -12,8 +12,8 @@ type SiteHeaderProps = {
   logo: ReactNode;
   brandName: string;
   items: HeaderLink[];
-  /** Botão destacado ("Vamos conversar" → /contato). */
-  cta: HeaderLink;
+  /** Botão destacado ("Vamos conversar" → /contato). `null` = sem rótulo no painel, o botão não aparece. */
+  cta: HeaderLink | null;
   /** Link extra no rodapé do menu móvel (ex.: Instagram). */
   extra?: (HeaderLink & { external?: boolean }) | null;
 };
@@ -121,10 +121,12 @@ function HeaderView({ logo, brandName, items, cta, extra, pathname }: SiteHeader
             ))}
           </ul>
           <div className="s-nav__base">
-            <Link href={cta.href} className="s-btn s-btn--primary" onClick={() => close(false)}>
-              <span>{cta.label}</span>
-              <Icon name="arrow" />
-            </Link>
+            {cta ? (
+              <Link href={cta.href} className="s-btn s-btn--primary" onClick={() => close(false)}>
+                <span>{cta.label}</span>
+                <Icon name="arrow" />
+              </Link>
+            ) : null}
             {extra ? (
               <a
                 href={extra.href}
@@ -137,12 +139,16 @@ function HeaderView({ logo, brandName, items, cta, extra, pathname }: SiteHeader
           </div>
         </nav>
 
-        <Link href={cta.href} className="s-btn s-btn--primary s-btn--sm s-header__cta--d">
-          {cta.label}
-        </Link>
-        <Link href={cta.href} className="s-btn s-btn--primary s-btn--sm s-header__cta--m" onClick={() => close(false)}>
-          {cta.label}
-        </Link>
+        {cta ? (
+          <>
+            <Link href={cta.href} className="s-btn s-btn--primary s-btn--sm s-header__cta--d">
+              <span>{cta.label}</span>
+            </Link>
+            <Link href={cta.href} className="s-btn s-btn--primary s-btn--sm s-header__cta--m" onClick={() => close(false)}>
+              <span>{cta.label}</span>
+            </Link>
+          </>
+        ) : null}
         <button
           type="button"
           className="s-header__menu"

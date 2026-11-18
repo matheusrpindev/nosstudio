@@ -130,7 +130,7 @@ export default async function HomePage() {
           </div>
           {about.values.items.length > 0 ? (
             <div className="s-values">
-              <h3 className="s-meta s-values__title">{about.values.eyebrow}</h3>
+              {about.values.eyebrow ? <h3 className="s-meta s-values__title">{about.values.eyebrow}</h3> : null}
               <ValuesList items={about.values.items} />
             </div>
           ) : null}

@@ -59,7 +59,9 @@ export async function SiteShell({ children }: { children: ReactNode }) {
   ]);
   const { general, home, contactPage, visibility } = content;
 
-  const cta = { label: home.closing.cta.label, href: safeHref(home.closing.cta.href) || "/contato" };
+  // Sem rótulo no painel, o botão do cabeçalho some (em vez de uma caixa lima vazia).
+  const ctaLabel = home.closing.cta.label.trim();
+  const cta = ctaLabel ? { label: ctaLabel, href: safeHref(home.closing.cta.href) || "/contato" } : null;
   const instagram = instagramLink(general.instagram);
   const whatsapp = whatsAppLink(general.whatsapp, general.whatsappMessage);
   const social = general.socialLinks

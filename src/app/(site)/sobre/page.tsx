@@ -78,9 +78,11 @@ export default async function AboutPage() {
         <Section id="sobre-porque" number={next()} label={LABELS.why} labelledBy="sobre-porque-titulo">
           <div className="about__why">
             <div className="about__why-head">
-              <h2 id="sobre-porque-titulo" className="s-h2">
-                {about.why.title}
-              </h2>
+              {about.why.title ? (
+                <h2 id="sobre-porque-titulo" className="s-h2">
+                  {about.why.title}
+                </h2>
+              ) : null}
               {/* o "nó" de NÓS: dois anéis entrelaçados (decorativo) */}
               <RingsMark className="about__why-mark" />
             </div>

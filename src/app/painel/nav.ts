@@ -10,6 +10,7 @@ import {
   FileText,
   Inbox,
   LayoutDashboard,
+  LifeBuoy,
   ListChecks,
   Megaphone,
   MonitorSmartphone,
@@ -60,7 +61,13 @@ export const PANEL_NAV: readonly NavGroup[] = [
     ],
   },
   { label: "Site", items: [{ href: "/painel/site", label: "Editar site", icon: MonitorSmartphone }] },
-  { label: "Sistema", items: [{ href: "/painel/config", label: "Configurações", icon: Settings }] },
+  {
+    label: "Sistema",
+    items: [
+      { href: "/painel/config", label: "Configurações", icon: Settings },
+      { href: "/painel/ajuda", label: "Ajuda", icon: LifeBuoy },
+    ],
+  },
 ];
 
 /** Atalhos da barra inferior do celular (o quinto botão é "Mais", com o menu completo). */

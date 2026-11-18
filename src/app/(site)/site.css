@@ -754,6 +754,7 @@
     .s-header__cta--d {
       grid-column: 11 / 13;
       justify-self: end;
+      max-width: 100%; /* rótulo longo: reticências dentro das duas colunas, sem invadir o menu */
     }
   }
 
@@ -797,11 +798,12 @@
     --fit-word: calc(var(--s-wrap) / var(--hero-word, 6.75) / 0.62);
     --fit-line: calc(var(--s-wrap) / var(--hero-line, 10.3) / 0.61);
     margin-top: 1.5rem;
-    font-size: min(20.5vw, 6.75rem, var(--fit-word));
+    /* piso de 2.25rem: uma palavra gigantesca quebra em vez de reduzir o título até sumir */
+    font-size: max(min(20.5vw, 6.75rem, var(--fit-word)), 2.25rem);
     font-weight: 900;
     line-height: 0.86;
     letter-spacing: -0.05em;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
   }
   .s-hero__title span {
     display: block;
@@ -1132,7 +1134,7 @@
     letter-spacing: 0.02em;
   }
   .s-panel__n span {
-    opacity: 0.6;
+    opacity: 0.75; /* 5.7:1 sobre a lavanda (0.6 dava 3.8:1) */
     font-weight: 500;
   }
   .s-panel__arrow {
@@ -2917,6 +2919,56 @@
   }
   .s-wa {
     animation: s-wa-in 0.3s 0.9s backwards;
+  }
+
+  /* ---------- 23b. Robustez de conteúdo ----------------------------------
+     A copy vem do painel: título enorme, palavra sem espaço, botão com rótulo longo. Nada disso pode
+     alargar a página (rolagem horizontal no celular) nem encolher o título do hero até ficar ilegível. */
+  /* `anywhere` (e não `break-word`) porque só ele reduz o tamanho mínimo da caixa: em grid e flex a palavra
+     gigante deixa de alargar a coluna. Especificidade zero: as classes `.s-*` continuam mandando. */
+  .site :where(h1, h2, h3, h4, p, li, dt, dd, blockquote, figcaption, summary, label, small, address, cite, a, button) {
+    overflow-wrap: anywhere;
+  }
+  /* Exceção: as duas metades da frase em destaque (desktop) dividem a largura pelo tamanho mínimo do texto
+     (`1fr 1fr`); com `anywhere` elas ficariam iguais e quebrariam palavras comuns. A versão de uma frase só
+     (`--single`, uma coluna) segue a regra geral. */
+  @media (min-width: 1024px) {
+    .s-statement:not(.s-statement--single) :where(*) {
+      overflow-wrap: break-word;
+    }
+  }
+  /* Botões sem rótulo não renderizam (ver button.tsx): o contêiner vazio também não ocupa espaço. */
+  .s-hero__actions:empty,
+  .s-pagehead__actions:empty {
+    display: none;
+  }
+  .s-btn {
+    max-width: 100%;
+  }
+  .s-btn > span:not([aria-hidden]) {
+    min-width: 0;
+  }
+  /* Cabeçalho: o botão nunca empurra o menu — rótulo longo vira reticências (o nome acessível continua inteiro). */
+  .s-header__cta--m,
+  .s-header__cta--d {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 11rem;
+  }
+  .s-header__cta--m > span,
+  .s-header__cta--d > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .s-header__brand {
+    flex: none;
+  }
+  @media (min-width: 1024px) {
+    .s-header__cta--d {
+      max-width: 16rem;
+    }
   }
 
   /* ---------- 24. Impressão ---------------------------------------------- */

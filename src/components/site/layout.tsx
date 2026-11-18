@@ -119,6 +119,8 @@ export function Display({
   id?: string;
   children: string;
 }) {
+  // Título apagado no painel: nada de <h2> vazio no DOM (o <h1> fica, a página precisa dele).
+  if (Tag !== "h1" && !children.trim()) return null;
   return (
     <Tag id={id} className={cn(size === "d0" ? "s-d0" : "s-d1", className)}>
       {accent ? <Accented text={children} fallback={accent === "tail" ? "tail" : "none"} /> : children}
@@ -162,11 +164,15 @@ export function SectionHeader({
   as?: HeadingTag;
   className?: string;
 }) {
+  const hasTitle = title.trim() !== "";
+  if (!hasTitle && !lead) return null;
   return (
     <div className={cn("s-section__head", className)}>
-      <Heading as={as} id={id}>
-        <Accented text={title} />
-      </Heading>
+      {hasTitle ? (
+        <Heading as={as} id={id}>
+          <Accented text={title} />
+        </Heading>
+      ) : null}
       {lead ? <p className="s-lead s-section__lead">{lead}</p> : null}
     </div>
   );

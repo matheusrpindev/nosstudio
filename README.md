@@ -11,6 +11,9 @@ O projeto tem dois ambientes no mesmo aplicativo:
 
 Os requisitos originais estão em [`docs/briefing/`](docs/briefing).
 
+Para os sócios: [`docs/manual-do-painel.md`](docs/manual-do-painel.md) (manual de uso, também disponível no painel em **Ajuda**) e
+[`docs/contas-e-servicos.md`](docs/contas-e-servicos.md) (domínio, hospedagem, e-mail, backups, contas e suporte pós-entrega).
+
 ## O que está pronto
 
 **Site público**

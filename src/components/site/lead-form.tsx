@@ -382,7 +382,7 @@ function LeadFormInner({
       {pkg ? <input type="hidden" name="packageName" value={pkg} /> : null}
 
       <button type="submit" className="s-btn s-btn--primary s-btn--block" disabled={pending}>
-        <span>{pending ? "Enviando…" : submitLabel}</span>
+        <span>{pending ? "Enviando…" : submitLabel.trim() || "Enviar"}</span>
         <Icon name="arrow" />
       </button>
       <p className="sr-only" role="status" aria-live="polite">
