@@ -2,9 +2,9 @@
  * Microanimação de entrada por rolagem.
  *
  * Como funciona: o servidor só marca o elemento com `data-reveal`. O conteúdo já nasce visível — nada
- * depende de JS para aparecer. No navegador, <RevealObserver /> (montado uma vez pelo <SiteShell>) esconde
- * APENAS o que ainda está abaixo da dobra e revela quando entra na tela. Com `prefers-reduced-motion`,
- * sem IntersectionObserver ou sem JS, tudo fica como veio do servidor.
+ * depende de JS para aparecer. No navegador, <RevealObserver /> (montado uma vez pelo <SiteShell>) prepara
+ * APENAS o que ainda está abaixo da dobra e anima quando entra na tela (Web Animations API, sem mexer no
+ * DOM). Com `prefers-reduced-motion`, sem IntersectionObserver ou sem JS, tudo fica como veio do servidor.
  */
 import type { CSSProperties, ElementType, ReactNode } from "react";
 

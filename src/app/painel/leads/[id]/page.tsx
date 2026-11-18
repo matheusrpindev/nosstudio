@@ -88,9 +88,10 @@ export default async function LeadPage({ params }: Props) {
         </Alert>
       ) : null}
 
+      {/* Duas colunas no desktop. No celular as colunas se desfazem (`contents`) e `order-*` põe contato e andamento logo depois do pedido. */}
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-start">
-        <div className="space-y-4">
-          <Card as="section" aria-labelledby="pedido-titulo">
+        <div className="contents lg:flex lg:flex-col lg:gap-4">
+          <Card as="section" aria-labelledby="pedido-titulo" className="order-1">
             <CardHeader id="pedido-titulo" title="Pedido" />
             {lead.message.trim() ? (
               <p className="border-lavanda text-grafite mb-5 border-l-4 pl-4 text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{lead.message}</p>
@@ -115,7 +116,7 @@ export default async function LeadPage({ params }: Props) {
             />
           </Card>
 
-          <Card as="section" aria-labelledby="registro-titulo">
+          <Card as="section" aria-labelledby="registro-titulo" className="order-4">
             <CardHeader id="registro-titulo" title="Origem e consentimento" />
             <DescriptionList
               items={[
@@ -139,8 +140,8 @@ export default async function LeadPage({ params }: Props) {
           </Card>
         </div>
 
-        <div className="space-y-4">
-          <Card as="section" aria-labelledby="contato-titulo">
+        <div className="contents lg:flex lg:flex-col lg:gap-4">
+          <Card as="section" aria-labelledby="contato-titulo" className="order-2">
             <CardHeader id="contato-titulo" title="Contato" />
             <DescriptionList
               items={[
@@ -158,12 +159,11 @@ export default async function LeadPage({ params }: Props) {
             />
           </Card>
 
-          <Card as="section" aria-labelledby="status-titulo">
+          <Card as="section" aria-labelledby="status-titulo" className="order-3">
             <CardHeader id="status-titulo" title="Andamento" />
             <ActionForm action={updateLeadStatusAction} hidden={{ id: lead.id }} className="space-y-4">
               <Field name="status" label="Status do lead">
-                {/* key: depois de salvar (ou converter), o select mostra o valor que veio do banco */}
-                <Select key={lead.status} options={LEAD_STATUS_LABELS} defaultValue={lead.status} />
+                <Select options={LEAD_STATUS_LABELS} defaultValue={lead.status} />
               </Field>
               <SubmitButton variant="secondary" pendingLabel="Salvando…">
                 Salvar status
@@ -171,7 +171,7 @@ export default async function LeadPage({ params }: Props) {
             </ActionForm>
           </Card>
 
-          <Card as="section" aria-labelledby="excluir-titulo">
+          <Card as="section" aria-labelledby="excluir-titulo" className="order-5">
             <CardHeader id="excluir-titulo" title="Excluir lead" description="Apaga os dados deste contato de forma definitiva — use para pedidos de eliminação (LGPD), testes e spam." />
             <ConfirmDialog
               trigger={

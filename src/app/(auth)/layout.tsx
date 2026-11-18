@@ -14,11 +14,14 @@ export const viewport: Viewport = { themeColor: "#3b1f8e" };
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-dvh flex-1 flex-col lg:flex-row">
-      <aside className="bg-roxo relative flex shrink-0 flex-col justify-between overflow-hidden px-6 py-7 text-white lg:w-[44%] lg:max-w-2xl lg:px-14 lg:py-12">
-        {/* motivo do visor (cantos do logo), bem discreto */}
-        <svg aria-hidden="true" viewBox="0 0 400 400" fill="none" className="text-lavanda/15 pointer-events-none absolute -right-24 -bottom-24 hidden size-[30rem] lg:block">
-          <path d="M40 130V70a30 30 0 0 1 30-30h60M270 40h60a30 30 0 0 1 30 30v60M360 270v60a30 30 0 0 1-30 30h-60M130 360H70a30 30 0 0 1-30-30v-60" stroke="currentColor" strokeWidth="14" strokeLinecap="round" />
-        </svg>
+      <aside className="bg-roxo relative flex shrink-0 flex-col justify-between overflow-hidden px-6 py-7 text-white lg:w-[44%] lg:max-w-2xl lg:px-16 lg:py-16">
+        {/* motivo do visor (os cantos do logo) emoldurando o bloco — só no desktop */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-5 hidden lg:block">
+          <span className="border-lavanda/30 absolute top-0 left-0 size-12 rounded-tl-2xl border-t-[3px] border-l-[3px]" />
+          <span className="border-lavanda/30 absolute top-0 right-0 size-12 rounded-tr-2xl border-t-[3px] border-r-[3px]" />
+          <span className="border-lavanda/30 absolute bottom-0 left-0 size-12 rounded-bl-2xl border-b-[3px] border-l-[3px]" />
+          <span className="border-lavanda/30 absolute right-0 bottom-0 size-12 rounded-br-2xl border-r-[3px] border-b-[3px]" />
+        </div>
         <Link href="/" className="relative inline-flex w-fit rounded-md focus-visible:outline-white" aria-label="NÓS Studio — voltar ao site">
           <Logo variant="assinatura" tone="branco" label="" className="h-14 lg:h-24" />
         </Link>

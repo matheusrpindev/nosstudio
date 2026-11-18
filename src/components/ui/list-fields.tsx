@@ -272,12 +272,12 @@ export function StringListField({
         </button>
       </div>
 
-      {hint ? <p className="hint">{hint}</p> : null}
       {message ? (
         <p className="field-error" role="alert">
           {message}
         </p>
       ) : null}
+      {hint ? <p className="hint">{hint}</p> : null}
       <span className="sr-only" aria-live="polite">
         {list.announcement}
       </span>
@@ -371,12 +371,12 @@ export function ObjectListField<T>({
       </button>
       {full ? <p className="hint">Limite de {max} itens atingido.</p> : null}
 
-      {hint ? <p className="hint">{hint}</p> : null}
       {message ? (
         <p className="field-error" role="alert">
           {message}
         </p>
       ) : null}
+      {hint ? <p className="hint">{hint}</p> : null}
       <span className="sr-only" aria-live="polite">
         {list.announcement}
       </span>

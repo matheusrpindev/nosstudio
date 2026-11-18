@@ -110,8 +110,17 @@ export type SelectProps = Omit<ComponentProps<"select">, "children"> & {
 export function Select({ className, options, placeholder, children, defaultValue, ...props }: SelectProps) {
   const { repopulate, submitted: _submitted, ...control } = useControlProps(props);
   const uncontrolled = props.value === undefined;
+  const initial = repopulate ?? defaultValue;
   return (
-    <select {...props} {...control} {...(uncontrolled ? { defaultValue: repopulate ?? defaultValue } : null)} className={cn("input", className)}>
+    <select
+      // Remonta quando o valor inicial muda (erro repopulado, ou novo valor salvo vindo do servidor): o reset
+      // automático do formulário depois da action devolveria o select à opção inicial ANTIGA.
+      key={uncontrolled ? String(initial ?? "") : undefined}
+      {...props}
+      {...control}
+      {...(uncontrolled ? { defaultValue: initial } : null)}
+      className={cn("input", className)}
+    >
       {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
       {options
         ? normalizeOptions(options).map((option) => (

@@ -47,8 +47,10 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
     build — só depois de ler cookies/`await connection()`, dentro de `"use cache"`, ou no cliente.
   - **Site público**: nunca consulte o banco direto na página. Use as funções de `src/server/site/queries.ts`
     (todas `"use cache"` + tag `site`). As páginas ficam estáticas e o painel as atualiza com `invalidateSite()`.
-  - **Painel**: `src/app/painel/layout.tsx` já envolve tudo em `<Suspense>` e exporta `instant = false`. As páginas
-    do painel são `async`, começam com `await requireUser()` e leem o banco direto (sem cache). `requireUser()`
+  - **Painel**: `src/app/painel/layout.tsx` já envolve tudo em `<Suspense>`. **Toda página do painel exporta
+    `export const instant = false`** (o do layout não cobre segmentos filhos; sem isso o Next acusa "uncached data
+    outside of <Suspense>" nas navegações), é `async`, começa com `await requireUser()` e lê o banco direto
+    (sem cache). `requireUser()`
     já chama `connection()` por dentro (a sessão depende do horário), então depois dele `todayISO()`/`new Date()`
     são seguros. Ler só `cookies()` NÃO basta: o Next pré-renderiza a "casca" por sessão e acusa `new Date()`.
   - Não use `export const dynamic/revalidate/fetchCache` (não existem com Cache Components) nem `unstable_cache`.

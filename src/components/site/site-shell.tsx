@@ -6,6 +6,7 @@
  * fica estática. Nada de cookies(), headers() ou searchParams aqui.
  */
 import { cacheLife } from "next/cache";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { todayISO } from "@/lib/dates";
@@ -78,7 +79,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
       <AnnouncementBar items={announcements.map(toAnnouncementView)} timeZone={env.timezone} />
 
       <SiteHeader
-        logo={<Logo variant="wordmark" label="" />}
+        logo={<Logo variant="wordmark" label="" className="h-[1.875rem] lg:h-9" />}
         brandName={general.brandName}
         items={nav}
         cta={cta}
@@ -93,20 +94,20 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         <div className="s-wrap">
           <div className="s-footer__grid">
             <div className="s-footer__brand">
-              <Logo variant="completo" tone="branco" label={`${general.brandName} — ${home.hero.eyebrow}`} />
+              <Logo variant="completo" tone="branco" label={general.brandName} className="h-auto w-full" />
             </div>
             <nav className="s-footer__col s-footer__col--nav" id="rodape-nav" aria-label="Rodapé">
               <h2 className="s-meta">Navegação</h2>
               <ul>
                 {nav.map((item) => (
                   <li key={item.href}>
-                    <a href={item.href}>{item.label}</a>
+                    <Link href={item.href}>{item.label}</Link>
                   </li>
                 ))}
               </ul>
             </nav>
             <div className="s-footer__col s-footer__col--contact">
-              <h2 className="s-meta">Fale com a NÓS</h2>
+              <h2 className="s-meta">Contato</h2>
               <ul>
                 {whatsapp ? (
                   <li>
@@ -135,7 +136,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
                   </li>
                 ))}
                 <li>
-                  <a href="/privacidade">Política de Privacidade</a>
+                  <Link href="/privacidade">Política de Privacidade</Link>
                 </li>
               </ul>
             </div>

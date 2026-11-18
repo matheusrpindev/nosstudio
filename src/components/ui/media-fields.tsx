@@ -161,11 +161,6 @@ function Messages({ name, hint, error: errorProp, uploadError, hintId }: { name:
   const error = errorProp ?? formError;
   return (
     <>
-      {hint ? (
-        <p className="hint" id={hintId}>
-          {hint}
-        </p>
-      ) : null}
       {uploadError ? (
         <p className="field-error" role="alert">
           {uploadError}
@@ -174,6 +169,11 @@ function Messages({ name, hint, error: errorProp, uploadError, hintId }: { name:
       {error ? (
         <p className="field-error" role="alert">
           {error}
+        </p>
+      ) : null}
+      {hint ? (
+        <p className="hint" id={hintId}>
+          {hint}
         </p>
       ) : null}
     </>
@@ -384,6 +384,7 @@ export function ImageField({ name, label, defaultValue = null, hint, error, aspe
       setUploadError(reason instanceof Error ? reason.message : CONNECTION_ERROR);
     } finally {
       setUpload(null);
+      setUploadError((current) => (current === WAIT_MESSAGE ? null : current));
     }
   };
 
@@ -513,7 +514,7 @@ export function GalleryField({ name, label, defaultValue = [], max, hint, error,
       }
     }
     setUpload(null);
-    if (errors.length > 0) setUploadError(errors.join(" "));
+    setUploadError((current) => (errors.length > 0 ? errors.join(" ") : current === WAIT_MESSAGE ? null : current));
   };
 
   const move = (id: number, direction: -1 | 1) => {
@@ -670,6 +671,7 @@ export function FileField({ name, label, defaultValue = null, accept = FILE_ACCE
       setUploadError(reason instanceof Error ? reason.message : CONNECTION_ERROR);
     } finally {
       setUpload(null);
+      setUploadError((current) => (current === WAIT_MESSAGE ? null : current));
     }
   };
 

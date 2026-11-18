@@ -3,7 +3,7 @@
 import { Switch as RadixSwitch } from "radix-ui";
 import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { useFieldState } from "./form";
+import { useActionFormState, useFieldState } from "./form";
 
 export type SwitchProps = {
   /** Enviado como `"on"` quando ligado (no schema: `f.checkbox()`). */
@@ -23,9 +23,13 @@ export function Switch({ name, label, hint, defaultChecked, checked, onCheckedCh
   const id = useId();
   const state = useFieldState(name);
   const initial = state.submitted ? state.value !== undefined : defaultChecked;
+  // O Radix guarda o estado inicial e volta para ele quando o React reseta o formulário depois da action.
+  // Remontar a cada resposta faz o switch nascer já com o valor certo (o que foi enviado, ou o novo padrão).
+  const responseKey = useActionFormState()?.state.nonce ?? "inicial";
   return (
     <div className={cn("flex min-h-11 items-start gap-3 py-2", className)}>
       <RadixSwitch.Root
+        key={responseKey}
         id={id}
         name={name}
         value="on"

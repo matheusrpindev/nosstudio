@@ -70,7 +70,7 @@ export function PhotoSlot({
           </span>
         ) : (
           <span className="s-photo__symbol" aria-hidden="true">
-            {symbol ?? <Logo variant="simbolo" tone={tone === "roxo" || tone === "grafite" ? "branco" : "roxo"} label="" />}
+            {symbol ?? <Logo variant="simbolo" tone={tone === "roxo" || tone === "grafite" ? "branco" : "roxo"} label="" className="h-auto w-[34%]" />}
           </span>
         )}
         {frame ? <ViewfinderFrame /> : null}

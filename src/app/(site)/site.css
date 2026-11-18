@@ -480,8 +480,8 @@
   }
   .s-notice__text a {
     display: inline-block;
-    margin-left: 0.25em;
-    padding-block: 0.25rem;
+    margin: -0.8125rem 0 -0.8125rem 0.25em;
+    padding-block: 0.8125rem; /* alvo de toque de 44px sem aumentar a barra */
     font-weight: 700;
     text-decoration: underline;
     text-underline-offset: 0.25em;
@@ -530,10 +530,6 @@
     align-items: center;
     min-height: 2.75rem;
     margin-right: auto;
-  }
-  .s-header__brand svg {
-    height: 1.875rem;
-    width: auto;
   }
   .s-header__cta--d {
     display: none;
@@ -673,9 +669,6 @@
   @media (min-width: 1024px) {
     .s-header__brand {
       margin-right: 0;
-    }
-    .s-header__brand svg {
-      height: 2.25rem;
     }
     .s-header__in {
       gap: 1.5rem;
@@ -843,10 +836,10 @@
   }
   .s-hero__symbol {
     position: absolute;
+    display: block;
     right: calc(var(--s-margin) + 1.25rem);
     top: 3.25rem;
     height: 56%;
-    width: auto;
   }
   .s-hero__rec {
     position: absolute;
@@ -1150,6 +1143,7 @@
     display: flex;
     align-items: center;
     padding-block: 1.75rem 2rem;
+    container-type: inline-size; /* o enquadramento se mede pela largura do painel */
   }
   .s-panel__title {
     font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.375rem);
@@ -1190,7 +1184,9 @@
 
   /* Enquadramento por proporção: 16:9 (vídeo), 9:16 (celular), 4:5 (retrato). */
   .s-ratio {
-    --h: 6rem;
+    /* altura: o maior quadro 16:9 (+ rótulo) que cabe na largura do painel, até --h-max */
+    --h-max: 9rem;
+    --h: min(var(--h-max), calc((100cqw - 3.5rem) * 0.5625));
     position: relative;
     display: grid;
     place-items: center;
@@ -1200,9 +1196,9 @@
   }
   .s-ratio .s-frame {
     inset: 0;
-    --arm: 1.125rem;
+    --arm: 1.25rem;
     --stroke: 2px;
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     transition: inset 0.45s var(--s-ease);
   }
   .s-ratio__label {
@@ -1218,22 +1214,27 @@
     opacity: 0.85;
   }
   .s-ratio__mark {
-    height: 46%;
+    height: 52%;
     width: auto;
     transition: transform 0.5s var(--s-ease);
   }
   .s-ratio[data-kind="play"] .s-ratio__mark {
     color: var(--color-lima);
-    margin-left: 6%;
+    margin-left: 5%;
   }
   .s-ratio[data-kind="accent"] .s-ratio__mark {
     height: auto;
-    width: 56%;
+    width: 62%;
     color: var(--s-idx);
   }
   .s-ratio[data-kind="rings"] .s-ratio__mark {
     height: auto;
-    width: 74%;
+    width: 82%;
+    --ring-2: var(--color-offwhite);
+  }
+  .site [data-tone="paper"] .s-ratio[data-kind="rings"] .s-ratio__mark,
+  .site [data-tone="lavanda"] .s-ratio[data-kind="rings"] .s-ratio__mark {
+    --ring-2: var(--color-grafite);
   }
   .s-ratio__bars {
     position: absolute;
@@ -1283,7 +1284,7 @@
     }
     .s-panel {
       padding: 1.5rem 1.75rem 2rem;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 19rem);
       column-gap: 2rem;
     }
     .s-panel__top {
@@ -1293,7 +1294,6 @@
       grid-column: 2;
       grid-row: 2 / span 2;
       padding-block: 1.5rem 0;
-      padding-right: 2.5rem;
       align-self: center;
     }
     .s-panel__title {
@@ -1307,7 +1307,7 @@
       grid-row: 3;
     }
     .s-ratio {
-      --h: 7.5rem;
+      --h-max: 8.5rem;
     }
   }
   @media (min-width: 1024px) {
@@ -1339,12 +1339,12 @@
       align-self: start;
     }
     .s-ratio {
-      --h: clamp(8rem, 12.5vw, 11.25rem);
+      --h-max: 12.5rem;
     }
     .s-ratio .s-frame {
-      --arm: 1.75rem;
-      --stroke: 2.5px;
-      border-radius: 0.75rem;
+      --arm: 2rem;
+      --stroke: 3px;
+      border-radius: 0.875rem;
     }
     .s-ratio__bars {
       top: 0.875rem;
@@ -1405,11 +1405,6 @@
     inset: 0;
     display: grid;
     place-items: center;
-  }
-  .s-photo__symbol > svg {
-    width: 34%;
-    height: auto;
-    max-height: 56%;
   }
   .s-photo__field .s-frame {
     inset: 0.875rem;
@@ -1841,11 +1836,23 @@
     letter-spacing: -0.05em;
     overflow-wrap: break-word;
   }
+  .s-plan--compact {
+    display: flex;
+    flex-direction: column;
+  }
   .s-plan--compact .s-plan__name {
+    margin-top: 0;
     font-size: var(--s-fs-h3);
     font-weight: 800;
     letter-spacing: -0.035em;
     line-height: 1.1;
+  }
+  .s-plan--compact .s-plan__for {
+    font-size: 1rem;
+  }
+  .s-plan--compact .s-plan__data {
+    margin-top: 1.25rem;
+    margin-bottom: auto;
   }
   .s-plan__for {
     margin-top: 0.875rem;
@@ -2361,6 +2368,7 @@
   /* Formulário */
   .s-form {
     display: grid;
+    align-content: start;
     gap: 1.125rem;
     padding: clamp(1.25rem, 0.6rem + 2.4vw, 2.25rem);
     scroll-margin-top: 6rem;
@@ -2622,9 +2630,8 @@
     display: grid;
     gap: 2.5rem var(--s-gutter);
   }
-  .s-footer__brand svg {
-    width: min(100%, 17.5rem);
-    height: auto;
+  .s-footer__brand {
+    max-width: 17.5rem;
   }
   .s-footer__col h2 {
     margin-bottom: 0.5rem;
@@ -2690,8 +2697,8 @@
     .s-footer__col--contact {
       grid-column: 10 / -1;
     }
-    .s-footer__brand svg {
-      width: min(100%, 24rem);
+    .s-footer__brand {
+      max-width: 24rem;
     }
     .s-footer__base {
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -2712,8 +2719,8 @@
     .s-footer__brand {
       grid-column: 1 / 6;
     }
-    .s-footer__brand svg {
-      width: min(100%, 30rem);
+    .s-footer__brand {
+      max-width: 30rem;
     }
     .s-footer__col--nav {
       grid-column: 7 / 9;
@@ -2841,26 +2848,8 @@
 
   /* ---------- 23. Movimento ---------------------------------------------- */
   @media (prefers-reduced-motion: no-preference) {
-    /* Entrada por rolagem. O estado "pending" só é aplicado por JS a elementos que ainda estão abaixo
-       da dobra (ver reveal.tsx): sem JS — ou se ele falhar — nada fica oculto. */
-    [data-reveal] {
-      transition:
-        opacity 0.7s var(--s-ease),
-        transform 0.7s var(--s-ease);
-      transition-delay: calc(var(--d, 0) * 80ms);
-    }
-    [data-reveal="pending"] {
-      opacity: 0;
-      transform: translateY(1rem);
-      transition: none;
-    }
-    .s-rule[data-reveal] {
-      transition: transform 1s var(--s-ease);
-    }
-    .s-rule[data-reveal="pending"] {
-      opacity: 1;
-      transform: scaleX(0);
-    }
+    /* A entrada por rolagem (`data-reveal`) é feita com a Web Animations API em reveal-observer.tsx:
+       sem JS — ou se ele falhar — nada fica oculto. */
 
     /* hero — CSS puro, uma vez, ao carregar */
     @keyframes s-rise {

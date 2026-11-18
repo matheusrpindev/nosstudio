@@ -22,6 +22,8 @@ export type MarkdownFieldProps = {
   /** Mensagem de erro. Dentro de um <ActionForm> o erro do campo (`fieldErrors[name]`) aparece sozinho. */
   error?: string;
   required?: boolean;
+  /** Mostra "(opcional)" ao lado do rótulo (como o <Field>). */
+  optional?: boolean;
   placeholder?: string;
   maxLength?: number;
   /** Id do textarea (por padrão é gerado). */
@@ -98,6 +100,7 @@ export function MarkdownField({
   hint,
   error: errorProp,
   required,
+  optional,
   placeholder,
   maxLength,
   id,
@@ -155,12 +158,7 @@ export function MarkdownField({
     <div className={className}>
       <label htmlFor={fieldId} className="label">
         {label}
-        {required ? (
-          <span aria-hidden="true" className="text-perigo">
-            {" "}
-            *
-          </span>
-        ) : null}
+        {optional ? <span className="text-cinza font-normal"> (opcional)</span> : null}
       </label>
 
       <div
@@ -239,6 +237,11 @@ export function MarkdownField({
         ) : null}
       </div>
 
+      {error ? (
+        <p id={errorId} className="field-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <div id={hintId}>
         {hint ? <p className="hint">{hint}</p> : null}
         <p className="hint">
@@ -247,11 +250,6 @@ export function MarkdownField({
           branco separa parágrafos.
         </p>
       </div>
-      {error ? (
-        <p id={errorId} className="field-error" role="alert">
-          {error}
-        </p>
-      ) : null}
     </div>
   );
 }

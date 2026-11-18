@@ -64,12 +64,15 @@ export function PackageCard({
       data-tone={recommended ? "roxo" : undefined}
       {...revealProps(delay)}
     >
-      <div className="s-plan__top">
-        {level ? <LevelMark level={level.index + 1} total={level.total} /> : <span />}
-        {recommended && recommendedLabel ? <span className="s-tag">{recommendedLabel}</span> : null}
-      </div>
+      {compact ? null : (
+        <div className="s-plan__top">
+          {level ? <LevelMark level={level.index + 1} total={level.total} /> : <span />}
+          {recommended && recommendedLabel ? <span className="s-tag">{recommendedLabel}</span> : null}
+        </div>
+      )}
       <Title className="s-plan__name">{pkg.name}</Title>
-      <p className="s-plan__for">{pkg.tagline}</p>
+      {/* no quadro de planos a linha existe mesmo vazia: mantém os cartões alinhados entre si */}
+      {compact && !pkg.tagline ? null : <p className="s-plan__for">{pkg.tagline}</p>}
       <dl className="s-plan__data">
         {pkg.description ? (
           <div>
@@ -131,7 +134,7 @@ export function PackageCard({
         >
           {pkg.ctaLabel}
         </SiteButtonLink>
-      ) : (
+      ) : compact ? null : (
         <span />
       )}
     </li>

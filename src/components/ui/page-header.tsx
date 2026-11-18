@@ -34,7 +34,8 @@ export function PageHeader({ title, description, actions, back, badge, className
           </div>
           {description ? <p className="text-cinza mt-1.5 max-w-2xl text-sm leading-relaxed sm:text-[0.9375rem]">{description}</p> : null}
         </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+        {/* no celular os botões dividem a largura (ou empilham, se não couberem) */}
+        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2 max-sm:[&>*]:flex-1">{actions}</div> : null}
       </div>
     </header>
   );

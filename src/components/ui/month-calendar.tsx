@@ -306,7 +306,14 @@ export function MonthCalendar({
                         const row = (
                           <>
                             <span aria-hidden="true" className={cn("size-2.5 shrink-0 rounded-full", TONE_DOT[item.tone ?? "roxo"])} />
-                            <span className="text-cinza w-11 shrink-0 text-sm font-semibold tabular-nums">{item.time ?? "—"}</span>
+                            <span className="text-cinza w-11 shrink-0 text-sm font-semibold tabular-nums">
+                              {item.time ?? (
+                                <>
+                                  <span aria-hidden="true">—</span>
+                                  <span className="sr-only">Sem horário</span>
+                                </>
+                              )}
+                            </span>
                             <span className="text-grafite min-w-0 flex-1 text-sm font-medium">{item.title}</span>
                             {item.href ? <ChevronRight aria-hidden="true" className="text-cinza size-4 shrink-0" /> : null}
                           </>
