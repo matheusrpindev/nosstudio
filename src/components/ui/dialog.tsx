@@ -136,8 +136,9 @@ export function ConfirmDialog({
         <RadixAlertDialog.Content
           {...(description ? {} : { "aria-describedby": undefined })}
           className={cn(
-            "dialogo-entrada shadow-flutuante fixed inset-x-0 bottom-0 z-50 w-full rounded-t-cartao bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none",
-            "sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-cartao sm:p-6",
+            // texto longo ou tela baixa: como o <Dialog>, nunca passa da altura da tela — rola por dentro
+            "dialogo-entrada shadow-flutuante fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] w-full overflow-y-auto overscroll-contain rounded-t-cartao bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none",
+            "sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[85dvh] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-cartao sm:p-6",
           )}
         >
           <RadixAlertDialog.Title className="text-grafite text-lg leading-snug font-bold">{title}</RadixAlertDialog.Title>

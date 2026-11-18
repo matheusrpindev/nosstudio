@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { ActionState } from "@/lib/action-state";
 import { cn } from "@/lib/cn";
+import { keepChoicesOnReset } from "@/lib/form-reset";
 import { SERVICE_INTEREST_LABELS, SERVICE_INTERESTS, type ServiceInterest } from "@/lib/domain";
 import {
   EVENT_COVERAGE_OPTIONS,
@@ -281,6 +282,9 @@ function LeadFormInner({
       id={id}
       ref={formRef}
       action={formAction}
+      // campos controlados: depois de um erro, o reset automático do React não pode desmarcar o consentimento
+      // nem esvaziar os selects que a pessoa já escolheu (ver src/lib/form-reset.ts)
+      onReset={keepChoicesOnReset}
       noValidate
       className={cn("s-form", bordered && "s-form--bordered", className)}
       data-tone="paper"

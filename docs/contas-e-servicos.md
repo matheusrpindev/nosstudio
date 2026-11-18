@@ -44,6 +44,8 @@ O README explica as alternativas. Serviços que oferecem disco persistente tamb�
 
 **HTTPS (cadeado do site):** o site precisa de certificado HTTPS. O README recomenda um proxy com certificado gratuito (Let's Encrypt), que o desenvolvedor configura e renova.
 
+**Um cuidado de instalação (para o desenvolvedor):** o sistema nunca deve ficar acessível direto pela internet, só através desse proxy. O README, na seção "Publicação", traz a configuração: a porta do sistema fica aberta apenas dentro do servidor, o proxy informa ao sistema o endereço real de cada visitante e o número de proxies fica anotado na configuração (`TRUSTED_PROXIES`). Sem isso, as proteções contra tentativas repetidas de login e contra abuso do formulário deixam de funcionar direito. Peça ao desenvolvedor a confirmação de que esse item foi conferido depois da publicação.
+
 **Se faltar:** sem hospedagem paga e ligada, site e painel ficam fora do ar. Se o disco não for persistente, o banco e os arquivos podem ser perdidos em uma reinicialização.
 
 ## E-mail de envio (SMTP)
@@ -56,10 +58,11 @@ O README explica as alternativas. Serviços que oferecem disco persistente tamb�
 
 **Quem cuida:** o desenvolvedor configura no servidor; os sócios mantêm a conta ativa e paga.
 
-**Se faltar:** o painel **continua funcionando**, mas os e-mails não saem. Eles ficam só no registro (log) do servidor. Na prática:
+**Se faltar:** o painel **continua funcionando**, mas os e-mails não saem. O registro (log) do servidor anota só que um e-mail deixou de ser enviado, sem o texto: o link de redefinição de senha e os dados dos leads não ficam gravados lá. Na prática:
 
 - vocês **não recebem aviso** de novo lead por e-mail, mas o lead aparece normalmente em **Leads**;
-- a recuperação de senha por e-mail **não funciona**. Para redefinir uma senha, outro administrador gera uma nova em **Configurações › Usuários**, ou o responsável técnico faz pelo servidor.
+- a recuperação de senha por e-mail **não funciona**. Para redefinir uma senha, outro administrador gera uma nova em **Configurações › Usuários › Nova senha**, ou o responsável técnico faz pelo servidor;
+- se o login de uma conta ficar travado por excesso de tentativas, o caminho também é **Nova senha** (pelo sócio) ou o comando de desbloqueio (pelo responsável técnico; está no README).
 
 O painel avisa essa falta na **Visão geral** e em **Configurações › Notificações**.
 
@@ -81,6 +84,8 @@ O painel avisa essa falta na **Visão geral** e em **Configurações › Notific
 
 **Cópia extra feita por vocês:** em **Configurações › Dados**, vocês podem baixar a qualquer momento uma cópia completa em JSON e planilhas (CSV). Ela serve para guardar ou levar para outro sistema, mas **não leva os arquivos enviados**. Não substitui o backup.
 
+**Backups e pedidos de exclusão de dados (LGPD):** quando vocês excluem um cliente, um lead ou uma foto no painel, as cópias de segurança feitas antes ainda guardam esses dados até serem substituídas pelas novas (o padrão do sistema é manter as 14 mais recentes). Combinem com o desenvolvedor por quanto tempo as cópias ficam guardadas e levem esse prazo em conta ao responder a um pedido de exclusão.
+
 **Se faltar:** se o servidor for perdido e não houver cópia, clientes, propostas, contratos e o conteúdo do site se perdem. Peça também um **teste de restauração** de tempos em tempos, para ter certeza de que a cópia funciona.
 
 ## Contas do próprio painel
@@ -93,7 +98,9 @@ O painel avisa essa falta na **Visão geral** e em **Configurações › Notific
 
 **Como são criadas:** em **Configurações › Usuários** (botão **Nova conta**) ou pelo desenvolvedor, na criação inicial. A senha provisória aparece uma única vez e a pessoa define a própria senha no primeiro acesso.
 
-**Conta do desenvolvedor:** para dar suporte, o desenvolvedor usa uma conta com perfil **Acesso técnico (temporário)**. Ela usa o painel, mas não gerencia contas nem exporta dados. **Quando o suporte acabar, os sócios usam Desativar:** o acesso é revogado na hora e o histórico fica guardado.
+**Conta do desenvolvedor:** para dar suporte, o desenvolvedor usa uma conta com perfil **Acesso técnico (temporário)**. Ela usa o painel, mas não gerencia contas, não vê nem altera as Notificações, não vê a Auditoria e não exporta dados. Atenção: dentro do painel ela **vê** clientes, orçamentos, financeiro e contratos, como vocês. Por isso é temporária. **Quando o suporte acabar, os sócios usam Desativar:** o acesso é revogado na hora e o histórico fica guardado. Depois de desativar, confiram em **Configurações › Notificações** se algum e-mail do desenvolvedor ficou na lista de quem recebe os avisos de novo lead.
+
+**Limites de segurança das contas:** cada conta fica conectada em no máximo 10 aparelhos (o mais antigo sai quando entra o décimo primeiro). Muitas tentativas erradas de senha travam a entrada por um tempo; o Manual do painel explica como destravar ("Bloqueio e desbloqueio do login").
 
 **Se faltar:** sem ao menos uma conta de administrador ativa, ninguém entra no painel. Mantenha sempre **duas contas de administrador** (Pedro e Laura), para que um possa gerar nova senha para o outro. Se as duas senhas forem perdidas e o e-mail não estiver configurado, só o responsável técnico consegue redefinir.
 
@@ -115,7 +122,7 @@ Estes pontos precisam ser **combinados por escrito** entre os sócios e o desenv
 
 - **Correções (garantia):** por quanto tempo o desenvolvedor corrige, sem custo, erros do que foi entregue, e como pedir. **A definir.**
 - **Mudanças e novas funções:** como pedir, como é feito o orçamento e o prazo de pequenas mudanças (textos, telas, novos campos) e de módulos novos. **A definir.**
-- **Atualizações de segurança:** quem atualiza o sistema, o servidor e as dependências, com que frequência, e o que acontece se uma falha de segurança for descoberta. **A definir.**
+- **Atualizações de segurança:** quem atualiza o sistema, o servidor e as dependências, com que frequência, e o que acontece se uma falha de segurança for descoberta. **A definir.** Há uma melhoria de segurança já mapeada e ainda não feita (uma política mais rígida contra scripts dentro do painel, descrita no README como "CSP com nonce"): combinem quando ela entra.
 - **Monitoramento e backups:** quem confere que o site está no ar e que os backups funcionam, e como os sócios são avisados se algo falhar. **A definir.**
 - **Mensalidade:** se haverá cobrança mensal de manutenção e suporte, o que ela inclui e o valor. **A definir.**
 - **Custos externos:** domínio, hospedagem, e-mail de envio e espaço de backup, e quem paga cada um (em geral, a NÓS diretamente ao provedor). Valores: **a definir.**

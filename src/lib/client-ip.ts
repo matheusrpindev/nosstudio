@@ -25,7 +25,13 @@ export function normalizeIp(raw: string | null | undefined): string | null {
   if (version !== 6) return null;
   value = value.toLowerCase();
   const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(value); // IPv4 mapeado em IPv6
-  return mapped && isIP(mapped[1]) === 4 ? mapped[1] : value;
+  if (mapped && isIP(mapped[1]) === 4) return mapped[1];
+  const mappedHex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(value); // o mesmo, escrito em hexadecimal
+  if (mappedHex) {
+    const [high, low] = [parseInt(mappedHex[1], 16), parseInt(mappedHex[2], 16)];
+    return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`;
+  }
+  return value;
 }
 
 /**

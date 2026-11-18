@@ -71,8 +71,9 @@ export default async function ProposalEditorPage({ params }: { params: Promise<{
         }
         back={isTemplate ? { href: "/painel/orcamentos/modelos", label: "Modelos" } : { href: "/painel/orcamentos", label: "Orçamentos" }}
         actions={
+          // `download`: link comum, sem prefetch — o <Link> chamaria a rota (e registraria "Baixou o PDF") só de a página abrir
           isTemplate ? null : (
-            <ButtonLink href={`/painel/orcamentos/${proposal.id}/pdf?baixar=1`} variant="secondary" icon={<Download />}>
+            <ButtonLink href={`/painel/orcamentos/${proposal.id}/pdf?baixar=1`} download variant="secondary" icon={<Download />}>
               Baixar PDF
             </ButtonLink>
           )

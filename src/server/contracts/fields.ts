@@ -128,5 +128,5 @@ export function buildContractFieldValues({ client, proposal, project, today }: C
 export function unfilledFieldsSummary(fields: UnfilledField[]): string {
   if (fields.length === 0) return "";
   const list = fields.map((field) => field.token).join(", ");
-  return fields.length === 1 ? `Falta preencher 1 campo: ${list}.` : `Faltam preencher ${fields.length} campos: ${list}.`;
+  return fields.length === 1 ? `Falta preencher 1 campo: ${list}.` : `Falta preencher ${fields.length} campos: ${list}.`;
 }

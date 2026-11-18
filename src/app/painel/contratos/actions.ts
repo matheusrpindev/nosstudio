@@ -41,7 +41,7 @@ async function checkReferences(data: z.output<typeof contractSchema>, formData: 
 function unfilledNotice(body: string): string {
   const count = findUnfilledFields(body).length;
   if (count === 0) return "";
-  return count === 1 ? " Falta preencher 1 campo do texto." : ` Faltam preencher ${count} campos do texto.`;
+  return count === 1 ? " Falta preencher 1 campo do texto." : ` Falta preencher ${count} campos do texto.`;
 }
 
 // ------------------------------------------------------------------ contratos

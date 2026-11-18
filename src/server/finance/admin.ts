@@ -33,6 +33,7 @@ function filterWhere(filters: FinanceFilters, today: ISODate): SQL | undefined {
   if (filters.category) conditions.push(eq(financeEntries.category, filters.category));
   if (filters.clientId) conditions.push(eq(financeEntries.clientId, filters.clientId));
   if (filters.projectId) conditions.push(eq(financeEntries.projectId, filters.projectId));
+  if (filters.proposalId) conditions.push(eq(financeEntries.proposalId, filters.proposalId));
   if (filters.situation === "realizado") conditions.push(isNotNull(financeEntries.paidAt));
   if (filters.situation === "vencido") conditions.push(isNull(financeEntries.paidAt), lt(financeEntries.dueDate, today));
   if (filters.situation === "previsto") conditions.push(isNull(financeEntries.paidAt), gte(financeEntries.dueDate, today));
@@ -41,6 +42,12 @@ function filterWhere(filters: FinanceFilters, today: ISODate): SQL | undefined {
     conditions.push(sql`(lower(${financeEntries.description}) like ${text} escape '\\' or lower(${financeEntries.supplier}) like ${text} escape '\\')`);
   }
   return and(...conditions);
+}
+
+/** "2026-007" ou "2026-007 v2" — para o aviso do filtro por proposta (`?proposta=`). `null` se não existir. */
+export async function getProposalLabel(id: number): Promise<string | null> {
+  const [row] = await db.select({ number: proposals.number, version: proposals.version }).from(proposals).where(and(eq(proposals.id, id), eq(proposals.isTemplate, false)));
+  return row ? `${row.number}${row.version > 1 ? ` v${row.version}` : ""}` : null;
 }
 
 export type FinanceListItem = FinanceEntry & { clientName: string | null; projectTitle: string | null };

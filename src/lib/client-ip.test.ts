@@ -8,6 +8,7 @@ describe("normalizeIp", () => {
     expect(normalizeIp("[2001:DB8::1]:443")).toBe("2001:db8::1");
     expect(normalizeIp("fe80::1%eth0")).toBe("fe80::1");
     expect(normalizeIp("::ffff:203.0.113.7")).toBe("203.0.113.7");
+    expect(normalizeIp("::FFFF:CB00:7107")).toBe("203.0.113.7");
   });
 
   it("recusa o que não é IP", () => {

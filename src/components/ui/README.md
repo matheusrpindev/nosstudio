@@ -123,7 +123,7 @@ Fora de um `Field`: `useFieldState(name)` (erro e valor a repopular) e `useActio
 | Componente | Props principais | Exemplo |
 | --- | --- | --- |
 | `Button` | `variant: primary \| accent \| secondary \| ghost \| danger \| danger-ghost`, `size: sm \| md \| lg`, `icon`, `iconRight`, `loading`, `block` | `<Button icon={<Plus />} onClick={…}>Nova tarefa</Button>` (`type="button"` por padrão) |
-| `ButtonLink` | as de `Button` + `href`, `external` | `<ButtonLink href="/painel/leads/novo" icon={<Plus />}>Cadastrar lead</ButtonLink>` · `external` abre em nova aba com `rel` seguro |
+| `ButtonLink` | as de `Button` + `href`, `external` | `<ButtonLink href="/painel/leads/novo" icon={<Plus />}>Cadastrar lead</ButtonLink>` · `external` abre em nova aba com `rel` seguro · `download` (exportações, PDF de rota): vira `<a>` comum, sem prefetch — o `<Link>` chamaria a rota só de a página abrir |
 | `IconButton` | `aria-label` (**obrigatório**), `variant` (padrão `ghost`), `size: sm \| md`, `loading` | `<IconButton aria-label="Excluir item"><Trash2 /></IconButton>` |
 | `buttonClasses()` | `{ variant, size, block }` | Para dar cara de botão a outro elemento (`<label>`, `<summary>`). |
 

@@ -19,6 +19,8 @@ export type FinanceFilters = {
   situation?: EntryStatus;
   clientId?: number;
   projectId?: number;
+  /** Só os lançamentos ligados a esta proposta (vem do cartão "Financeiro" do orçamento). */
+  proposalId?: number;
   /** Período livre (data de referência: pagamento, ou vencimento se em aberto). */
   from?: ISODate;
   to?: ISODate;
@@ -65,6 +67,7 @@ export function parseFinanceFilters(raw: Raw, today: ISODate): FinanceFilters {
     situation: oneOf(ENTRY_SITUATIONS, raw.situacao),
     clientId: positiveId(raw.cliente),
     projectId: positiveId(raw.projeto),
+    proposalId: positiveId(raw.proposta),
     from: dateParam(raw.de),
     to: dateParam(raw.ate),
     q: q || undefined,
@@ -77,12 +80,12 @@ export type Scope = { kind: "month" | "range" | "all"; from?: ISODate; to?: ISOD
 /**
  * Período que a lista cobre:
  * - datas informadas ("de"/"até") → intervalo livre;
- * - filtro por cliente, projeto ou "vencido" → todo o histórico (esses recortes atravessam meses);
+ * - filtro por cliente, projeto, proposta ou "vencido" → todo o histórico (esses recortes atravessam meses);
  * - senão → o mês em foco.
  */
 export function resolveScope(filters: FinanceFilters): Scope {
   if (filters.from || filters.to) return { kind: "range", from: filters.from, to: filters.to };
-  if (filters.clientId || filters.projectId || filters.situation === "vencido") return { kind: "all" };
+  if (filters.clientId || filters.projectId || filters.proposalId || filters.situation === "vencido") return { kind: "all" };
   return { kind: "month", from: startOfMonth(filters.month), to: endOfMonth(filters.month) };
 }
 
@@ -98,6 +101,7 @@ export function filtersToQuery(filters: FinanceFilters, overrides: Partial<Recor
   set("situacao", filters.situation);
   set("cliente", filters.clientId);
   set("projeto", filters.projectId);
+  set("proposta", filters.proposalId);
   set("de", filters.from);
   set("ate", filters.to);
   set("q", filters.q);

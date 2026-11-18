@@ -13,6 +13,7 @@ import { TabPanel, Tabs } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { initialActionState } from "@/lib/action-state";
 import { cn } from "@/lib/cn";
+import { keepChoicesOnReset } from "@/lib/form-reset";
 import { formatBRL, formatPercent } from "@/lib/format";
 import { saveProposalAction } from "../actions";
 import { draftNumbers, stepOfField, type EditorStep, type ProposalDraft } from "../draft";
@@ -119,7 +120,9 @@ export function ProposalEditor({ id, isTemplate, number, version, serverKey, ini
   return (
     <div>
       <Tabs items={tabs} value={tab} onValueChange={(value) => setTab(value as EditorStep)} aria-label="Etapas do orçamento">
-        <form id={formId} action={formAction} noValidate className="space-y-4">
+        {/* onReset: todos os campos são controlados; o reset automático do React depois de salvar deixaria caixas e
+            selects mostrando o valor de quando a página abriu (ver src/lib/form-reset.ts) */}
+        <form id={formId} action={formAction} noValidate className="space-y-4" onReset={keepChoicesOnReset}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="payload" value={payload} />
           {!state.ok && state.message ? (

@@ -118,7 +118,7 @@ export function Select({ className, options, placeholder, children, defaultValue
       key={uncontrolled ? String(initial ?? "") : undefined}
       {...props}
       {...control}
-      {...(uncontrolled ? { defaultValue: initial } : null)}
+      {...(uncontrolled ? { defaultValue: initial } : { "data-controlled": "" })}
       className={cn("input", className)}
     >
       {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
@@ -168,7 +168,7 @@ export function Checkbox({ label, hint, className, defaultChecked, ...props }: C
         <input
           type="checkbox"
           {...props}
-          {...(uncontrolled ? { defaultChecked: checked } : null)}
+          {...(uncontrolled ? { defaultChecked: checked } : { "data-controlled": "" })}
           aria-invalid={state.error ? true : undefined}
           className="checkbox mt-px"
         />
@@ -225,7 +225,7 @@ export function RadioCards({ name, options, defaultValue, value, onValueChange, 
             disabled={option.disabled}
             required={required ?? field?.required}
             {...(value !== undefined
-              ? { checked: value === option.value, onChange: () => onValueChange?.(option.value) }
+              ? { checked: value === option.value, onChange: () => onValueChange?.(option.value), "data-controlled": "" }
               : { defaultChecked: initial === option.value, onChange: () => onValueChange?.(option.value) })}
             className="accent-roxo mt-0.5 size-[1.125rem] shrink-0 cursor-pointer"
           />

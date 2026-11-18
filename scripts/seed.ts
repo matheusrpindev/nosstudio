@@ -576,7 +576,15 @@ async function seedDemo() {
       kind: "diaria",
       isTemplate: true,
       versionLabel: "rascunho",
-      body: "Modelo de exemplo. A redação jurídica precisa ser revisada antes do uso.\n\n**Objeto:** prestação de serviço de captação em diária…",
+      // usa os campos automáticos ({{…}}): ao criar um contrato com este modelo, eles viram os dados do cliente e da proposta
+      body: [
+        "Modelo de exemplo. A redação jurídica precisa ser revisada antes do uso.",
+        "**CONTRATANTE:** {{cliente}}, CPF/CNPJ {{documento}}, {{cidade}}. Contato: {{contato}}, WhatsApp {{whatsapp}}, e-mail {{email}}.",
+        "**Objeto:** prestação de serviço de captação em diária — {{servico}} (proposta {{proposta}}), em {{data_evento}}, {{local_evento}}.",
+        "**Valor:** {{valor_total}}, com entrada de {{entrada}} e saldo de {{saldo}}:",
+        "{{parcelas}}",
+        "{{data_hoje_extenso}}.",
+      ].join("\n\n"),
     },
     {
       title: "[Exemplo] Contrato de casamento — Ana & Bruno",

@@ -107,15 +107,14 @@ export default async function ClientPage({ params }: Props) {
                   <span className="mt-2 block">
                     {remaining ? (
                       <>
-                        <strong className="text-grafite">Continuam existindo</strong>, sem cliente vinculado: {remaining}. Eles podem citar o nome da pessoa no título, no texto ou em arquivos enviados.
+                        <strong className="text-grafite">Continuam existindo</strong>, sem cliente vinculado: {remaining}. Eles podem citar o nome da pessoa.
                       </>
                     ) : (
                       "Não há orçamentos, projetos, contratos, lançamentos, compromissos nem tarefas ligados a este cliente."
                     )}
                   </span>
                   <span className="mt-2 block">
-                    Se a pessoa pediu a <strong className="text-grafite">eliminação dos dados</strong> (LGPD)
-                    {remaining ? ": antes de excluir, abra esses registros pelas abas desta ficha e apague ou edite os que a identificam." : ": marque também a opção abaixo, se aparecer."} As cópias de segurança (backups) antigas ainda guardam os dados até serem substituídas.
+                    Pedido de <strong className="text-grafite">eliminação de dados</strong> (LGPD)?{remaining ? " Antes, apague ou edite esses registros (abas desta ficha)." : ""} Os backups antigos ainda guardam os dados até serem substituídos.
                   </span>
                 </>
               }
@@ -127,7 +126,7 @@ export default async function ClientPage({ params }: Props) {
                 <Checkbox
                   name="deleteLeads"
                   label={footprint.leads === 1 ? "Excluir também o pedido que esta pessoa enviou pelo site" : `Excluir também os ${footprint.leads} pedidos que esta pessoa enviou pelo site`}
-                  hint="Ficam em Leads, com nome, WhatsApp, e-mail e mensagem (inclui pedidos com o mesmo WhatsApp ou e-mail). Sem marcar, continuam lá, sem cliente vinculado."
+                  hint="Ficam em Leads (nome, WhatsApp, e-mail e mensagem), inclusive os de mesmo WhatsApp ou e-mail. Sem marcar, continuam lá, sem vínculo."
                 />
               ) : null}
             </ConfirmDialog>
@@ -202,7 +201,7 @@ export default async function ClientPage({ params }: Props) {
                 {/* LGPD (acesso/portabilidade): só administradores exportam dados — a rota confere de novo e registra na auditoria */}
                 {isAdmin ? (
                   <div className="border-areia mt-4 border-t pt-4">
-                    <ButtonLink href={`/painel/clientes/${client.id}/dados`} download prefetch={false} variant="secondary" size="sm" icon={<FileJson />}>
+                    <ButtonLink href={`/painel/clientes/${client.id}/dados`} download prefetch={false} variant="secondary" size="sm" className="min-h-11 sm:min-h-9" icon={<FileJson />}>
                       Dados deste titular (JSON)
                     </ButtonLink>
                     <p className="hint mt-2">Baixa tudo o que o painel guarda ligado a este cadastro — para responder a um pedido de acesso aos dados (LGPD). Revise antes de entregar: inclui anotações internas.</p>

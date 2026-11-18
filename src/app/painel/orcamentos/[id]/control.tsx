@@ -11,8 +11,6 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { ActionForm, Field, FormActions, SubmitButton } from "@/components/ui/form";
 import { Input, Select } from "@/components/ui/input";
 import { DateText } from "@/components/ui/text";
-import { toast } from "@/components/ui/toast";
-import type { ActionState } from "@/lib/action-state";
 import { formatDate } from "@/lib/dates";
 import { CONTRACT_STATUS_LABELS, PROPOSAL_STATUS_LABELS, type ContractStatus, type FinanceType, type ProposalStatus } from "@/lib/domain";
 import { formatBRL } from "@/lib/format";
@@ -61,39 +59,14 @@ type Props = ControlData & {
 
 const pdfUrl = (id: number) => `/painel/orcamentos/${id}/pdf`;
 
-/**
- * Onde ver estes lançamentos no financeiro. A tela de lá não tem filtro por proposta: abrimos o histórico inteiro
- * do cliente (o filtro por cliente não se limita ao mês). Sem cliente, cai na busca pelo número, que é como os
- * lançamentos gerados a partir da proposta são descritos ("Proposta 2026-001 — Entrada").
- * A lista exata desta proposta fica no próprio cartão (cada linha abre o lançamento).
- */
-function financeListUrl(number: string, clientId: number | null): string {
-  const params = new URLSearchParams();
-  if (clientId) params.set("cliente", String(clientId));
-  else {
-    params.set("de", "2000-01-01"); // período livre: não cair só no mês atual
-    params.set("q", `Proposta ${number}`);
-  }
-  return `/painel/financeiro?${params.toString()}#lancamentos`;
-}
+/** Lista do financeiro só com os lançamentos desta proposta (`?proposta=`; o filtro atravessa os meses). */
+const financeListUrl = (id: number) => `/painel/financeiro?proposta=${id}#lancamentos`;
 
 /** "Recebido em 05/12/2026" · "Vencido em …" · "Vence em …" (despesas: "Pago em …"). */
 function entrySituation(entry: { type: FinanceType; dueDate: string; paidAt: string | null }, today: string): { text: string; tone: string } {
   if (entry.paidAt) return { text: `${entry.type === "receita" ? "Recebido" : "Pago"} em ${formatDate(entry.paidAt)}`, tone: "text-sucesso" };
   if (entry.dueDate < today) return { text: `Vencido em ${formatDate(entry.dueDate)}`, tone: "text-perigo" };
   return { text: `Vence em ${formatDate(entry.dueDate)}`, tone: "text-cinza" };
-}
-
-/**
- * A troca de status tira o próprio botão da tela (a resposta do servidor já traz a etapa com o status novo), e o
- * aviso de sucesso do formulário se perdia junto com ele. Por isso o aviso é mostrado aqui, assim que a action
- * responde — é nele que aparece "O cliente foi movido para … no funil".
- */
-async function setStatusAndNotify(prev: ActionState, formData: FormData): Promise<ActionState> {
-  const state = await setProposalStatusAction(prev, formData);
-  if (!state.ok || !state.message) return state;
-  toast(state.message);
-  return { ...state, message: undefined }; // já avisado: o formulário não repete
 }
 
 function StatusButton({ id, status, children, title, description, confirmLabel, icon, variant = "secondary", disabled, tone = "primary" }: {
@@ -119,7 +92,7 @@ function StatusButton({ id, status, children, title, description, confirmLabel, 
       description={description}
       confirmLabel={confirmLabel}
       tone={tone}
-      action={setStatusAndNotify}
+      action={setProposalStatusAction}
       hidden={{ id, status }}
     />
   );
@@ -193,7 +166,7 @@ export function ControlStep(props: Props) {
           description="A pré-visualização é o mesmo arquivo do download. Ela só mostra o que o cliente pode ver."
           action={
             <div className="flex flex-wrap gap-2">
-              <ButtonLink href={`${pdfUrl(id)}?baixar=1`} icon={<Download />} variant="primary">
+              <ButtonLink href={`${pdfUrl(id)}?baixar=1`} download icon={<Download />} variant="primary">
                 Baixar PDF
               </ButtonLink>
               <ButtonLink href={pdfUrl(id)} external variant="secondary" icon={<ExternalLink />}>
@@ -379,7 +352,7 @@ export function ControlStep(props: Props) {
               </ul>
               {finance.count > finance.entries.length ? <p className="text-cinza mb-3 text-sm">Mostrando os {finance.entries.length} primeiros por vencimento.</p> : null}
               <div className="flex flex-wrap gap-2 max-sm:[&>*]:w-full">
-                <ButtonLink href={financeListUrl(number, clientId)} icon={<Wallet />}>
+                <ButtonLink href={financeListUrl(id)} icon={<Wallet />}>
                   Ver lançamentos desta proposta
                 </ButtonLink>
                 <ButtonLink href={`/painel/financeiro/novo?proposta=${id}`} variant="ghost" icon={<FilePlus2 />}>
@@ -388,9 +361,7 @@ export function ControlStep(props: Props) {
               </div>
             </>
           )}
-          {finance.count > 0 ? (
-            <p className="text-cinza mt-3 text-sm">{clientId ? "O botão abre o financeiro com todos os lançamentos deste cliente." : "O botão abre o financeiro com a busca pelo número da proposta."}</p>
-          ) : dirty ? (
+          {finance.count > 0 ? null : dirty ? (
             <p className="text-cinza mt-3 text-sm">As parcelas vêm da última versão salva da proposta.</p>
           ) : null}
         </Card>

@@ -47,7 +47,7 @@ export function UnfilledFieldsAlert({ body, children, className }: { body: strin
   if (fields.length === 0) return null;
   const unknown = fields.filter((field) => !field.known);
   return (
-    <Alert tone="alerta" className={className} title={fields.length === 1 ? "Falta preencher 1 campo no texto" : `Faltam preencher ${fields.length} campos no texto`}>
+    <Alert tone="alerta" className={className} title={fields.length === 1 ? "Falta preencher 1 campo no texto" : `Falta preencher ${fields.length} campos no texto`}>
       <p className="flex flex-wrap items-center gap-1.5">
         {fields.map((field) => (
           <FieldToken key={field.token}>{field.token}</FieldToken>

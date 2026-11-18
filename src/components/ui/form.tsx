@@ -4,6 +4,7 @@ import { createContext, Fragment, use, useActionState, useEffect, useEffectEvent
 import { useFormStatus } from "react-dom";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 import { cn } from "@/lib/cn";
+import { keepChoicesOnReset } from "@/lib/form-reset";
 import { Alert } from "./alert";
 import { Button, type ButtonProps } from "./button";
 import { toast } from "./toast";
@@ -63,7 +64,19 @@ export function ActionForm<TData = undefined>({
   className,
   ...rest
 }: ActionFormProps<TData>) {
-  const [state, formAction, pending] = useActionState(action, initialActionState as ActionState<TData>);
+  // O aviso de sucesso é mostrado assim que a action responde, e não num efeito deste componente: quando a
+  // resposta já traz a tela nova (`refresh()`) e o formulário sai dela — um botão que só existe num status, por
+  // exemplo —, o efeito nunca rodaria e o aviso se perderia.
+  const toasted = useRef<number | undefined>(undefined);
+  const run = async (previous: ActionState<TData>, formData: FormData): Promise<ActionState<TData>> => {
+    const next = await action(previous, formData);
+    if (next?.ok && next.message && success === "toast") {
+      toast(next.message);
+      toasted.current = next.nonce;
+    }
+    return next;
+  };
+  const [state, formAction, pending] = useActionState(run, initialActionState as ActionState<TData>);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Remonta os campos a cada sucesso (padrão "ajustar estado durante o render", sem efeito).
@@ -72,7 +85,7 @@ export function ActionForm<TData = undefined>({
 
   const onResponse = useEffectEvent(() => {
     if (state.ok) {
-      if (success === "toast" && state.message) toast(state.message);
+      if (success === "toast" && state.message && toasted.current !== state.nonce) toast(state.message);
       onSuccess?.(state);
     } else {
       formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
@@ -84,7 +97,8 @@ export function ActionForm<TData = undefined>({
   }, [state.nonce]);
 
   return (
-    <form ref={formRef} action={formAction} className={cn("space-y-5", className)} noValidate {...rest}>
+    // onReset: o reset automático do React depois da action não pode desmarcar campos controlados (ver form-reset.ts)
+    <form ref={formRef} action={formAction} className={cn("space-y-5", className)} noValidate onReset={(event) => keepChoicesOnReset(event, true)} {...rest}>
       {hidden
         ? Object.entries(hidden).map(([name, value]) => (value == null ? null : <input key={name} type="hidden" name={name} value={String(value)} />))
         : null}

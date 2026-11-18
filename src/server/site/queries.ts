@@ -28,7 +28,7 @@ import {
 } from "@/db/schema";
 import { toPublicImage, type PublicImage } from "@/lib/media";
 import { defaultSiteContent, resolveSiteContent, SITE_CONTENT_KEYS, type SiteContent } from "@/lib/site/content";
-import { secondsToNextAnnouncementChange, servableAnnouncements } from "./admin/announcement-status";
+import { announcementCacheLife, secondsToNextAnnouncementChange, servableAnnouncements } from "./admin/announcement-status";
 import { SITE_TAG } from "./cache";
 
 /** Durante o build o banco pode não existir ainda: registra e segue com o valor de fallback. */
@@ -118,13 +118,10 @@ export type PublicAnnouncement = Pick<
   version: number;
 };
 
-/** Os mesmos tempos do perfil "site" (next.config.ts), para montar um perfil com `revalidate` menor. */
-const SITE_CACHE = { stale: 300, revalidate: 300, expire: 3600 } as const;
-
 /**
  * Avisos ativados que estão no período AGORA. Um aviso agendado NÃO sai daqui antes da hora: o texto não pode
  * aparecer no código-fonte do site (nem escondido) antes da data combinada. Para ele entrar no ar na hora, este
- * cache vence no instante do próximo início/fim: a primeira visita depois disso já dispara a página nova.
+ * cache vence no instante do próximo início/fim (`announcementCacheLife`).
  * A janela exata é conferida de novo no navegador pelo componente da barra (a página pode ter alguns minutos).
  */
 export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
@@ -153,9 +150,10 @@ export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
       })),
     };
   });
-  // Mudança (início ou fim de um aviso) antes da próxima renovação normal? O cache vence junto com ela.
-  if (nextChange !== null && nextChange < SITE_CACHE.revalidate) cacheLife({ ...SITE_CACHE, revalidate: nextChange });
-  else cacheLife("site");
+  // Início ou fim de um aviso na próxima hora? O cache vence junto com ele (ver `announcementCacheLife`).
+  const life = announcementCacheLife(nextChange);
+  if (life === "site") cacheLife("site");
+  else cacheLife(life);
   return items;
 }
 

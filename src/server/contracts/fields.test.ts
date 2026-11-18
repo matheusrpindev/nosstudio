@@ -174,6 +174,6 @@ describe("findUnfilledFields", () => {
   it("resume em uma frase para os avisos", () => {
     expect(unfilledFieldsSummary([])).toBe("");
     expect(unfilledFieldsSummary([{ token: "{{documento}}", known: true }])).toBe("Falta preencher 1 campo: {{documento}}.");
-    expect(unfilledFieldsSummary(findUnfilledFields("{{documento}} {{foro}}"))).toBe("Faltam preencher 2 campos: {{documento}}, {{foro}}.");
+    expect(unfilledFieldsSummary(findUnfilledFields("{{documento}} {{foro}}"))).toBe("Falta preencher 2 campos: {{documento}}, {{foro}}.");
   });
 });

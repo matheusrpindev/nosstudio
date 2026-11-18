@@ -64,13 +64,28 @@ export type ButtonLinkProps = StyleProps &
     external?: boolean;
   };
 
-/** Link com aparência de botão (navegação). Para links externos use `external`. */
+/**
+ * Link com aparência de botão (navegação). Para links externos use `external`; para baixar um arquivo de uma
+ * rota (exportações, PDF) passe `download` — vira um link comum, sem prefetch.
+ */
 export function ButtonLink({ variant, size, icon, iconRight, block, external, className, children, ...rest }: ButtonLinkProps) {
   const classes = cn(buttonClasses({ variant, size, block }), className);
   if (external) {
     const { href, prefetch: _prefetch, replace: _replace, scroll: _scroll, ...anchor } = rest;
     return (
       <a href={typeof href === "string" ? href : "#"} target="_blank" rel="noopener noreferrer" className={classes} {...anchor}>
+        <Content icon={icon} iconRight={iconRight}>
+          {children}
+        </Content>
+      </a>
+    );
+  }
+  if (rest.download !== undefined && rest.download !== false) {
+    // Download (CSV, JSON, PDF de uma rota do painel): link comum, nunca <Link> — o <Link> faz prefetch e a rota
+    // seria chamada só de a página abrir (arquivo gerado à toa e uma linha falsa de "exportou" na auditoria).
+    const { href, prefetch: _prefetch, replace: _replace, scroll: _scroll, ...anchor } = rest;
+    return (
+      <a href={typeof href === "string" ? href : "#"} className={classes} {...anchor}>
         <Content icon={icon} iconRight={iconRight}>
           {children}
         </Content>

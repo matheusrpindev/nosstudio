@@ -68,3 +68,29 @@ export function secondsToNextAnnouncementChange(rows: readonly { startsAt: strin
   }
   return next === null ? null : Math.max(1, next);
 }
+
+/** Os tempos do perfil de cache "site" (next.config.ts), em segundos. */
+const SITE_CACHE = { stale: 300, revalidate: 300, expire: 3600 } as const;
+/** Abaixo disto (5 min) o Next trata o cache como dinâmico e a página deixaria de ser estática. */
+const MIN_EXPIRE = 300;
+
+/**
+ * Tempo de vida do cache da lista de avisos (`cacheLife`), para um aviso agendado entrar no ar na hora H.
+ * Sem mudança na próxima hora, vale o perfil normal do site. Com mudança daqui a `s` segundos:
+ * - `expire` = s (nunca menos de 5 min, senão o Next deixaria a página dinâmica): numa página que ninguém
+ *   visitou desde que foi gerada, a primeira visita depois de H espera a página nova, já com o aviso;
+ * - `revalidate` = s / 2 (no máximo os 5 min do site): o Next repassa estes tempos INTEIROS a qualquer página
+ *   que reaproveite a lista, contados a partir da geração da página — não do momento em que a lista foi lida do
+ *   banco. Com metade do tempo, uma página gerada enquanto a lista ainda vale fica "velha" antes de H, e a
+ *   primeira visita depois de H dispara a página nova. No pior caso, UMA visita por página ainda recebe a
+ *   versão anterior.
+ * (Conferido com requisições reais num servidor de produção, com páginas visitadas e não visitadas antes de H.)
+ */
+export function announcementCacheLife(nextChangeSeconds: number | null): "site" | { stale: number; revalidate: number; expire: number } {
+  if (nextChangeSeconds === null || nextChangeSeconds > SITE_CACHE.expire) return "site";
+  return {
+    stale: SITE_CACHE.stale,
+    revalidate: Math.max(1, Math.min(SITE_CACHE.revalidate, Math.floor(nextChangeSeconds / 2))),
+    expire: Math.max(MIN_EXPIRE, nextChangeSeconds),
+  };
+}

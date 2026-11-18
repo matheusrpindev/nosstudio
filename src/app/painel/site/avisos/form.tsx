@@ -44,7 +44,7 @@ function ColorSwatches({ name, label, value, onChange }: { name: string; label: 
                 selected ? "border-roxo bg-lavanda-claro" : "border-areia hover:border-areia-escuro bg-white",
               )}
             >
-              <input type="radio" name={name} value={color} checked={selected} onChange={() => onChange(color)} className="sr-only" />
+              <input type="radio" name={name} value={color} checked={selected} onChange={() => onChange(color)} data-controlled="" className="sr-only" />
               <span aria-hidden="true" className="border-grafite/25 size-7 rounded-full border" style={{ backgroundColor: BRAND_COLOR_HEX[color] }} />
               {BRAND_COLOR_LABELS[color]}
             </label>

@@ -12,7 +12,7 @@ Os nomes de menus, abas e botões aparecem aqui **exatamente como estão na tela
 2. Digite o e-mail e a senha da sua conta e toque em **Entrar**.
 3. Na primeira vez, a senha que você recebeu é **provisória**. O painel mostra o aviso "Troca de senha obrigatória" e pede que você crie uma senha só sua.
 
-Se errar a senha várias vezes seguidas, o painel bloqueia a tentativa por alguns minutos e avisa quanto tempo falta. É uma proteção. Espere e tente de novo.
+Se errar a senha várias vezes seguidas, o painel bloqueia a tentativa por alguns minutos e avisa quanto tempo falta. É uma proteção. Veja "Bloqueio e desbloqueio do login", logo abaixo.
 
 ### Trocar a senha
 
@@ -20,13 +20,38 @@ Se errar a senha várias vezes seguidas, o painel bloqueia a tentativa por algun
 2. Toque em **Trocar senha**.
 3. Preencha **Senha atual**, **Nova senha** e **Repita a nova senha**. A nova senha precisa ter pelo menos 10 caracteres, com letras e números, e ser diferente da atual.
 
-Ao trocar a senha, os outros aparelhos conectados saem da conta e precisam entrar de novo. Em **Minha conta** você também vê onde sua conta está conectada agora.
+Ao trocar a senha, os outros aparelhos conectados saem da conta e precisam entrar de novo. Um link de "Esqueci minha senha" pedido antes da troca também deixa de valer.
+
+### Sessões (aparelhos conectados)
+
+Em **Minha conta**, o cartão **Sessões ativas** mostra os aparelhos em que sua conta está conectada agora.
+
+- Ficam no máximo **10 aparelhos**. Ao entrar em mais um, o que está há mais tempo sem uso é desconectado.
+- **Encerrar outras sessões** desconecta todos os outros aparelhos de uma vez. Use se perdeu um celular ou entrou em um computador que não é seu.
+- **Sair** (no menu) encerra só o aparelho em que você está.
 
 ### Esqueci a senha
 
 1. Na tela de entrada, toque em **Esqueci minha senha**.
 2. Informe o e-mail da conta. Se ele estiver cadastrado, você recebe um link para criar uma nova senha. O link vale por **1 hora** e só funciona uma vez. Olhe também a caixa de spam.
 3. Se o e-mail não chegar, o envio de e-mail pode não estar configurado ainda. Nesse caso, peça ao seu sócio para gerar uma nova senha em **Configurações › Usuários › Nova senha**, ou fale com o responsável técnico.
+
+O link deixa de valer se, depois de pedi-lo, a senha for trocada em **Minha conta**, se o seu sócio gerar uma **Nova senha**, se o e-mail da conta mudar ou se a conta for desativada. Pedir um link novo também cancela o anterior.
+
+### Bloqueio e desbloqueio do login
+
+O painel limita as tentativas de entrada para ninguém ficar adivinhando senhas. Há duas mensagens diferentes:
+
+- **"Muitas tentativas. Tente de novo em N minutos."** Você (ou alguém na mesma rede) errou a senha 8 vezes em 15 minutos. Espere o tempo indicado. De outra rede (por exemplo, o 4G do celular) dá para entrar na hora com a senha certa.
+- **"Muitas tentativas de entrar nesta conta…"** Houve muitas tentativas erradas para o seu e-mail, vindas de vários lugares: alguém pode estar tentando adivinhar a sua senha. Durante 1 hora, cada lugar tem só 3 tentativas para essa conta. **Quem sabe a senha continua entrando**: um aparelho em que você já entrou antes entra normalmente, e um aparelho novo entra se acertar a senha em até 3 tentativas.
+
+Para destravar na hora, sem esperar:
+
+- use **Esqueci minha senha** e crie uma senha nova pelo link do e-mail (precisa do envio de e-mail configurado); ou
+- peça ao seu sócio uma **Nova senha** em **Configurações › Usuários**; ou
+- peça ao responsável técnico o comando de desbloqueio (está no README do projeto; ele não muda a senha).
+
+Se a mensagem da conta aparecer sem você ter errado nada, vale trocar a senha por uma mais forte e avisar o responsável técnico.
 
 ### Usar no celular
 
@@ -58,6 +83,8 @@ Quando alguém preenche o formulário do site, o pedido aparece em **Leads** com
 
 Abra o lead para ver o pedido, o interesse, a data do evento, o contato e o consentimento de privacidade (LGPD). Use **Chamar no WhatsApp** para responder. Conforme o atendimento avança, mude o **Status do lead** (Novo, Em atendimento, Convertido em cliente, Descartado) e toque em **Salvar status**.
 
+Se o pedido trouxer a observação **"Atenção: Enviado poucos segundos depois de abrir o formulário — pode ser automático"**, o formulário foi enviado rápido demais para uma pessoa digitando. Pode ser alguém com preenchimento automático no celular, ou pode ser um robô. O pedido é guardado do mesmo jeito para vocês não perderem um cliente de verdade: confira o nome e o WhatsApp antes de responder e, se for lixo, use **Excluir lead**.
+
 ### 2. Converter o lead em cliente
 
 No lead, toque em **Converter em cliente** e confirme. O painel cria o cadastro em **Clientes** com os dados do lead, guarda o pedido no histórico e marca o lead como convertido. Você fica como responsável. Depois, o botão vira **Abrir cliente**.
@@ -66,7 +93,21 @@ No lead, toque em **Converter em cliente** e confirme. O painel cria o cadastro 
 
 Na ficha do cliente você tem o histórico de atendimento (use **Registrar atendimento** para anotar conversas, ligações e reuniões), o "Próximo passo", as datas importantes e o status do funil: **Novo contato**, **Em orçamento**, **Negociação**, **Fechado**, **Em produção**, **Finalizado**, **Perdido** e **Cancelado**.
 
-**Atenção:** o painel **não muda o status do cliente sozinho**. Quando você envia ou fecha uma proposta, lembre de mover o cliente de etapa. Na aba **Funil** de Clientes, arraste o cartão (ou use **Mover para…** no celular). Cada mudança fica registrada no histórico. Ao marcar como **Perdido**, o painel pede o motivo.
+**O cliente anda sozinho no funil** quando acontece uma destas três coisas:
+
+- você marca uma proposta dele como **enviada**: ele vai para **Em orçamento**;
+- você marca uma proposta como **aceita**: ele vai para **Fechado**;
+- você converte a proposta em projeto, ou cria um projeto para ele em **Projetos**: ele vai para **Em produção**.
+
+O aviso que aparece depois da ação confirma ("O cliente foi movido para “Fechado” no funil.") e a mudança fica no histórico da ficha como "Status alterado automaticamente para…".
+
+O que o painel **não** faz sozinho:
+
+- nunca volta o cliente para uma etapa anterior. Voltar a proposta para rascunho, marcar como recusada ou expirada não mexe no cliente;
+- não mexe em clientes **Perdido** ou **Cancelado** (quem decide reabrir é você) nem em quem já está em **Finalizado**. Se um cliente antigo voltar, mova-o à mão;
+- não passa ninguém para **Negociação**, **Finalizado**, **Perdido** ou **Cancelado**: essas etapas são sempre suas.
+
+Mover à mão continua valendo a qualquer momento: na aba **Funil** de Clientes, arraste o cartão (ou use **Mover para…** no celular), ou mude o status na ficha. Cada mudança fica registrada no histórico. Ao marcar como **Perdido**, o painel pede o motivo.
 
 ### 4. Criar o orçamento
 
@@ -80,6 +121,8 @@ Na ficha do cliente você tem o histórico de atendimento (use **Registrar atend
 
 No editor, passe pelas etapas (veja a próxima seção). Na etapa **Cálculo interno**, confira os custos, a margem e se o preço está dentro da meta. Essa etapa é só de vocês.
 
+O resultado e a margem dependem do preço ao cliente. Enquanto os itens do **Escopo** estiverem sem valor, o cartão **Resultado estimado** mostra "Preencha os itens na etapa Escopo para ver o resultado", com o botão **Ir para Escopo**.
+
 ### 6. Baixar o PDF
 
 Na etapa **PDF e controle**, toque em **Baixar PDF** (ou **Abrir em nova aba**). O PDF mostra só o que o cliente pode ver. Mande o arquivo por WhatsApp ou e-mail: **o painel não envia a proposta**.
@@ -88,21 +131,29 @@ Na etapa **PDF e controle**, toque em **Baixar PDF** (ou **Abrir em nova aba**).
 
 Ainda em **PDF e controle**, em **Andamento da proposta**:
 
-- **Marcar como enviada**: registra a data de envio e anota no histórico do cliente. Só funciona se a proposta tiver um cliente escolhido.
-- Quando o cliente responder, use **Aceita**, **Recusada** ou **Expirada** (esta última para quando a validade passou sem resposta).
-- **Voltar para rascunho** desfaz o status, se precisar corrigir algo.
+- **Marcar como enviada**: registra a data de envio e anota no histórico do cliente. Se ele ainda estava em **Novo contato**, passa para **Em orçamento** no funil. Só funciona se a proposta tiver um cliente escolhido.
+- Quando o cliente responder, use **Aceita**, **Recusada** ou **Expirada** (esta última para quando a validade passou sem resposta). **Aceita** move o cliente para **Fechado**.
+- **Voltar para rascunho** desfaz o status da proposta, se precisar corrigir algo. O cliente continua na etapa em que está.
 
-### 8. Converter em projeto
+### 8. Lançar as parcelas no financeiro
 
-Com a proposta **Aceita**, toque em **Converter em projeto**. O painel cria o projeto com cliente, título, tipo de serviço, data e local da proposta e abre a tela dele. Isso só acontece uma vez por proposta; depois o botão vira **Abrir o projeto**.
+Com a proposta **Aceita**, a etapa **PDF e controle** ganha o cartão **Financeiro**:
 
-### 9. Lançar o financeiro
+1. Toque em **Gerar parcelas no financeiro**. O painel abre a lista das parcelas da proposta (as da etapa **Preço ao cliente**, da última versão salva).
+2. Confira valores e vencimentos e toque em **Criar lançamentos**. Cada parcela marcada vira uma receita **prevista** (a receber).
+3. De volta à proposta, o cartão passa a listar os lançamentos, com o total a receber e o que já foi recebido. Toque em um deles para abrir, dar baixa ou corrigir.
 
-No projeto, no cartão **Financeiro**, toque em **Novo**. Como o projeto veio de uma proposta, aparece o botão **Gerar parcelas da proposta**: confira a lista e crie. Cada parcela marcada vira uma receita **prevista** (a receber). Se preferir, lance um valor avulso. Quando o dinheiro entrar, use **Marcar como recebido** em **Financeiro**.
+Depois de gerar, o botão some (para ninguém lançar duas vezes) e entram **Ver lançamentos desta proposta**, que abre o Financeiro só com eles, e **Novo lançamento desta proposta**, para um valor avulso. Quando o dinheiro entrar, use **Marcar como recebido** em **Financeiro**.
+
+O mesmo pode ser feito pelo projeto: no cartão **Financeiro** do projeto, toque em **Novo** e depois em **Gerar parcelas da proposta**.
+
+### 9. Converter em projeto
+
+Com a proposta **Aceita**, toque em **Converter em projeto**. O painel cria o projeto com cliente, título, tipo de serviço, data e local da proposta, abre a tela dele e move o cliente para **Em produção** no funil. Isso só acontece uma vez por proposta; depois o botão vira **Abrir o projeto**.
 
 ### 10. Contrato
 
-Na proposta, em **PDF e controle**, o cartão **Contrato** tem **Criar contrato desta proposta** (ou **Salvar vínculo**, para ligar um contrato que já existe). Em **Contratos**, escolha **Começar de um modelo** para copiar o texto, preencha os dados e acompanhe o status: **Rascunho**, **Enviado para assinatura**, **Assinado**, **Encerrado** ou **Cancelado**. Veja mais em "Produção e gestão".
+Na proposta, em **PDF e controle**, o cartão **Contrato** tem **Criar contrato desta proposta** (ou **Salvar vínculo**, para ligar um contrato que já existe). Na tela do novo contrato, escolha um modelo em **Começar de um modelo** e toque em **Usar modelo**: o texto é copiado e os **campos automáticos** (nome do cliente, valor, parcelas…) já vêm preenchidos com os dados do cliente e da proposta. Confira o texto, cadastre e acompanhe o status: **Rascunho**, **Enviado para assinatura**, **Assinado**, **Encerrado** ou **Cancelado**. A lista dos campos está em "Produção e gestão › Contratos".
 
 ## Orçamentos em detalhe
 
@@ -111,9 +162,9 @@ O editor tem seis abas, nesta ordem:
 - **Dados**: número e versão (automáticos), modalidade, responsável comercial, título (aparece na capa do PDF), cliente, nome na capa do PDF, contato, data do evento ou início, local e validade da proposta.
 - **Escopo**: a descrição do projeto, os **Itens inclusos** (cada um com quantidade, unidade e valor unitário), os **Opcionais** (não entram no total e aparecem à parte no PDF), o cronograma e o que não está incluso. O valor pode ficar todo em um item (o pacote) e os demais sem valor: no PDF eles aparecem como "incluso".
 - **Cálculo interno**: só para vocês (veja abaixo).
-- **Preço ao cliente**: mostra o total, deixa registrar um desconto, definir o sinal (percentual ou valor fixo) e montar as parcelas. O botão **Sugerir parcelas** divide o saldo em até 12 vezes. Há também a opção "Mostrar o valor de cada item no PDF"; desmarcada, o PDF mostra só o total.
+- **Preço ao cliente**: mostra o total, deixa registrar um desconto, definir o sinal (percentual ou valor fixo) e montar as parcelas. O botão **Sugerir parcelas** (depois, **Recalcular parcelas**) divide o saldo em até 12 vezes. Há também a opção "Mostrar o valor de cada item no PDF"; desmarcada, o PDF mostra só o total.
 - **Textos**: condições de pagamento e observações comerciais.
-- **PDF e controle**: prévia e download do PDF, andamento da proposta, contrato, versões e outras ações.
+- **PDF e controle**: prévia e download do PDF, andamento da proposta, financeiro (com a proposta aceita), contrato, versões e outras ações.
 
 **Salvar proposta** fica na barra de baixo, sempre visível. A barra mostra "Tudo salvo" ou "Alterações não salvas". **O PDF e os botões de andamento valem para a última versão salva**, então salve antes de baixar.
 
@@ -129,6 +180,8 @@ Na aba **Cálculo interno** aparece a faixa "Só painel — não aparece no PDF"
 - descontos que ainda **não foram aprovados**.
 
 Sobre o desconto: registre o valor em **Preço ao cliente** e marque **Desconto aprovado (aparece no PDF)** só quando os dois concordarem. Só então ele reduz o total e entra no PDF.
+
+Cuidado com as parcelas: se elas foram calculadas com o desconto e depois o desconto voltou a ficar **não aprovado**, a soma das parcelas deixa de fechar com o total e a diferença entregaria o desconto. Nesse caso o painel avisa ("A soma das parcelas não fecha com o total") e **as parcelas não entram no PDF** até você usar **Recalcular parcelas** ou aprovar o desconto. O PDF sai só com o total, o sinal e o texto das condições de pagamento.
 
 ### Margem e markup
 
@@ -157,6 +210,8 @@ Em **Textos**, cada cartão é uma parte do site: **Contato e redes**, **Visibil
 
 Abra a seção, mude o que quiser e toque em **Salvar alterações**. Para voltar ao combinado inicial, use **Restaurar texto original** (isso apaga as suas edições daquela seção).
 
+Nos botões do site (grupos com **Texto do botão** e **Para onde leva**), deixar o **texto vazio esconde o botão**. O link fica guardado para quando você escrever o texto de novo.
+
 ### Fotos dos fundadores e do casal
 
 - Fotos de Pedro e Laura: **Textos › Quem Somos**, grupo **Fundadores**, no campo **Foto** de cada pessoa. Funciona melhor com foto de rosto ou meio corpo, quadrada ou vertical.
@@ -164,9 +219,17 @@ Abra a seção, mude o que quiser e toque em **Salvar alterações**. Para volta
 
 Sem fotos, o site mostra um espaço com as iniciais. Só envie fotos reais.
 
+### O que acontece com as fotos enviadas
+
+- Uma foto só fica acessível ao público **enquanto algum conteúdo publicado a usa**. Ao despublicar um depoimento, um projeto do portfólio ou um serviço, a foto dele sai do ar de verdade: quem guardou o link deixa de ver. Vocês, logados no painel, continuam vendo.
+- Ao **trocar** ou **remover** uma foto e salvar, ou ao **excluir** o depoimento, projeto, serviço ou lançamento que a usava, o arquivo antigo é apagado do servidor (se nada mais o usar).
+- Navegadores e serviços de busca podem guardar uma cópia por até **24 horas** depois que a foto sai do ar. Os backups antigos também guardam o arquivo até serem substituídos.
+
 ### Avisos (barra do topo)
 
 Em **Avisos**, use **Novo aviso** para criar recados como férias ou novidades. Defina a mensagem, o botão (opcional), as cores (a prévia ao vivo mostra como fica e avisa se o contraste for baixo), o período e se o visitante pode fechar o aviso. O site mostra **um aviso por vez**: o primeiro da lista que estiver ligado e dentro do período. Use as setas para mudar a ordem.
+
+Um aviso com **Começa em** no futuro aparece na lista como **Agendado**. O texto dele **não vai para o site antes da hora** (nem escondido no código da página), então dá para deixar pronto um lançamento ou uma promoção com data marcada. Na hora combinada ele entra no ar sozinho; em uma página que alguém acabou de visitar, pode levar cerca de um minuto (uma visita a mais) para aparecer.
 
 ### Serviços
 
@@ -210,15 +273,15 @@ Em **Textos › SEO e compartilhamento** você define o nome do site nos resulta
 
 Em **Editar site › Visão geral**, o painel calcula as pendências e mostra "Antes de divulgar o site". Use esta lista como checklist de lançamento. Cada item tem um botão que leva direto ao lugar de resolver.
 
-- ☐ **WhatsApp**: cadastrar o número em **Textos › Contato e redes**. Sem ele, os botões de WhatsApp ficam ocultos.
-- ☐ **E-mail de contato**: cadastrar no mesmo lugar. Ele aparece no rodapé e na política de privacidade, para pedidos de quem quer cuidar dos próprios dados.
-- ☐ **Fotos dos fundadores**: enviar a foto de Pedro e a de Laura.
-- ☐ **Foto do casal**: enviar em **Quem Somos**.
-- ☐ **Perguntas frequentes**: revisar as respostas sugeridas e publicar pelo menos uma.
-- ☐ **Política de privacidade**: revisar com advogado ou assessoria jurídica e atualizar o texto e a versão em **Textos › Política de privacidade**. O painel só tira o aviso quando o texto ou a versão mudam.
-- ☐ **Pacotes**: lembrete, não obrigação. "Sob consulta" é um estado válido. Preencha quando quiserem divulgar valores.
+1. **WhatsApp**: cadastrar o número em **Textos › Contato e redes**. Sem ele, os botões de WhatsApp ficam ocultos.
+2. **E-mail de contato**: cadastrar no mesmo lugar. Ele aparece no rodapé e na política de privacidade, para pedidos de quem quer cuidar dos próprios dados.
+3. **Fotos dos fundadores**: enviar a foto de Pedro e a de Laura.
+4. **Foto do casal**: enviar em **Quem Somos**.
+5. **Perguntas frequentes**: revisar as respostas sugeridas e publicar pelo menos uma.
+6. **Política de privacidade**: revisar com advogado ou assessoria jurídica e atualizar o texto e a versão em **Textos › Política de privacidade**. O painel só tira o aviso quando o texto ou a versão mudam.
+7. **Pacotes**: lembrete, não obrigação. "Sob consulta" é um estado válido. Preencha quando quiserem divulgar valores.
 
-Na **Visão geral** do painel (a tela inicial), há também um aviso se o **envio de e-mail (SMTP)** não estiver configurado. Sem ele, o aviso de novo lead e a recuperação de senha por e-mail não funcionam (veja o documento Contas e serviços).
+Na **Visão geral** do painel (a tela inicial), os administradores veem também um aviso se o **envio de e-mail (SMTP)** não estiver configurado. Sem ele, o aviso de novo lead e a recuperação de senha por e-mail não funcionam (veja o documento Contas e serviços).
 
 Antes de divulgar, confira também o site no celular e teste o formulário de contato com um pedido de verdade seu.
 
@@ -244,13 +307,47 @@ Em **Conteúdo** vocês organizam as publicações da NÓS e dos clientes, em tr
 - **Realizado**: o que já foi recebido ou pago. O **Resultado do mês (realizado)** é recebido menos pago.
 - **Vencido**: em aberto e atrasado. O painel avisa na tela inicial.
 
-O que foi pago conta no mês do pagamento; o que está em aberto conta no mês do vencimento. Use **Novo lançamento** para uma receita ou despesa. Sem data de pagamento, ela fica como prevista. Quando acontecer, use **Marcar como recebido** ou **Marcar como pago**. Dá para anexar comprovante (arquivo privado) e **Exportar CSV**.
+O que foi pago conta no mês do pagamento; o que está em aberto conta no mês do vencimento. Use **Novo lançamento** para uma receita ou despesa. Sem data de pagamento, ela fica como prevista. Quando acontecer, use **Marcar como recebido** ou **Marcar como pago**. Dá para anexar comprovante (arquivo privado) e **Exportar CSV** (só administradores). Ao excluir um lançamento, ou trocar o comprovante, o arquivo antigo é apagado.
+
+As parcelas de uma proposta aceita entram por aqui com um toque: veja "Do contato ao contrato › 8. Lançar as parcelas no financeiro".
 
 A **Reserva de caixa** é um valor que vocês mesmos definem em **Editar reserva**; não vem do banco. O painel é uma visão gerencial e **não substitui a contabilidade**.
 
 ### Contratos
 
-Em **Contratos** ficam os contratos e acordos, com datas, vigência e o documento assinado. Em **Modelos** há textos prontos por tipo (mensal, evento, casamento, diária, acordo entre sócios, outro). Ao criar um contrato, escolha **Começar de um modelo**: o texto é **copiado** para ajustar. Ele não é preenchido sozinho com os dados do cliente, então revise nomes, datas e valores.
+Em **Contratos** ficam os contratos e acordos, com datas, vigência e o documento assinado. Em **Modelos** há textos prontos por tipo (mensal, evento, casamento, diária, acordo entre sócios, outro). Ao criar um contrato, escolha **Começar de um modelo** e toque em **Usar modelo**: o texto é **copiado** para ajustar.
+
+#### Campos automáticos
+
+No texto de um modelo, tudo o que muda de um contrato para outro pode ser escrito como um **campo entre chaves duplas**, por exemplo {{cliente}} ou {{valor_total}}. Ao criar o contrato, o painel troca cada campo pelo dado do **cliente**, da **proposta** e do **projeto** escolhidos em **Vínculos**. O editor de modelo mostra a lista no bloco **Campos automáticos**. São estes:
+
+- **{{cliente}}**: nome do cliente ou da empresa, como está no cadastro.
+- **{{contato}}**: pessoa de contato do cliente.
+- **{{documento}}**: CPF ou CNPJ do cliente.
+- **{{email}}**: e-mail do cliente.
+- **{{whatsapp}}**: WhatsApp do cliente, com DDD.
+- **{{cidade}}**: cidade do cliente.
+- **{{servico}}**: título da proposta (ou do projeto, se não houver proposta).
+- **{{proposta}}**: número da proposta, por exemplo 2026-007.
+- **{{valor_total}}**: total da proposta ao cliente, o mesmo do PDF.
+- **{{entrada}}**: valor do sinal (entrada) da proposta.
+- **{{saldo}}**: total da proposta menos a entrada.
+- **{{parcelas}}**: as parcelas da proposta, uma por linha, com valor e vencimento.
+- **{{data_evento}}**: data do evento ou da gravação (da proposta ou do projeto).
+- **{{local_evento}}**: local do evento ou da gravação (da proposta ou do projeto).
+- **{{projeto}}**: nome do projeto vinculado.
+- **{{data_hoje}}**: data em que o contrato é criado, por exemplo 18/11/2026.
+- **{{data_hoje_extenso}}**: a mesma data por extenso, por exemplo 18 de novembro de 2026.
+
+Como funciona na prática:
+
+- Vindo da proposta (**Criar contrato desta proposta**), do projeto ou da ficha do cliente, o texto **já aparece preenchido** na tela do novo contrato. Se o contrato for criado direto em **Contratos › Novo contrato**, os campos são preenchidos ao cadastrar, com o cliente, a proposta e o projeto escolhidos no formulário.
+- Os valores vêm da proposta **como o cliente a vê no PDF**. Custos, margem, notas internas e desconto não aprovado nunca entram no contrato.
+- Se o dado não estiver no cadastro (cliente sem CPF, proposta sem data do evento), **o campo continua no texto** e a tela do contrato avisa: "Falta preencher N campos no texto". Complete o cadastro e salve o contrato de novo (em **Editar**, salvar preenche o que faltava), ou escreva o texto no lugar do campo. **Não envie nem imprima um contrato com esse aviso.**
+- Um nome que o painel não conhece (por exemplo {{foro}}) também fica no texto, e o aviso diz que ele não é um campo automático.
+- Depois de preenchido, o texto é do contrato: mudar o cadastro do cliente mais tarde não altera um contrato já salvo.
+
+Mesmo com os campos, **releia nomes, datas e valores** antes de enviar.
 
 **Importante:** os textos de contrato do painel são um ponto de partida. **A redação jurídica precisa ser revisada por um(a) advogado(a) antes do uso.**
 
@@ -266,18 +363,29 @@ Em **Agenda**, use **Novo compromisso** para gravações, eventos, reuniões e e
 
 ## Configurações
 
-Em **Configurações** ficam as áreas de gestão. **Usuários**, **Dados** e **Auditoria** são só para quem tem perfil de **Administrador(a)**.
+Em **Configurações** ficam as áreas de gestão. **Usuários**, **Notificações**, **Dados** e **Auditoria** são só para quem tem perfil de **Administrador(a)**.
 
 ### Usuários
 
 - **Nova conta**: informe nome, e-mail e **Perfil**. A pessoa recebe uma **senha temporária**, mostrada **uma única vez**. Anote na hora e toque em **Já anotei, concluir**. No primeiro acesso, ela define a própria senha.
-- **Nova senha**: gera outra senha temporária e desconecta a pessoa de todos os aparelhos. Use quando alguém esquecer a senha e o e-mail não estiver funcionando.
-- **Desativar**: a pessoa não entra mais e é desconectada na hora. Nada é apagado, e dá para **Reativar** depois.
-- Perfis: **Administrador(a)** é para vocês (acesso completo). **Acesso técnico (temporário)** é para o desenvolvedor dar suporte: usa o painel, mas não gerencia contas nem exporta dados. Quando o suporte acabar, use **Desativar**.
+- **Nova senha**: gera outra senha temporária e desconecta a pessoa de todos os aparelhos. Use quando alguém esquecer a senha e o e-mail não estiver funcionando. Também destrava o login da conta (veja "Bloqueio e desbloqueio do login") e cancela links de "Esqueci minha senha" pendentes.
+- **Desativar**: a pessoa não entra mais e é desconectada na hora. Nada é apagado, e dá para **Reativar** depois. Se o e-mail dela estiver na lista de **Notificações**, o painel lembra de tirá-lo de lá: desativar a conta não tira o e-mail da lista.
+- Perfis: **Administrador(a)** é para vocês (acesso completo). **Acesso técnico (temporário)** é para o desenvolvedor dar suporte. Quando o suporte acabar, use **Desativar**.
+
+O que o **Acesso técnico** não faz:
+
+- não cria, edita, desativa contas nem gera senhas (**Usuários**);
+- não vê nem altera **Notificações** (para onde vão os avisos de novo lead);
+- não exporta nada: nem **Dados**, nem **Exportar CSV** de Clientes e do Financeiro, nem **Dados deste titular**;
+- não vê a **Auditoria**.
+
+No restante, o Acesso técnico usa o painel como vocês: vê e edita leads, clientes, orçamentos, financeiro, contratos e arquivos. Por isso a conta é temporária. Crie quando precisar de suporte e desative em seguida.
 
 ### Notificações
 
-Em **Notificações**, ligue **Avisar por e-mail a cada novo lead** e escolha **Quem recebe o aviso**. Com a lista vazia, o aviso vai para todos os usuários ativos. Isso só funciona com o envio de e-mail configurado; sem ele, os leads continuam chegando no painel normalmente.
+Em **Notificações** (só administradores), ligue **Avisar por e-mail a cada novo lead** e escolha **Quem recebe o aviso**. Com a lista vazia, o aviso vai para todos os usuários ativos. Isso só funciona com o envio de e-mail configurado; sem ele, os leads continuam chegando no painel normalmente.
+
+Os endereços dessa lista recebem nome, WhatsApp e mensagem de cada pedido. Coloque só e-mails de vocês e revise a lista sempre que desativar uma conta. Cada alteração fica na auditoria, com os endereços.
 
 ### Padrões de proposta
 
@@ -286,6 +394,8 @@ Em **Propostas**, defina a validade (dias), a entrada (%), as condições de pag
 ### Exportar dados
 
 Em **Dados**, **Baixar tudo (JSON)** gera uma cópia completa e há planilhas (CSV) de **Clientes**, **Leads** e **Lançamentos financeiros**. Os arquivos trazem dados pessoais: guarde em local seguro. Senhas e sessões nunca são exportadas. Cada download fica registrado na auditoria.
+
+Toda exportação é **só para administradores**: esta tela, o **Exportar CSV** de Clientes e do Financeiro e o botão **Dados deste titular (JSON)** da ficha do cliente (veja "Atender um pedido de acesso aos dados").
 
 ### Auditoria
 
@@ -300,17 +410,32 @@ Em **Auditoria** está o histórico de quem fez o quê no painel, com filtros po
 - Não coloque senhas nem dados sensíveis desnecessários nas observações.
 - As **Observações internas** e as notas do **Cálculo interno** nunca vão para o PDF.
 
+### Atender um pedido de acesso aos dados
+
+Se alguém pedir uma cópia do que a NÓS guarda sobre ela:
+
+1. Abra a ficha em **Clientes**. Na aba **Resumo**, no cartão dos dados de contato, toque em **Dados deste titular (JSON)** (só administradores).
+2. O arquivo reúne o cadastro, o histórico de atendimento, os pedidos enviados pelo site (inclusive os de mesmo WhatsApp ou e-mail), orçamentos, projetos, contratos, pagamentos, agenda, tarefas e conteúdos ligados ao cadastro. Não inclui o cálculo interno dos orçamentos nem as despesas da NÓS.
+3. **Revise antes de entregar**: o arquivo traz anotações internas de vocês (observações e histórico). Arquivos enviados (contrato assinado, comprovantes) não vão dentro dele; o arquivo só indica onde existem.
+
+Cada download fica na auditoria. Se a pessoa nunca virou cliente, os dados dela estão só no lead: abra o lead e copie de lá.
+
 ### Atender um pedido de exclusão de dados
 
 Se alguém pedir que seus dados sejam apagados:
 
-1. Em **Leads**, abra o lead da pessoa e use **Excluir lead**. Isso apaga o contato de forma definitiva.
-2. Em **Clientes**, se ela virou cliente, abra a ficha e use **Excluir**. O cadastro e o histórico de atendimento são apagados.
-3. **Atenção:** excluir o cliente **não apaga** orçamentos, projetos, contratos, lançamentos financeiros e compromissos. Eles continuam existindo, só sem o cliente vinculado. Procure o nome da pessoa nesses lugares e revise, em especial **Nome na capa do PDF** e **Contato** nas propostas, os títulos de contratos e projetos, e as descrições do financeiro. Rascunhos de proposta podem ser excluídos; propostas enviadas ficam como histórico.
-4. Registros financeiros e contratos podem precisar ser guardados por obrigação legal ou fiscal. Na dúvida, converse com o contador ou com o advogado antes de apagar.
-5. Responda à pessoa confirmando o que foi feito.
+1. **Se a pessoa é só um lead**: em **Leads**, abra o lead e use **Excluir lead**. Isso apaga o contato de forma definitiva.
+2. **Se virou cliente**: abra a ficha em **Clientes**. Antes de excluir, passe pelas abas da ficha e apague ou edite o que cita a pessoa: orçamentos (em especial **Nome na capa do PDF** e **Contato**), projetos, contratos, lançamentos financeiros, compromissos e tarefas. Rascunhos de proposta podem ser excluídos; propostas enviadas ficam como histórico.
+3. Toque em **Excluir**. O aviso de confirmação mostra a conta exata do que será apagado (o cadastro, o histórico de atendimento e os itens do calendário de conteúdo do cliente) e do que **continua existindo sem cliente vinculado** ("1 orçamento, 1 contrato e 2 lançamentos financeiros", por exemplo).
+4. Se a pessoa enviou pedidos pelo site, o aviso traz a opção **Excluir também os pedidos que esta pessoa enviou pelo site**. Ela vale para os leads ligados ao cadastro e para os de **mesmo WhatsApp ou e-mail**. Marque para apagar tudo de uma vez. Sem marcar, os pedidos continuam em **Leads**.
+5. Fotos: se a pessoa aparece em um depoimento ou projeto do portfólio, exclua o item em **Editar site** (isso apaga também as fotos do servidor).
+6. Registros financeiros e contratos podem precisar ser guardados por obrigação legal ou fiscal. Na dúvida, converse com o contador ou com o advogado antes de apagar.
+7. Responda à pessoa confirmando o que foi feito.
 
-A auditoria registra a exclusão sem repetir os dados pessoais apagados.
+Dois limites para ter em mente:
+
+- **Backups**: as cópias de segurança antigas ainda guardam os dados até serem substituídas pelas novas (por padrão, o servidor mantém as 14 mais recentes). Pergunte ao responsável técnico o prazo de vocês.
+- **Auditoria**: os registros não são apagados, mas a auditoria anota a exclusão sem repetir o nome nem os dados da pessoa, e não guarda o nome dos arquivos enviados.
 
 ### Backup
 
@@ -320,7 +445,8 @@ Enquanto isso, a exportação em **Configurações › Dados** é uma cópia ext
 
 ### Se algo der errado
 
-- **Não consigo entrar**: confira o e-mail, tente **Esqueci minha senha** ou peça ao seu sócio uma **Nova senha** em **Configurações › Usuários**. Se aparecer "Muitas tentativas", espere o tempo indicado.
+- **Não consigo entrar**: confira o e-mail, tente **Esqueci minha senha** ou peça ao seu sócio uma **Nova senha** em **Configurações › Usuários**. Se aparecer "Muitas tentativas", veja "Bloqueio e desbloqueio do login" em "Primeiro acesso".
+- **Fui desconectado sem sair**: a conta entrou em mais de 10 aparelhos (o mais antigo sai), a senha foi trocada ou gerada de novo, ou alguém usou **Encerrar outras sessões**. É só entrar de novo.
 - **Salvei e o site não mudou**: atualize a página do site (no celular, feche e abra de novo). Veja se a seção está ligada em **Visibilidade das seções** e se o item está publicado.
 - **Mensagem de erro na tela**: anote o que você estava fazendo, tire um print e avise o responsável técnico.
 - **Apaguei algo sem querer**: avise o responsável técnico logo. Exclusões são definitivas no painel, mas pode haver cópia em backup.
@@ -342,7 +468,15 @@ Em uma proposta já enviada, use **Criar nova versão**. A anterior fica guardad
 
 ### O cliente pode ver os custos e a margem?
 
-Não. Custos, rateio, tributos, margem, notas internas e descontos não aprovados ficam só no painel e nunca entram no PDF.
+Não. Custos, rateio, tributos, margem, notas internas e descontos não aprovados ficam só no painel e nunca entram no PDF nem nos campos automáticos dos contratos.
+
+### Marquei a proposta como aceita. Preciso mover o cliente no funil?
+
+Não. Enviar, aceitar e converter em projeto já movem o cliente (Em orçamento, Fechado, Em produção). Só as outras etapas (Negociação, Finalizado, Perdido, Cancelado) são à mão.
+
+### O contrato mostra "Falta preencher N campos no texto". O que faço?
+
+Faltou algum dado no cadastro (CPF, data do evento…) ou o modelo tem um campo que o painel não conhece. Complete o cadastro e salve o contrato de novo, ou escreva o texto no lugar do campo. Veja "Campos automáticos".
 
 ### Por que o site mostra "Sob consulta" nos pacotes?
 
@@ -360,7 +494,7 @@ Sim. Use as setas na lista de cada um. A ordem da lista é a ordem no site.
 
 ### Como crio uma conta para o desenvolvedor dar suporte?
 
-Em **Configurações › Usuários**, **Nova conta** com o perfil **Acesso técnico (temporário)**. Quando acabar, use **Desativar**.
+Em **Configurações › Usuários**, **Nova conta** com o perfil **Acesso técnico (temporário)**. Quando acabar, use **Desativar** e confira a lista de **Notificações**. Essa conta não exporta dados nem mexe em contas, notificações e auditoria.
 
 ### O painel avisa por e-mail quando chega um lead?
 
@@ -368,7 +502,7 @@ Só se o envio de e-mail estiver configurado e **Avisar por e-mail a cada novo l
 
 ### Posso usar o painel em dois aparelhos ao mesmo tempo?
 
-Sim. Em **Minha conta** você vê os aparelhos conectados. Ao trocar a senha, os outros saem da conta.
+Sim, em até 10 aparelhos. Em **Minha conta** você vê os aparelhos conectados. Ao trocar a senha, os outros saem da conta.
 
 ### Onde vejo quem mexeu em alguma coisa?
 

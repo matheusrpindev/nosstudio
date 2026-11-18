@@ -109,27 +109,47 @@ export async function getTemplate(id: number): Promise<Contract | null> {
   return row ?? null;
 }
 
-/** Vínculos sugeridos ao começar um contrato a partir de um projeto ou proposta. */
+/**
+ * Vínculos sugeridos ao começar um contrato a partir de um projeto ou proposta.
+ * Um puxa o outro: partindo da proposta que já virou projeto, o projeto vem junto; partindo do projeto que nasceu
+ * de uma proposta, a proposta vem junto — assim os campos automáticos (`{{valor_total}}`, `{{projeto}}`…) têm de
+ * onde sair. São só sugestões: dá para trocar no formulário.
+ */
 export async function getLinkDefaults(input: { projectId?: number; proposalId?: number }): Promise<{ clientId: number | null; projectId: number | null; proposalId: number | null; title: string }> {
   let clientId: number | null = null;
   let projectId: number | null = null;
   let proposalId: number | null = null;
   let title = "";
-  if (input.projectId) {
-    const [project] = await db.select({ id: projects.id, clientId: projects.clientId, title: projects.title }).from(projects).where(eq(projects.id, input.projectId));
-    if (project) {
-      projectId = project.id;
-      clientId = project.clientId;
-      title = project.title;
-    }
+  const loadProject = async (id: number) =>
+    (await db.select({ id: projects.id, clientId: projects.clientId, title: projects.title, proposalId: projects.proposalId }).from(projects).where(eq(projects.id, id)))[0];
+  const loadProposal = async (id: number) =>
+    (
+      await db
+        .select({ id: proposals.id, clientId: proposals.clientId, title: proposals.title, projectId: proposals.projectId })
+        .from(proposals)
+        .where(and(eq(proposals.id, id), eq(proposals.isTemplate, false)))
+    )[0];
+
+  const project = input.projectId ? await loadProject(input.projectId) : undefined;
+  const proposal = input.proposalId ? await loadProposal(input.proposalId) : undefined;
+  if (project) {
+    projectId = project.id;
+    clientId = project.clientId;
+    title = project.title;
   }
-  if (input.proposalId) {
-    const [proposal] = await db.select({ id: proposals.id, clientId: proposals.clientId, title: proposals.title }).from(proposals).where(and(eq(proposals.id, input.proposalId), eq(proposals.isTemplate, false)));
-    if (proposal) {
-      proposalId = proposal.id;
-      clientId ??= proposal.clientId;
-      title ||= proposal.title;
-    }
+  if (proposal) {
+    proposalId = proposal.id;
+    clientId ??= proposal.clientId;
+    title ||= proposal.title;
+  }
+  // o par que faltou, desde que seja do mesmo cliente
+  if (project && !proposal && project.proposalId) {
+    const linked = await loadProposal(project.proposalId);
+    if (linked && linked.clientId === project.clientId) proposalId = linked.id;
+  }
+  if (proposal && !project && proposal.projectId) {
+    const linked = await loadProject(proposal.projectId);
+    if (linked && linked.clientId === proposal.clientId) projectId = linked.id;
   }
   return { clientId, projectId, proposalId, title };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { announcementStatuses, secondsToNextAnnouncementChange, servableAnnouncements } from "./announcement-status";
+import { announcementCacheLife, announcementStatuses, secondsToNextAnnouncementChange, servableAnnouncements } from "./announcement-status";
 
 const NOW = "2026-11-18T10:00";
 const item = (id: number, over: Partial<{ enabled: boolean; startsAt: string | null; endsAt: string | null }> = {}) => ({
@@ -87,5 +87,54 @@ describe("secondsToNextAnnouncementChange (quando o cache das páginas precisa v
   it("aviso já encerrado não conta; nunca devolve zero ou negativo", () => {
     expect(secondsToNextAnnouncementChange([row("2026-11-01T00:00", "2026-11-18T10:00")], now)).toBeNull();
     expect(secondsToNextAnnouncementChange([row("2026-11-18T10:01")], new Date("2026-11-18T13:00:59.900Z"))).toBe(1);
+  });
+});
+
+describe("announcementCacheLife (tempo de vida do cache da barra de avisos)", () => {
+  const own = (seconds: number) => {
+    const life = announcementCacheLife(seconds);
+    if (life === "site") throw new Error("esperava um perfil próprio");
+    return life;
+  };
+
+  it("sem mudança na próxima hora: perfil normal do site", () => {
+    expect(announcementCacheLife(null)).toBe("site");
+    expect(announcementCacheLife(3601)).toBe("site");
+    expect(announcementCacheLife(86_400)).toBe("site");
+  });
+
+  it("vence exatamente na hora da mudança (mas nunca em menos de 5 min: a página deixaria de ser estática)", () => {
+    expect(own(3600).expire).toBe(3600);
+    expect(own(900).expire).toBe(900);
+    expect(own(300).expire).toBe(300);
+    expect(own(299).expire).toBe(300);
+    expect(own(1).expire).toBe(300);
+  });
+
+  it("fica velho na metade do tempo que falta (no máximo os 5 min do site)", () => {
+    expect(own(3600).revalidate).toBe(300);
+    expect(own(600).revalidate).toBe(300);
+    expect(own(369).revalidate).toBe(184);
+    expect(own(60).revalidate).toBe(30);
+    expect(own(1).revalidate).toBe(1);
+  });
+
+  it("uma página gerada enquanto a lista ainda vale fica velha ANTES da hora da mudança", () => {
+    // lista lida a `s` segundos de H; uma página pode reaproveitá-la até `revalidate` segundos depois e herda
+    // `min(300, revalidate)` de validade a partir daí: a soma não pode passar de `s` (tolerância de 1 s)
+    for (const s of [2, 3, 10, 59, 60, 299, 300, 301, 369, 599, 600, 601, 1200, 3600]) {
+      const { revalidate } = own(s);
+      expect(revalidate + Math.min(300, revalidate), `s=${s}`).toBeLessThanOrEqual(s);
+    }
+    expect(own(1).revalidate + 1).toBeLessThanOrEqual(2);
+  });
+
+  it("o Next exige expire > revalidate e revalidate > 0", () => {
+    for (const s of [1, 2, 59, 299, 300, 301, 1800, 3599, 3600]) {
+      const life = own(s);
+      expect(life.expire).toBeGreaterThan(life.revalidate);
+      expect(life.revalidate).toBeGreaterThan(0);
+      expect(life.stale).toBe(300);
+    }
   });
 });

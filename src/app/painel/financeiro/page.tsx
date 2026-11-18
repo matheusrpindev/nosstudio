@@ -17,7 +17,7 @@ import { addMonths, formatDate, formatMonth, formatRelativeDay, startOfMonth, to
 import { FINANCE_CATEGORIES_BY_TYPE, FINANCE_CATEGORY_LABELS, FINANCE_TYPE_LABELS, type FinanceCategory } from "@/lib/domain";
 import { formatBRL } from "@/lib/format";
 import { getClientOptions, getProjectOptions } from "@/server/options";
-import { FINANCE_PAGE_SIZE, getMonthEntries, getOverdueEntries, getRealizedEntries, listFinanceEntries, type FinanceListItem } from "@/server/finance/admin";
+import { FINANCE_PAGE_SIZE, getMonthEntries, getOverdueEntries, getProposalLabel, getRealizedEntries, listFinanceEntries, type FinanceListItem } from "@/server/finance/admin";
 import { filtersToQuery, parseFinanceFilters, resolveScope } from "@/server/finance/filters";
 import { entryStatus, monthlySeries, overdueTotals, reserveProgress, summarizeMonth, totalize } from "@/server/finance/summary";
 import { getSetting } from "@/server/settings";
@@ -39,7 +39,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
   const month = filters.month;
   const scope = resolveScope(filters);
 
-  const [monthEntries, overdueEntries, realizedEntries, reserve, listed, clientOptions, projectOptions] = await Promise.all([
+  const [monthEntries, overdueEntries, realizedEntries, reserve, listed, clientOptions, projectOptions, proposalLabel] = await Promise.all([
     getMonthEntries(month),
     getOverdueEntries(today),
     getRealizedEntries(month, 6),
@@ -47,6 +47,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
     listFinanceEntries(filters, today),
     getClientOptions(),
     getProjectOptions(),
+    filters.proposalId ? getProposalLabel(filters.proposalId) : null,
   ]);
 
   const summary = summarizeMonth(monthEntries, month);
@@ -67,7 +68,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
   const overdueHref = (type: "receita" | "despesa") => `/painel/financeiro?${new URLSearchParams({ mes: month.slice(0, 7), tipo: type, situacao: "vencido" }).toString()}#lancamentos`;
   const newHref = (type?: "receita" | "despesa") => `/painel/financeiro/novo${type ? `?tipo=${type}` : ""}`;
 
-  const filtered = Boolean(filters.type || filters.category || filters.situation || filters.clientId || filters.projectId || filters.q || filters.from || filters.to);
+  const filtered = Boolean(filters.type || filters.category || filters.situation || filters.clientId || filters.projectId || filters.proposalId || filters.q || filters.from || filters.to);
   const scopeLabel =
     scope.kind === "month"
       ? `Lançamentos de ${formatMonth(month)}`
@@ -304,8 +305,17 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
           </p>
         </div>
 
+        {filters.proposalId ? (
+          <Alert tone="info" role="status">
+            Mostrando só os lançamentos {proposalLabel ? <>da proposta <strong>{proposalLabel}</strong></> : "de uma proposta que não existe mais"}.{" "}
+            <Link className="link" href={`/painel/financeiro?mes=${month.slice(0, 7)}#lancamentos`}>
+              Ver todos os lançamentos
+            </Link>
+          </Alert>
+        ) : null}
+
         <FilterBar
-          preserve={["mes"]}
+          preserve={["mes", "proposta"]}
           search={{ placeholder: "Buscar por descrição ou fornecedor", label: "Buscar lançamentos" }}
           filters={[
             { name: "tipo", label: "Tipo", options: FINANCE_TYPE_LABELS, allLabel: "Receitas e despesas" },

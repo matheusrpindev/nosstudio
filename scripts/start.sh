@@ -3,12 +3,19 @@
 #   - migrations + conteúdo inicial são idempotentes (não alteram dados existentes);
 #   - a primeira chamada a /api/health invalida as páginas pré-renderizadas no build, para que o site
 #     sempre reflita o banco real (importante quando o build roda sem acesso ao banco, ex.: imagem Docker).
+#   - BIND_HOST (opcional): endereço em que o servidor escuta. Sem Docker, use BIND_HOST=127.0.0.1 para o app só
+#     aceitar conexões do proxy que roda no mesmo servidor. (No Docker deixe vazio: quem restringe é o "ports"
+#     do docker-compose.yml.)
 set -e
 PORT="${PORT:-3000}"
 
 npm run db:setup
 
-npx next start -p "$PORT" &
+if [ -n "$BIND_HOST" ]; then
+  npx next start -p "$PORT" -H "$BIND_HOST" &
+else
+  npx next start -p "$PORT" &
+fi
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null' INT TERM
 
