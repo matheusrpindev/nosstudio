@@ -239,14 +239,15 @@ export function MonthCalendar({
                           ))}
                           {hidden.length > 0 ? (
                             <li>
-                              <details className="group/mais">
+                              {/* aberto: o resumo ("Mostrar menos") vai para depois dos itens */}
+                              <details className="group/mais open:flex open:flex-col-reverse open:gap-1">
                                 <summary className="text-roxo hover:bg-lavanda-claro cursor-pointer list-none rounded-md px-1.5 py-0.5 text-xs leading-5 font-semibold [&::-webkit-details-marker]:hidden">
                                   <span className="group-open/mais:hidden">
                                     +{hidden.length} <span className="sr-only">itens neste dia — mostrar</span>
                                   </span>
                                   <span className="hidden group-open/mais:inline">Mostrar menos</span>
                                 </summary>
-                                <ul className="mt-1 space-y-1">
+                                <ul className="space-y-1 group-not-open/mais:mt-1">
                                   {hidden.map((item) => (
                                     <li key={item.id}>
                                       <Chip item={item} />

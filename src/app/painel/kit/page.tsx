@@ -337,14 +337,14 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
                   <Avatar name="Pedro Henrique" tone="roxo" />
                   <div>
                     <p className="text-sm font-bold">Pedro Henrique</p>
-                    <p className="text-cinza text-[0.8125rem]">Captação e edição</p>
+                    <p className="text-cinza text-[0.8125rem]">pedro@nos.local</p>
                   </div>
                 </CardSection>
                 <CardSection className="flex items-center gap-3">
                   <Avatar name="Laura Nepomuceno" />
                   <div>
                     <p className="text-sm font-bold">Laura Nepomuceno</p>
-                    <p className="text-cinza text-[0.8125rem]">Marketing e atendimento</p>
+                    <p className="text-cinza text-[0.8125rem]">laura@nos.local</p>
                   </div>
                   <span className="ml-auto flex items-center gap-1">
                     <Avatar name="Pedro Henrique" size="sm" tone="lima" labelled />
