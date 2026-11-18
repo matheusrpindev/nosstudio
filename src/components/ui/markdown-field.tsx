@@ -9,6 +9,7 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { Bold, Italic, Link2, List } from "lucide-react";
 import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/cn";
+import { useFieldState } from "./form";
 
 export type MarkdownFieldProps = {
   name: string;
@@ -18,7 +19,7 @@ export type MarkdownFieldProps = {
   rows?: number;
   /** Texto de ajuda (aparece acima da dica de formatação). */
   hint?: ReactNode;
-  /** Mensagem de erro do servidor (ex.: `state.fieldErrors?.[name]`). */
+  /** Mensagem de erro. Dentro de um <ActionForm> o erro do campo (`fieldErrors[name]`) aparece sozinho. */
   error?: string;
   required?: boolean;
   placeholder?: string;
@@ -95,7 +96,7 @@ export function MarkdownField({
   defaultValue,
   rows = 6,
   hint,
-  error,
+  error: errorProp,
   required,
   placeholder,
   maxLength,
@@ -103,6 +104,8 @@ export function MarkdownField({
   className,
   onChange,
 }: MarkdownFieldProps) {
+  const formError = useFieldState(name).error;
+  const error = errorProp ?? formError;
   const uid = useId();
   const fieldId = id ?? `${uid}-campo`;
   const hintId = `${uid}-dica`;

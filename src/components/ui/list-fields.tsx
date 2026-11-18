@@ -10,6 +10,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useFieldState } from "./form";
 
 type Row<T> = { key: number; value: T };
 
@@ -135,7 +136,7 @@ type CommonProps = {
   name: string;
   label: string;
   hint?: ReactNode;
-  /** Mensagem de erro do servidor (ex.: `state.fieldErrors?.[name]`). */
+  /** Mensagem de erro. Dentro de um <ActionForm> o erro do campo (`fieldErrors[name]`) aparece sozinho. */
   error?: string;
   /** Texto do botão de adicionar. */
   addLabel?: string;
@@ -190,7 +191,9 @@ export function StringListField({
   const draftId = `${uid}-novo`;
   const [draft, setDraft] = useState("");
   const list = useRows<string>(uid, defaultValue, onChange);
+  const formState = useFieldState(name);
   const full = max !== undefined && list.rows.length >= max;
+  const message = error ?? formState.error;
 
   // O que será enviado: itens preenchidos + o texto digitado e ainda não adicionado (para não se perder ao salvar).
   const values = list.rows.map((row) => row.value.trim()).filter(Boolean);
@@ -270,9 +273,9 @@ export function StringListField({
       </div>
 
       {hint ? <p className="hint">{hint}</p> : null}
-      {error ? (
+      {message ? (
         <p className="field-error" role="alert">
-          {error}
+          {message}
         </p>
       ) : null}
       <span className="sr-only" aria-live="polite">
@@ -315,7 +318,9 @@ export function ObjectListField<T>({
   const uid = useId();
   const labelId = `${uid}-label`;
   const list = useRows<T>(uid, defaultValue, onChange);
+  const formState = useFieldState(name);
   const full = max !== undefined && list.rows.length >= max;
+  const message = error ?? formState.error;
 
   return (
     <div id={uid} role="group" aria-labelledby={labelId} className={className}>
@@ -367,9 +372,9 @@ export function ObjectListField<T>({
       {full ? <p className="hint">Limite de {max} itens atingido.</p> : null}
 
       {hint ? <p className="hint">{hint}</p> : null}
-      {error ? (
+      {message ? (
         <p className="field-error" role="alert">
-          {error}
+          {message}
         </p>
       ) : null}
       <span className="sr-only" aria-live="polite">

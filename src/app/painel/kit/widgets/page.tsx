@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { addDays, startOfMonth, todayISO } from "@/lib/dates";
 import { MonthCalendar, parseMonthParam, type CalendarItem } from "@/components/ui/month-calendar";
-import { BoardDemo, FormDemo } from "./demos";
+import { BoardDemo, FormDemo, ValidatedFormDemo } from "./demos";
 
 export const metadata: Metadata = { title: "Widgets do kit" };
 /** A página lê a sessão a cada requisição: pode bloquear a navegação (o `instant = false` do layout não cobre segmentos filhos). */
@@ -94,6 +94,12 @@ export default async function WidgetsShowcasePage({
       <Section id="formulario" title="Campos de formulário" file="list-fields · markdown-field · masked-inputs · media-fields">
         <div className="card card-pad">
           <FormDemo />
+        </div>
+      </Section>
+
+      <Section id="validacao" title="Dentro de ActionForm + Field" file="erros da Server Action por campo">
+        <div className="card card-pad max-w-3xl">
+          <ValidatedFormDemo />
         </div>
       </Section>
     </div>

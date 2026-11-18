@@ -61,13 +61,15 @@ type StatCardProps = {
   /** Torna o cartão inteiro um link. */
   href?: string;
   icon?: ReactNode;
+  /** `lg` (padrão) para contagens curtas ("03"); `md` para valores longos como dinheiro — encolhe com o cartão, sem estourar. */
+  size?: "lg" | "md";
   /** `destaque` pinta o cartão de roxo (use em no máximo um por tela). */
   tone?: "padrao" | "destaque";
   className?: string;
 };
 
 /** Cartão de indicador: rótulo, número grande roxo, legenda e link opcional. */
-export function StatCard({ label, value, caption, href, icon, tone = "padrao", className }: StatCardProps) {
+export function StatCard({ label, value, caption, href, icon, size = "lg", tone = "padrao", className }: StatCardProps) {
   const highlight = tone === "destaque";
   const body = (
     <>
@@ -81,12 +83,20 @@ export function StatCard({ label, value, caption, href, icon, tone = "padrao", c
           </span>
         ) : null}
       </div>
-      <p className={cn("mt-2 text-[2rem] leading-none font-extrabold tracking-tight tabular-nums sm:text-4xl", highlight ? "text-white" : "text-roxo")}>{value}</p>
+      <p
+        className={cn(
+          "mt-2 leading-none font-extrabold tracking-tight tabular-nums",
+          size === "lg" ? "text-[2rem] sm:text-4xl" : "pt-1 text-[clamp(1.125rem,10.5cqi,1.75rem)] sm:pt-1.5",
+          highlight ? "text-white" : "text-roxo",
+        )}
+      >
+        {value}
+      </p>
       {caption ? <p className={cn("mt-2 text-[0.8125rem] leading-snug", highlight ? "text-lavanda" : "text-cinza")}>{caption}</p> : null}
     </>
   );
   const classes = cn(
-    "card group block p-4 sm:p-5",
+    "card group @container block min-w-0 p-4 sm:p-5",
     highlight && "bg-roxo border-roxo",
     href && (highlight ? "hover:bg-roxo-escuro transition-colors" : "hover:border-roxo/40 transition-colors"),
     className,

@@ -5,8 +5,9 @@
  */
 import { requireUser } from "@/lib/auth";
 import { actionOk, type ActionState } from "@/lib/action-state";
-import { parseBRL } from "@/lib/format";
-import { jsonField } from "@/server/action";
+import { formatBRL, isValidPhone, parseBRL } from "@/lib/format";
+import { z } from "zod";
+import { f, jsonField, parseInput } from "@/server/action";
 
 /** Coluna que sempre recusa o movimento — serve para ver o "desfazer" do <Board>. */
 const BLOCKED_COLUMN = "bloqueada";
@@ -41,4 +42,24 @@ export async function demoEchoAction(_prev: ActionState<DemoEcho>, formData: For
     "jsonField(formData, 'galeria') → ids": jsonField(formData, "galeria"),
     "formData.get('contrato') → id": text("contrato"),
   });
+}
+
+const validatedSchema = z.object({
+  valor: f.money().refine((cents) => cents >= 10_000, "O valor mínimo desta demonstração é R$ 100,00."),
+  telefone: z.string().refine(isValidPhone, "Informe um telefone com DDD."),
+  resumo: f.text(2000, "Escreva um resumo."),
+  etapas: z.array(f.text(80)).min(2, "Liste pelo menos 2 etapas."),
+});
+
+/** Demonstração com <ActionForm> + <Field>: valida com zod e devolve os erros por campo. */
+export async function demoValidateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireUser();
+  const parsed = parseInput(validatedSchema, {
+    valor: formData.get("valor"),
+    telefone: formData.get("telefone"),
+    resumo: formData.get("resumo"),
+    etapas: jsonField(formData, "etapas"),
+  });
+  if (!parsed.ok) return parsed.state;
+  return actionOk(`Tudo certo: ${formatBRL(parsed.data.valor)}, ${parsed.data.etapas.length} etapas (nada foi gravado).`);
 }

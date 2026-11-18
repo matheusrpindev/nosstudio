@@ -4,11 +4,28 @@
  * Campos com máscara para formulários do painel.
  * - <MoneyInput>: valor em reais; envia o TEXTO formatado ("10.900,00") — o servidor converte com f.money()/parseBRL.
  * - <PhoneInput>: telefone brasileiro; envia o texto formatado ("(11) 91234-5678").
- * Ambos repassam os atributos usuais de <input> (id, required, aria-*, className…).
+ * Ambos repassam os atributos usuais de <input> (id, required, aria-*, className…) e, dentro de um <Field>,
+ * recebem dele id/name/required/aria-* automaticamente.
  */
 import { useId, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 import { centsToInput, onlyDigits } from "@/lib/format";
+import { useFieldContext } from "./form";
+
+/**
+ * Dentro de um <Field> (src/components/ui/form.tsx), o campo recebe dele id, name, required e aria-*.
+ * O que for passado direto no componente tem prioridade.
+ */
+function useFieldProps(props: Pick<ComponentProps<"input">, "id" | "name" | "required" | "aria-invalid" | "aria-describedby">) {
+  const field = useFieldContext();
+  return {
+    id: props.id ?? field?.id,
+    name: props.name ?? field?.name,
+    required: props.required ?? field?.required,
+    "aria-invalid": props["aria-invalid"] ?? (field?.invalid || undefined),
+    "aria-describedby": props["aria-describedby"] ?? field?.describedBy,
+  };
+}
 
 // ------------------------------------------------------------------ dinheiro
 /** Maior valor aceito pela máscara: R$ 999.999.999,99. */
@@ -55,6 +72,7 @@ export function MoneyInput({
   const controlled = value !== undefined;
   const [inner, setInner] = useState(() => centsToInput(defaultValue ?? null));
   const text = controlled ? centsToInput(value) : inner;
+  const fieldProps = useFieldProps(rest);
 
   return (
     <div className={cn("relative", wrapperClassName)}>
@@ -65,6 +83,7 @@ export function MoneyInput({
       )}
       <input
         {...rest}
+        {...fieldProps}
         type="text"
         inputMode="numeric"
         autoComplete="off"
@@ -122,6 +141,7 @@ export function PhoneInput({ defaultValue, value, onValueChange, className, plac
   const [inner, setInner] = useState(() => maskPhone(defaultValue ?? ""));
   const text = controlled ? maskPhone(value) : inner;
   const marker = useId();
+  const fieldProps = useFieldProps(rest);
   /** Posição em que o cursor deve ficar depois que o texto reformatado for para a tela. */
   const pendingCaret = useRef<number | null>(null);
 
@@ -137,6 +157,7 @@ export function PhoneInput({ defaultValue, value, onValueChange, className, plac
   return (
     <input
       {...rest}
+      {...fieldProps}
       data-phone-input={marker}
       type="tel"
       inputMode="tel"

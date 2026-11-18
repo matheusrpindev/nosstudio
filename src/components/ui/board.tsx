@@ -428,6 +428,7 @@ function BoardCardView({
   onSelect: (toColumnId: string) => void;
   children: ReactNode;
 }) {
+  const selectId = useId();
   const { setNodeRef, setActivatorNodeRef, attributes, listeners } = useDraggable({ id: card.id, attributes: { roleDescription: "cartão arrastável" } });
   return (
     <li
@@ -454,9 +455,9 @@ function BoardCardView({
         </button>
       </div>
       <div className="border-areia border-t px-1.5 py-1">
-        <label className="sr-only" htmlFor={`mover-${card.id}`}>{`Mover ${name} para outra coluna`}</label>
+        <label className="sr-only" htmlFor={selectId}>{`Mover ${name} para outra coluna`}</label>
         <select
-          id={`mover-${card.id}`}
+          id={selectId}
           value=""
           onChange={(event) => {
             if (event.target.value) onSelect(event.target.value);

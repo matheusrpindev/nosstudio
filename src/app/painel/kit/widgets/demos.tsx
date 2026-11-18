@@ -7,7 +7,8 @@ import { ObjectListField, StringListField } from "@/components/ui/list-fields";
 import { MarkdownField } from "@/components/ui/markdown-field";
 import { MoneyInput, PhoneInput } from "@/components/ui/masked-inputs";
 import { FileField, GalleryField, ImageField } from "@/components/ui/media-fields";
-import { demoEchoAction, demoMoveAction, type DemoEcho } from "./actions";
+import { ActionForm, Field, FieldRow, FormActions, SubmitButton } from "@/components/ui/form";
+import { demoEchoAction, demoMoveAction, demoValidateAction, type DemoEcho } from "./actions";
 import type { ActionState } from "@/lib/action-state";
 
 // ------------------------------------------------------------------ Board
@@ -191,5 +192,27 @@ export function FormDemo({ children }: { children?: React.ReactNode }) {
         </div>
       </div>
     </form>
+  );
+}
+
+// ------------------------------------------------------------------ com <ActionForm> + <Field>
+/** Os widgets dentro do formulário padrão do kit: id/name/aria vêm do <Field>; os erros da action aparecem pelo `name`. */
+export function ValidatedFormDemo() {
+  return (
+    <ActionForm action={demoValidateAction} success="inline" data-demo-validated>
+      <FieldRow>
+        <Field name="valor" label="Valor" hint="Mínimo de R$ 100,00 nesta demonstração." required>
+          <MoneyInput defaultValue={5000} />
+        </Field>
+        <Field name="telefone" label="Telefone" required>
+          <PhoneInput defaultValue="1191234" />
+        </Field>
+      </FieldRow>
+      <StringListField name="etapas" label="Etapas" defaultValue={["Briefing"]} placeholder="Ex.: Gravação" hint="Pelo menos 2." />
+      <MarkdownField name="resumo" label="Resumo" rows={3} required />
+      <FormActions>
+        <SubmitButton pendingLabel="Validando…">Validar no servidor</SubmitButton>
+      </FormActions>
+    </ActionForm>
   );
 }

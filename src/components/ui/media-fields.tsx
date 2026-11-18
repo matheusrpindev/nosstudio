@@ -11,9 +11,10 @@
  * Para preencher `defaultValue`, use `getMediaValue(id)` / `getMediaValues(ids)` de `@/server/media`.
  * Remover do campo NÃO apaga o arquivo no servidor: só desvincula (vale ao salvar o formulário).
  */
-import { useEffect, useId, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, ExternalLink, FileText, ImagePlus, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useFieldState } from "./form";
 
 export type MediaValue = {
   id: number;
@@ -33,6 +34,7 @@ const IMAGE_MAX_BYTES = 15 * 1024 * 1024;
 const FILE_ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv,.jpg,.jpeg,.png,.webp,.gif";
 const FILE_MAX_BYTES = 25 * 1024 * 1024;
 const ALT_MAX = 300;
+const WAIT_MESSAGE = "Aguarde o envio do arquivo terminar antes de salvar.";
 const CONNECTION_ERROR = "Falha de conexão ao enviar. Confira a internet e tente de novo.";
 
 /** `1,2 MB`, `340 KB`. */
@@ -108,14 +110,25 @@ function checkSize(file: File, max: number, what: string): string | null {
   return file.size > max ? `${what} grande demais: "${file.name}" tem ${formatBytes(file.size)} (máximo de ${formatBytes(max)}).` : null;
 }
 
-/** Enquanto um envio está em andamento, impede o envio do formulário (validação nativa do navegador). */
-function UploadGuard({ active }: { active: boolean }) {
-  const ref = useRef<HTMLInputElement | null>(null);
+/**
+ * Enquanto um envio está em andamento, segura o envio do formulário em volta (senão ele seria salvo sem o arquivo).
+ * O ouvinte nativo cancela o `submit` antes de o React disparar a Server Action.
+ */
+function UploadGuard({ active, onBlocked }: { active: boolean; onBlocked: () => void }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const notify = useEffectEvent(onBlocked);
   useEffect(() => {
-    ref.current?.setCustomValidity(active ? "Aguarde o envio do arquivo terminar." : "");
+    const form = active ? ref.current?.closest("form") : null;
+    if (!form) return;
+    const block = (event: SubmitEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      notify();
+    };
+    form.addEventListener("submit", block, true);
+    return () => form.removeEventListener("submit", block, true);
   }, [active]);
-  if (!active) return null;
-  return <input ref={ref} type="text" tabIndex={-1} aria-hidden="true" defaultValue="" className="sr-only" />;
+  return <span ref={ref} hidden />;
 }
 
 function ProgressBar({ upload }: { upload: NonNullable<UploadState> }) {
@@ -143,7 +156,9 @@ function ProgressBar({ upload }: { upload: NonNullable<UploadState> }) {
   );
 }
 
-function Messages({ hint, error, uploadError, hintId }: { hint?: ReactNode; error?: string; uploadError: string | null; hintId: string }) {
+function Messages({ name, hint, error: errorProp, uploadError, hintId }: { name: string; hint?: ReactNode; error?: string; uploadError: string | null; hintId: string }) {
+  const formError = useFieldState(name).error;
+  const error = errorProp ?? formError;
   return (
     <>
       {hint ? (
@@ -329,7 +344,7 @@ type FieldProps = {
   name: string;
   label: string;
   hint?: ReactNode;
-  /** Mensagem de erro do servidor (ex.: `state.fieldErrors?.[name]`). */
+  /** Mensagem de erro. Dentro de um <ActionForm> o erro do campo (`fieldErrors[name]`) aparece sozinho. */
   error?: string;
   className?: string;
 };
@@ -380,7 +395,7 @@ export function ImageField({ name, label, defaultValue = null, hint, error, aspe
         {label}
       </span>
       <input type="hidden" name={name} value={media?.id ?? ""} />
-      <UploadGuard active={upload !== null} />
+      <UploadGuard active={upload !== null} onBlocked={() => setUploadError(WAIT_MESSAGE)} />
 
       {media && !showDropZone ? (
         <div className="border-areia rounded-campo grid gap-3 border bg-white p-3 sm:grid-cols-[minmax(0,14rem)_1fr] sm:gap-4">
@@ -434,7 +449,7 @@ export function ImageField({ name, label, defaultValue = null, hint, error, aspe
         </>
       )}
 
-      <Messages hint={hint} error={error} uploadError={uploadError} hintId={`${uid}-hint`} />
+      <Messages name={name} hint={hint} error={error} uploadError={uploadError} hintId={`${uid}-hint`} />
     </div>
   );
 }
@@ -534,7 +549,7 @@ export function GalleryField({ name, label, defaultValue = [], max, hint, error,
         </span>
       </div>
       <input type="hidden" name={name} value={JSON.stringify(items.map((item) => item.id))} />
-      <UploadGuard active={upload !== null} />
+      <UploadGuard active={upload !== null} onBlocked={() => setUploadError(WAIT_MESSAGE)} />
 
       {items.length > 0 ? (
         <ul className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-3">
@@ -612,7 +627,7 @@ export function GalleryField({ name, label, defaultValue = [], max, hint, error,
         <p className="hint">Limite de {max} imagens atingido. Remova uma para adicionar outra.</p>
       )}
 
-      <Messages hint={hint} error={error} uploadError={uploadError} hintId={`${uid}-hint`} />
+      <Messages name={name} hint={hint} error={error} uploadError={uploadError} hintId={`${uid}-hint`} />
       <span className="sr-only" aria-live="polite">
         {announcement}
       </span>
@@ -667,7 +682,7 @@ export function FileField({ name, label, defaultValue = null, accept = FILE_ACCE
         {label}
       </span>
       <input type="hidden" name={name} value={media?.id ?? ""} />
-      <UploadGuard active={upload !== null} />
+      <UploadGuard active={upload !== null} onBlocked={() => setUploadError(WAIT_MESSAGE)} />
 
       {media && !showDropZone ? (
         <div className="border-areia rounded-campo flex flex-col gap-2 border bg-white p-3 sm:flex-row sm:items-center sm:gap-3">
@@ -730,7 +745,7 @@ export function FileField({ name, label, defaultValue = null, accept = FILE_ACCE
         </>
       )}
 
-      <Messages hint={hint} error={error} uploadError={uploadError} hintId={`${uid}-hint`} />
+      <Messages name={name} hint={hint} error={error} uploadError={uploadError} hintId={`${uid}-hint`} />
     </div>
   );
 }

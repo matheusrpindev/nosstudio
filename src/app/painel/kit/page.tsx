@@ -282,7 +282,7 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
               <StatCard label="Leads novos" value="03" caption="Esperando contato" href="/painel/leads?status=novo" tone="destaque" />
               <StatCard label="Propostas em aberto" value="02" caption="R$ 13.790,00 em negociação" href="/painel/kit" />
               <StatCard label="Entregas previstas" value="04" caption="Nos próximos 7 dias" icon={<CalendarDays />} />
-              <StatCard label="Recebido no mês" value={<Money cents={1289000} />} caption="Até hoje" />
+              <StatCard label="Recebido no mês" size="md" value={<Money cents={1289000} />} caption="Até hoje" />
             </div>
           </Demo>
           <Demo label="FilterBar + DataList + Pagination (tabela no desktop, cartões no celular)">
