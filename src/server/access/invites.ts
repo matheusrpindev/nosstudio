@@ -186,23 +186,6 @@ export async function revokeInvite(id: number, actor: InviteActor, now: Date = n
 }
 
 // --------------------------------------------------------------------- aceitar
-/**
- * SQLite em arquivo aceita um escritor por vez: dois aceites no mesmo instante fazem o segundo `BEGIN` falhar
- * com "database is locked". Tentamos de novo — na segunda vez a transação já enxerga o convite gasto e responde
- * "convite inválido", em vez de a pessoa receber uma tela de erro.
- */
-async function retryWhenBusy<T>(run: () => Promise<T>): Promise<T> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await run();
-    } catch (error) {
-      const busy = (error as { code?: string })?.code === "SQLITE_BUSY" || /database is locked/i.test((error as Error)?.message ?? "");
-      if (!busy || attempt >= 4) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 40 * (attempt + 1)));
-    }
-  }
-}
-
 /** O que a futura tela de aceite pode mostrar a quem abriu o link: só o necessário para preencher o formulário. */
 export type PendingInvite = { email: string; name: string; role: UserRole; expiresAt: Date };
 
@@ -236,7 +219,7 @@ export type AcceptInviteResult =
  * simultâneos do mesmo link criam uma conta só.
  */
 export async function acceptInvite(input: AcceptInviteInput, context: { ipBucket: string }, now: Date = new Date()): Promise<AcceptInviteResult> {
-  const limit = await retryWhenBusy(() => consumeRateLimit(`convite-uso:ip:${anonymize(context.ipBucket)}`, ACCEPT_LIMIT));
+  const limit = await consumeRateLimit(`convite-uso:ip:${anonymize(context.ipBucket)}`, ACCEPT_LIMIT);
   if (!limit.ok) return { ok: false, error: "rate_limited", message: retryMessage(limit.retryAfterSeconds) };
 
   const invalid = { ok: false, error: "invalid", message: INVITE_INVALID_MESSAGE } as const;
@@ -257,7 +240,8 @@ export async function acceptInvite(input: AcceptInviteInput, context: { ipBucket
 
   const passwordHash = await hashPassword(password);
   type Outcome = { kind: "ok"; user: { id: number; name: string; email: string; role: UserRole } } | { kind: "invalid" } | { kind: "email_taken" };
-  const outcome = await retryWhenBusy(() => db.transaction(async (tx): Promise<Outcome> => {
+  // (dois aceites no mesmo instante: o segundo espera a trava de escrita — src/db/busy.ts — e já encontra o convite gasto)
+  const outcome = await db.transaction(async (tx): Promise<Outcome> => {
     // "Gasta" o convite primeiro e confere que fomos nós (e que ele continua pendente neste instante).
     const used = await tx
       .update(userInvites)
@@ -280,7 +264,7 @@ export async function acceptInvite(input: AcceptInviteInput, context: { ipBucket
       await tx.insert(projectMembers).values({ projectId: invite.projectId, userId: created.id, role: invite.projectRole, canView: true, addedBy: invite.invitedBy });
     }
     return { kind: "ok", user: created };
-  })).catch(async (error): Promise<Outcome> => {
+  }).catch(async (error): Promise<Outcome> => {
     const [taken] = await db.select({ id: users.id }).from(users).where(eq(users.email, invite.email));
     if (taken) return { kind: "email_taken" };
     throw error;
