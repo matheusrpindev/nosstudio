@@ -1,0 +1,563 @@
+NÓS STUDIO / 02
+
+
+
+
+Briefing de
+desenvolvimento
+Plataforma digital • versão 2.0
+
+
+Preparado para Matheus
+
+Pedro Henrique e Laura Nepomuceno
+
+Site público, administração, clientes e equipe
+
+Novembro de 2026
+
+
+
+
+Sua história, nosso olhar.
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ Escopo do projeto
+ Site atual: harmonious-platypus-4aa0d3.netlify.app
+ Referência funcional: www.designi.com.br
+
+
+ 01 / Objetivo e arquitetura
+ Evoluir o site existente para uma plataforma integrada de apresentação comercial, gestão, produção e
+ relacionamento. Referência funcional: Designi (organização e navegação, sem copiar identidade ou
+ recursos licenciados). Referência de calendário: Google Agenda.
+
+ Quatro ambientes: site público NÓS Studio; Painel Administrativo; Área do Cliente; Área da Equipe. Base
+ de dados compartilhada, permissões individuais e módulos expansíveis. Aproveitar o que já existe e evitar
+ reconstruções desnecessárias.
+
+
+ 02 / Identidade visual
+ Paleta: roxo #3B1F8E, verde-lima #C6F432, lavanda #CFC6FF, off-white #F6F4EF, grafite #1B1B22 e
+ preto #101014. Site público expressivo, jovem e autoral; ambientes internos predominantemente pretos,
+ painéis grafite, detalhes roxos e ações verde-lima. Usar a logo original, fotos reais, hierarquia consistente,
+ ícones padronizados e animações discretas. Evitar aparência de template e excesso de efeitos.
+
+ Tipografia proposta: Space Grotesk 700 para títulos, 500 para subtítulos; Montserrat 400 para textos e
+ 600 para menus e botões; IBM Plex Mono para indicadores e números. Validar junto ao arquivo original
+ do logo antes de oficializar.
+
+
+ 03 / Navegação e página inicial
+ Menu: Início, Sobre a NÓS, Serviços, Planos, Portfólio, Eventos e Casamentos, Contato e Área do Cliente.
+ Botão Solicitar proposta. Menu acessível durante a rolagem e versão mobile adequada.
+
+ Ordem inicial: barra de avisos, menu, banners, serviços, portfólio em destaque, diferenciais, fundadores,
+ processo de atendimento, planos, serviços avulsos, eventos, clientes e depoimentos, perguntas
+ frequentes, formulário, experiência interativa e rodapé. Permitir reorganizar e ocultar seções.
+
+ Diferenciais: estratégia antes da criação; atendimento próximo; comunicação integrada; criatividade com
+ intenção; audiovisual alinhado à marca; planejamento orientado aos objetivos. Processo: conexão,
+ estratégia, planejamento, produção e entrega.
+
+
+ 04 / Banners e comunicados
+ Carrossel inicial gerenciável: criar, editar, duplicar, excluir, ordenar, agendar, ativar/desativar, definir
+ duração, imagem ou vídeo, títulos, subtítulos, botões e links. Aceitar peças totalmente diagramadas e
+ versões específicas para desktop e celular; prévia antes da publicação. Medidas sugeridas: 1920 × 800 px
+ e 1080 × 1350 px, validar com layout. Setas, indicadores, gestos, pausa e movimento reduzido.
+
+ Banners iniciais: “Sua história, nosso olhar.” / Marketing, comunicação e audiovisual em um só lugar /
+ Conheça a NÓS. “Não apenas vídeos. Histórias.” / Produções que traduzem a essência da sua marca /
+ Conheça nossas produções. “O comum não é nosso estilo.” / Design, identidade e criatividade com
+ personalidade / Explore nosso portfólio. “Momentos passam. Histórias ficam.” / Fotografia e audiovisual
+
+
+
+Sua história, nosso olhar.                                                                                        02
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ para momentos especiais / Consulte nossa agenda.
+
+ Barra superior editável: texto, cor, link, início, encerramento, páginas e visibilidade. Texto inicial: “Agenda
+ aberta para novos projetos. Vamos criar juntos?”
+
+
+ 05 / Sobre a NÓS
+ Antes de existir a NÓS, já existia um nós.
+
+ Algumas histórias começam com uma ideia. A nossa começou com uma conexão. Somos Pedro Henrique e
+ Laura Nepomuceno, dois empreendedores que encontraram na comunicação, na criatividade e no
+ audiovisual uma oportunidade de construir algo juntos. A NÓS Studio nasceu da união das nossas
+ experiências profissionais, das nossas diferentes maneiras de enxergar o mundo e da vontade de
+ transformar ideias em projetos que realmente façam sentido.
+
+ Acreditamos que comunicar vai muito além de aparecer. É sobre criar conexões, transmitir sentimentos e
+ fazer com que pessoas e marcas sejam reconhecidas por aquilo que as torna únicas. Por isso, unimos
+ estratégia, criatividade e produção audiovisual em um mesmo lugar. Mais do que uma empresa de
+ marketing, somos parceiros de quem tem uma história para contar. Sua história, nosso olhar.
+
+ Pedro Henrique — Cofundador | Marketing, Estratégia e Audiovisual. Empresário no segmento de brindes
+ personalizados, com trajetória profissional iniciada em 2016 e atuação em campanhas de comunicação
+ desde 2018. Possui experiências em gestão, planejamento estratégico, comunicação institucional,
+ marketing digital, organização de eventos e produção audiovisual. Também atuou na formação de alunos
+ nas áreas de comunicação e criação de conteúdo. Na NÓS, reúne experiência em negócios, estratégia e
+ audiovisual.
+
+ Laura Nepomuceno — Cofundadora | Criação, Comunicação e Audiovisual. Empresária na área da
+ educação, com seis anos de experiência no universo do marketing e atuação profissional nos últimos dois
+ anos. Sua trajetória reúne empreendedorismo, comunicação digital, criação de conteúdo, gravação e
+ edição de vídeos. Na NÓS, une criatividade, sensibilidade e visão empreendedora.
+
+ Missão: transformar ideias e histórias em estratégias de comunicação que gerem conexões,
+ reconhecimento e valor. Visão: ser reconhecida pela criatividade, qualidade audiovisual e soluções
+ personalizadas. Valores: criatividade, autenticidade, comprometimento, transparência, parceria e evolução
+ constante. Textos e fotos editáveis; validar biografias antes de publicar.
+
+
+ 06 / Serviços
+ Marketing e estratégia: diagnóstico, planejamento, posicionamento, consultoria e campanhas. Redes
+ sociais: calendário editorial, conteúdo, artes, legendas, agendamento e relatórios. Audiovisual: roteiros,
+ Reels, vídeos institucionais e publicitários, gravação, direção, edição e pós-produção. Fotografia:
+ corporativa, ensaios, produtos, gastronomia, eventos e campanhas.
+
+ Design gráfico: artes publicitárias e esportivas, manipulação de imagens, carrosséis, peças digitais e
+ impressas. Identidade visual: logotipos, manual, direção criativa e posicionamento visual. Tráfego pago:
+ planejamento, configuração, gestão, otimização e relatórios. Eventos e storymaker: foto, filmagem,
+ conteúdo em tempo real e melhores momentos. Casamentos: fotografia, filmes, pré-wedding, making of,
+ teasers e galerias.
+
+
+
+
+Sua história, nosso olhar.                                                                                         03
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ Cada serviço terá página própria com mídia, descrição, benefícios, possíveis entregas, trabalhos
+ relacionados, perguntas frequentes e orçamento. Cadastro de novas categorias sem alterar código.
+
+
+ 07 / Planos e serviços avulsos
+ Nomes provisórios, simples e comerciais: Plano Essencial, Plano Integrado e Plano Estratégico. Não
+ publicar preços ou quantidades até validar custos, capacidade e margem.
+
+ Essencial: planejamento mensal, calendário, design, legendas, padronização visual, reunião e relatório
+ simplificado. Integrado: acrescenta gestão de redes sociais, roteiros, captação, edição, Reels, fotografias,
+ agendamento e relatórios. Estratégico: estratégia integrada, produção recorrente, campanhas, direção
+ criativa, peças publicitárias, acompanhamento e tráfego pago quando contratado.
+
+ Tabela comparativa; destaque configurável para o Integrado. Texto provisório: “Investimento
+ personalizado para o seu negócio.” Permitir criar, editar, ordenar, desativar planos, alterar preços, ocultar
+ valores, editar entregas, quantidades, opcionais, descontos e destaque. Seção Serviços Avulsos para
+ diárias, edição, fotografia, design e campanhas pontuais.
+
+
+ 08 / Portfólio
+ Título: “Nosso olhar em prática.” Grade com pesquisa, filtros (audiovisual, fotografia, design, marketing,
+ identidade visual, eventos e casamentos), reprodução de vídeo, galerias, ampliação, antes/depois,
+ bastidores, projetos relacionados e compartilhamento.
+
+ Cada projeto: nome, categoria, cliente autorizado, objetivo, desafio, solução, mídia e resultados
+ comprovados quando disponíveis. Cadastro de capa, ordem e destaque na home. Publicar somente
+ trabalhos reais autorizados; distinguir experiências anteriores dos fundadores. Arquivos da equipe nunca
+ entram automaticamente no portfólio.
+
+
+ 09 / Eventos e casamentos
+ Separar eventos corporativos e sociais de casamentos. Galerias, formatos de cobertura, depoimentos reais
+ e perguntas frequentes. Chamada: “Existem momentos que passam. E histórias que permanecem.”
+ Formulário: nome, WhatsApp, e-mail, tipo, data, horário, cidade, local, convidados, serviços e observações.
+ Botão Consultar disponibilidade da minha data. Integrar ao CRM e agenda sem confirmar contratação
+ automaticamente.
+
+
+ 10 / Captação comercial
+ Formulários inteligentes: nome, empresa, WhatsApp, e-mail, serviço, objetivo e observações; campos
+ adicionais conforme marketing (segmento e perfil), audiovisual (tipo e previsão) ou evento (data e local).
+ Gerar lead, confirmar recebimento, proteger contra spam e notificar equipe. Botão WhatsApp com
+ mensagem: “Olá, NÓS! Conheci o trabalho de vocês pelo site e gostaria de conversar sobre um projeto.”
+ Pré-selecionar serviço ou plano de origem.
+
+
+
+
+Sua história, nosso olhar.                                                                                       04
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ 11 / Rodapé interativo
+ Título: “Antes de ir, deixe sua marca.” Subtítulo: “Porque toda conexão merece ser registrada.” Câmera
+ realista clicável com animação de lente, flash, obturador, fotografia instantânea e som opcional. Celular
+ clicável com REC, cronômetro, trechos de vídeos e botão parar. Fotos e vídeos substituíveis pelo painel.
+ Na primeira versão, simulação sem acesso à câmera ou microfone do visitante.
+
+ Contador real de visitas ou visitantes estimados, com métrica identificada, deduplicação por sessão e
+ filtragem de robôs quando possível. Frase: “Cada visita é o começo de uma nova história.” Sem números
+ inventados; controle de visibilidade.
+
+ Rodapé institucional: logo, slogan, menu, WhatsApp, Instagram, e-mail, localização, Área do Cliente,
+ privacidade, termos, cookies e direitos autorais. Remover identificação de protótipo e atalhos de
+ desenvolvimento; proteger rotas no servidor.
+
+
+ 12 / Painel Administrativo
+ Menu lateral recolhível e busca global com permissões. Visão geral: painel, agenda, notificações, tarefas.
+ Comercial: leads, clientes, propostas, contratos, serviços, planos. Produção: projetos, briefings, calendário
+ editorial, aprovações, marcas, arquivos, biblioteca criativa. Equipe: profissionais, escalas, disponibilidade,
+ horas, entregas e avaliações. Financeiro: receitas, despesas, contas a pagar/receber, caixa, pagamentos da
+ equipe, sócios e relatórios. Site: banners, páginas, portfólio, depoimentos, avisos, FAQ e métricas.
+ Administração: usuários, permissões, integrações, histórico e segurança.
+
+ Painel inicial com saudação, faturamento, saldo registrado, recebimentos, despesas, contas, clientes, leads,
+ projetos, propostas, conversão, gravações, reuniões, entregas, aprovações, disponibilidade, arquivos
+ recebidos e visitas. Filtros por período, gráficos, atalhos, indicadores configuráveis e histórico.
+
+
+ 13 / CRM e clientes
+ Funil Kanban/lista com etapas configuráveis: novo contato, atendimento, briefing, proposta em
+ elaboração, enviada, negociação, fechado, perdido. Cadastro com nome, empresa, contatos, Instagram,
+ origem, serviço, responsável, valor estimado, histórico, notas, próxima ação, retorno, anexos e motivo de
+ perda. Lembretes e conversão em cliente sem duplicar dados.
+
+ Ficha de cliente pessoa física ou jurídica: visão geral, dados, contatos, projetos, marcas, arquivos,
+ propostas, contratos, briefings, financeiro, relatórios, histórico e usuários vinculados. Múltiplas marcas e
+ projetos; observações privadas.
+
+
+ 14 / Identidade visual dos clientes
+ Cadastro de logos e variações, símbolos, paleta HEX/RGB/CMYK, fontes, manual, tom de voz, público,
+ posicionamento, referências, fotos, peças e redes sociais. Copiar códigos, visualizar fontes, baixar arquivos
+ autorizados, controlar versões e compartilhar seletivamente. Criar também a ficha da própria NÓS.
+
+
+
+
+Sua história, nosso olhar.                                                                                      05
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ 15 / Projetos e tarefas
+ Projeto com nome, cliente, marca, serviço, objetivo, briefing, responsável, equipe, datas, orçamento,
+ custos, entregas, arquivos, tarefas, referências, aprovações e histórico. Etapas editáveis: briefing,
+ planejamento, pré-produção, produção, pós-produção, aprovação, ajustes, entrega e conclusão. Lista,
+ Kanban, calendário, linha do tempo; modelos reutilizáveis por serviço. Tarefas com prioridade,
+ responsável, subtarefas, checklist e prazo.
+
+
+ 16 / Agenda da NÓS
+ Calendários diário, semanal, mensal, anual, lista e linha do tempo. Agenda geral, individual de Pedro e
+ Laura, funcionários, freelancers, comercial, financeiro, editorial e produções. Sobreposição e filtros por
+ cliente, responsável, categoria e projeto.
+
+ Compromissos: título, categoria, descrição, início/fim, local, link de mapa/reunião, cliente, projeto,
+ responsáveis, participantes, prioridade, status, anexos, checklist, lembretes, recorrência e privacidade.
+ Criar, editar, duplicar, cancelar, reagendar e arrastar. Categorias e cores personalizáveis; reuniões,
+ captações, fotos, eventos, edição, publicações, entregas, aprovações, pagamentos, férias e
+ indisponibilidade.
+
+ Planejamento de gravação: horário de chegada, endereço, equipe, roteiro, referências, equipamentos,
+ quantidade de conteúdos, prazo de edição, entrega e checklist. Alertar conflitos de horário, permitir
+ bloqueios e consulta de disponibilidade conjunta. Compromissos pessoais visíveis a outros apenas como
+ ocupado.
+
+ Calendário editorial: cliente, plataforma, formato, tema, data/hora, legenda, roteiro, mídia, responsável,
+ aprovação e publicação; etapas de ideia até publicado. Agenda financeira com parcelas, contas,
+ fornecedores, equipe, impostos, assinaturas, pró-labore e fechamento. Prazos de projeto vinculados com
+ atualização controlada.
+
+ Área do cliente: somente compromissos próprios e solicitação de reagendamento. Site público: “Agende
+ uma conversa com a NÓS”, horários disponibilizados, tipo de atendimento, contato e confirmação
+ configurável; registrar CRM e agenda. Lembretes internos/e-mail, recorrência, exportação e integração
+ autorizada com Google Agenda (evitar duplicidade e respeitar privacidade). Relatórios de horas previstas e
+ realizadas, reuniões, gravações, entregas, atrasos e carga de trabalho por projeto/profissional.
+
+
+ 17 / Área da Equipe: cadastro e escalas
+ Ambiente preto, roxo e verde-lima, otimizado para celular. Perfis de funcionário, freelancer, prestador,
+ colaborador e parceiro; permissões por função e necessidade, não apenas vínculo.
+
+ Ficha: nome, foto, contatos, cidade, função, especialidades, experiência, portfólio, redes, equipamentos,
+ disponibilidade, valores por diária/hora/serviço, documentos contratuais, dados necessários ao
+ pagamento, notas e status. Proteger dados pessoais. Funções iniciais: fotógrafo, filmmaker, editor,
+ designer, social media, storymaker, tráfego, roteirista, assistente, drone, áudio, iluminação, atendimento e
+ administrativo; permitir novas funções.
+
+ Banco interno de profissionais: filtros por especialidade, região, disponibilidade, equipamento, valor e
+ histórico; favoritos. Não criar marketplace público nesta fase.
+
+
+
+
+Sua história, nosso olhar.                                                                                      06
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ Escalas por projeto: selecionar profissionais e papéis; enviar convocação com função, local, data, horários,
+ valor combinado, responsabilidades e prazo. Aceitar, recusar ou pedir informações; registrar resposta.
+ Gerar ordem de serviço PDF com escopo, entregas, pagamento e orientações; aceite operacional não
+ substitui contrato.
+
+
+ 18 / Área da Equipe: trabalho e entregas
+ Menu: Início, Minha agenda, Meus trabalhos, Convocações, Briefings, Tarefas, Enviar arquivos, Entregas,
+ Pagamentos, Documentos, Notificações e Perfil. Painel com próximos trabalhos, convocações, prazos,
+ arquivos, pagamentos próprios e histórico. Acesso somente a projetos atribuídos, briefing e contatos
+ necessários, roteiro, referências, equipamentos, checklist, entregas, prazo e valor individual; sem
+ orçamento total ou margens.
+
+ Registro operacional de chegada, início, pausas, finalização e horas, sem rastreamento contínuo ou
+ geolocalização obrigatória. Controle formal de jornada, quando necessário, deverá ser avaliado
+ separadamente. Checklists por função (equipamentos, baterias, cartões, áudio, cenas obrigatórias, backup,
+ organização e envio).
+
+ Upload pelo projeto: múltiplos arquivos, pastas, arrastar/soltar, celular, progresso, retomada de envio
+ interrompido, cancelamento, reenvio, identificação de falhas e duplicidade, registro de autor/data.
+ Formatos JPEG, PNG, RAW, DNG, HEIC, MP4, MOV, WAV, MP3, PDF, PSD, AI e ZIP; limites
+ configuráveis. Envio em segundo plano apenas quando suportado; manter originais intactos.
+
+ Organização automática por cliente, projeto, profissional e categoria: brutos, fotos, vídeos, áudio, seleção,
+ edição, aprovação interna e entrega final. Central de recebimento com quantidade, volume, autor, data,
+ status, notas e filtros. Revisar, solicitar faltantes ou substituições, baixar, selecionar, mover, encaminhar
+ edição, aprovar e liberar explicitamente ao cliente. Nunca liberar brutos automaticamente.
+
+
+ 19 / Fluxo de produção e pagamento da equipe
+ Fluxo obrigatório: cadastrar cliente e projeto > escalar profissional > convocar > confirmar > disponibilizar
+ briefing > produzir > enviar arquivos > notificar administração > revisar > selecionar/editar > aprovar
+ internamente > liberar galeria > notificar cliente > download > registrar entrega.
+
+ Pagamento: valor acordado, adicionais autorizados, reembolsos, forma, vencimento, comprovante e
+ situação. Integrar ao financeiro; profissional vê apenas seus pagamentos. Não condicionar
+ automaticamente salário ou valor contratualmente devido à aprovação de arquivos.
+
+ Avaliação interna profissional: pontualidade, comunicação, qualidade técnica, organização, escopo, prazo e
+ trabalho em equipe. Histórico de trabalhos, funções, entregas, pagamentos e ocorrências. Revogar acesso
+ ao final da contratação; não expor outros clientes, contratos, remunerações ou informações societárias.
+
+
+ 20 / Central de Arquivos
+ Pastas e subpastas, upload em lote, grade/lista, pesquisa, tags, favoritos, recentes, miniaturas, visualização
+ de imagens/PDF, reprodução de vídeos, downloads individuais e em lote, renomear, mover, versões,
+ lixeira, recuperação, links seguros e indicador de espaço. Separar arquivos administrativos, clientes,
+ projetos, brutos, edição, aprovados e finais.
+
+
+
+
+Sua história, nosso olhar.                                                                                    07
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ Avaliar Google Drive, Cloudflare R2, Amazon S3, Supabase Storage ou equivalente. Evitar armazenar
+ grandes volumes na hospedagem do site. Orçar armazenamento, transferência, processamento de
+ miniaturas, backup e retenção. Preservar originais; gerar prévias otimizadas. Links temporários e
+ revogáveis, upload seguro e retomável.
+
+
+ 21 / Galerias e entrega ao cliente
+ Galeria personalizada com capa, nome, cliente, projeto, descrição, data, logo, categorias, ordem, validade,
+ acesso e link. Exemplo de casamento: pré-wedding, making of, cerimônia, recepção, festa, retratos, filme e
+ teaser. Cliente visualiza grade, tela cheia, vídeos, favoritos, seleção e download individual/em lote;
+ compartilhamento autorizado.
+
+ Seleção de fotos: definir quantidade contratada, cliente marca favoritas e confirma; equipe recebe lista;
+ registrar extras para orçamento. Acesso privado por login ou link protegido e com validade, revogação,
+ permissão de download, prévias com marca-d'água quando necessário. Bloquear indexação, sem
+ confundir isso com controle de acesso.
+
+ Registrar responsável pela liberação, data, arquivos, downloads quando mensuráveis e confirmação de
+ recebimento. Avisar antes do fim da disponibilidade e respeitar contratos e política de retenção antes de
+ excluir.
+
+
+ 22 / Biblioteca Criativa
+ Biblioteca interna de templates, mockups, fotos, vídeos, texturas, elementos, fontes, presets, LUTs, trilhas,
+ efeitos, roteiros, prompts, referências e modelos de documentos. Categorias, coleções, arquivos, links,
+ pesquisa, favoritos, tags, origem e licença. Somente materiais próprios ou licenciados; não copiar
+ bibliotecas do Designi.
+
+
+ 23 / Briefings e aprovações
+ Gerenciador de formulários reutilizáveis por serviço: marketing, redes, design, identidade visual,
+ audiovisual, foto, eventos, casamento e tráfego. Editar perguntas, tipos de resposta, ordem,
+ obrigatoriedade e anexos; enviar link individual, armazenar respostas no projeto e compartilhar partes
+ autorizadas com equipe.
+
+ Aprovação interna antes da externa. Artes, fotos, vídeos, roteiros, legendas, calendários e campanhas:
+ aprovar, solicitar ajuste e comentar. Registrar usuário, data, versão e histórico; nova versão sem apagar
+ anterior. Notificar responsáveis. Futuramente comentários em pontos de imagem ou momentos de vídeo.
+
+
+ 24 / Propostas e contratos
+ Gerador com cliente, modelo, serviços cadastrados ou personalizados, quantidade, preço unitário,
+ desconto, cortesia, opcionais, prazos, validade, pagamento e observações; calcular totais. PDF com
+ identidade NÓS e link controlado. Status rascunho, enviada, visualizada, negociação, aceita, recusada e
+ expirada. Registrar aceite comercial; converter em projeto, contrato e financeiro mediante confirmação.
+
+ Contratos: modelos validados juridicamente, preenchimento de dados, escopo, valores, condições, PDF,
+ upload de documentos assinados, validade e histórico. Categorias por serviço, freelancer, fornecedor, uso
+ de imagem e confidencialidade. Avaliar assinatura eletrônica apropriada.
+
+
+
+Sua história, nosso olhar.                                                                                   08
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ 25 / Financeiro
+ Receitas por cliente, projeto, serviço, forma de pagamento, valor, datas, parcelas e situação. Despesas por
+ descrição, categoria, fornecedor, projeto, valor, data, comprovante e responsável. Categorias:
+ equipamentos, software, assinaturas, transporte, alimentação, equipe, terceirização, impostos,
+ contabilidade, marketing e administração.
+
+ Contas a pagar e receber, vencimentos, atrasos, pagamentos parciais, fluxo realizado e projetado, saldo
+ registrado, reserva e investimentos. Gestão societária: pró-labore, retiradas, distribuição de lucros,
+ participação, aportes e reembolsos. Percentuais somente após definição dos sócios. Laura conduz o
+ financeiro com prestação mensal e acesso de Pedro; registrar alterações.
+
+ Rentabilidade por projeto: receita, custos de equipe, equipamentos, transporte, despesas atribuídas, horas,
+ margem e resultado. Distinguir faturamento, recebimento e lucro. Relatórios mensais, por cliente,
+ categoria, rentabilidade, equipe, inadimplência e caixa; exportar PDF e planilha. Não substitui
+ contabilidade.
+
+
+ 26 / Equipamentos
+ Inventário de câmeras, lentes, celulares, áudio, iluminação, tripés, estabilizadores, cartões, baterias,
+ computadores e acessórios. Nome, marca/modelo, série quando pertinente, foto, aquisição, valor,
+ proprietário, estado, localização registrada, responsável, disponibilidade e manutenção. Vincular a
+ produções, registrar retirada/devolução e alertar conflitos. Distinguir próprios, alugados e da equipe.
+
+
+ 27 / Área do Cliente
+ Interface preta, grafite, roxa e verde-lima. Menu: início, projetos, aprovações, agenda, arquivos, galerias,
+ minha marca, briefings, propostas, contratos, financeiro, relatórios, mensagens, notificações e perfil.
+ Saudação: “Bem-vindo à NÓS, [nome]. Acompanhe tudo o que estamos criando juntos.”
+
+ Painel com projetos ativos, gravações, reuniões, aprovações, entregas, pagamentos e avisos. Projetos com
+ cronograma e progresso baseado em etapas reais. Aprovações e ajustes com histórico. Arquivos e galerias
+ somente liberados; marca com logos, paleta, fontes e manual autorizados. Agenda própria, briefings,
+ contratos, mensagens por projeto e relatórios do serviço. Financeiro somente valores contratados,
+ parcelas, vencimentos, pagamentos e comprovantes; nunca margens internas ou dados de terceiros.
+
+
+ 28 / Login, usuários e permissões
+ Tela única: “Boas histórias continuam aqui.” Logo, fundo preto, campos e-mail/senha, recuperação,
+ convites, sessões e autenticação de dois fatores (prioridade para administradores). Encaminhar ao
+ ambiente autorizado; alternar perfis quando permitido. Sem cadastro público irrestrito de administradores
+ ou equipe.
+
+ Perfis: administrador, sócio, gestor de projetos, funcionário, freelancer e cliente. Permissões por módulo e
+ por projeto para ver, editar, excluir, baixar e compartilhar. Validar no servidor, revogar acessos, registrar
+ ações sensíveis e testar isolamento de contas. Um usuário não pode acessar dados de outro por mudança
+ de URL ou identificador.
+
+
+
+
+Sua história, nosso olhar.                                                                                      09
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ 29 / Gerenciamento do site
+ CMS para banners, avisos, textos, fotos, vídeos, serviços, planos, preços, portfólio, depoimentos, logos,
+ FAQ, fundadores, contatos, redes, rodapé, interações e contador. Criar, editar, duplicar, excluir, ordenar,
+ publicar, despublicar, rascunho, agendamento e prévia. Componentes padronizados para preservar a
+ marca. Depoimentos somente reais e autorizados; ocultar seção vazia.
+
+
+ 30 / Notificações, métricas e conteúdo
+ Notificações de lead, proposta, aceite, projeto, convocação/resposta, briefing, tarefa, prazo, upload,
+ entrega, ajuste, aprovação, galeria, comentários e pagamentos. Marcar lidas, abrir item, configurar
+ preferências e e-mail. WhatsApp oficial e push em fase futura.
+
+ Métricas: visitas, visitantes estimados, origem, páginas, dispositivos, cliques em banner e WhatsApp,
+ formulários, procura, leads; propostas, conversão, ticket e perdas; projetos, entregas, atrasos, horas, carga
+ e produções; equipe, custos e pagamentos; faturamento, recebimentos, despesas e rentabilidade. Filtros,
+ gráficos e exportações.
+
+ Blog opcional, inicialmente desativável: marketing, audiovisual, design, branding, redes, bastidores,
+ projetos e empreendedorismo; rascunhos, mídias, categorias, agenda, SEO e compartilhamento.
+
+
+ 31 / Experiência e integrações
+ Animação curta do logo, transições suaves, textos em movimento, prévia de vídeo sem áudio automático,
+ antes/depois, bastidores, estados de carregamento e mensagens de sucesso/erro. Página 404: “Esse take
+ saiu do roteiro. Mas toda boa história tem uma segunda tomada.” Botão Voltar para o início.
+
+ Avaliar Google Agenda, Drive, Analytics, Search Console, Meta Pixel, WhatsApp oficial, assinatura
+ eletrônica, armazenamento, e-mail, pagamentos e plataformas de campanha. Autorizações adequadas,
+ tratamento de falhas e custos recorrentes separados; não ativar rastreamento incompatível com
+ preferências de privacidade.
+
+
+ 32 / Segurança, infraestrutura e qualidade
+ HTTPS, autenticação, autorização no servidor, isolamento por cliente e projeto, links privados revogáveis,
+ validação de uploads, proteção contra arquivos maliciosos e spam, backups e testes de recuperação,
+ auditoria, sessões, credenciais, retenção, privacidade, termos e LGPD. Dados pessoais e financeiros
+ restritos. Evitar exposição de arquivos e segredos no código público.
+
+ Domínio próprio, produção e testes separados, banco estruturado, armazenamento escalável, código
+ versionado, documentação, monitoramento de erros, otimização de imagens/vídeos/fontes, miniaturas e
+ uploads grandes. Contas de domínio, hospedagem, banco e armazenamento sob controle da NÓS. SEO
+ por página, URLs, sitemap, favicon, prévias sociais, textos alternativos, contraste, teclado e
+ responsividade; áreas privadas sem indexação.
+
+
+
+
+Sua história, nosso olhar.                                                                                     10
+NÓS STUDIO / BRIEFING TÉCNICO
+
+
+
+ 33 / Etapas e prioridades
+ Fase 1: site público, identidade, banners, textos, serviços, planos, portfólio, eventos, formulários, rodapé,
+ contador, CMS básico e segurança. Fase 2: autenticação, permissões, painel, CRM, clientes, projetos,
+ agenda, briefings, propostas, contratos e financeiro básico. Fase 3: equipe, escalas, convocações, ordens,
+ upload, revisão, central de arquivos e pagamentos. Fase 4: área do cliente, agenda, aprovações, galerias,
+ seleção, entregas, documentos e financeiro. Fase 5: biblioteca criativa, identidade visual avançada,
+ equipamentos, mensagens, comentários em mídia, relatórios e integrações.
+
+ A entrega de arquivos ao cliente deve ser testada em conjunto entre fases 3 e 4; se necessário, antecipar
+ uma galeria privada mínima para concluir o fluxo operacional.
+
+
+ 34 / Validação e aceite
+ Testar mobile/desktop, formulários, leads, banners, cadastro, login, recuperação, permissões, propostas,
+ cálculos financeiros, agenda e conflitos, convocação, uploads grandes e retomada, organização, revisão,
+ ajustes, liberação, galeria, downloads, seleção, aprovações, notificações, desempenho e segurança. Teste
+ ponta a ponta: cliente > proposta > projeto > fotógrafo > convocação > briefing > upload > revisão >
+ galeria > cliente baixa > entrega registrada > pagamento da equipe > conclusão. Testar tentativa de acesso
+ a dados de terceiros e revogação de links. Apresentar funcionamento e documentação ao entregar cada
+ fase.
+
+
+ 35 / Solicitação ao desenvolvedor
+ Matheus, avaliar a estrutura atual e indicar o que pode ser aproveitado, o que precisa ser desenvolvido e
+ alternativas existentes de melhor custo-benefício. Apresentar viabilidade, tecnologias, orçamento e
+ cronograma por fase, custos mensais de hospedagem, armazenamento, transferência e integrações,
+ limites, manutenção, suporte, correções, backups e expansão. Validar especialmente o custo de guardar
+ grandes volumes de fotos e vídeos.
+
+ Este documento descreve requisitos desejados, não funcionalidades já implementadas. A área privada do
+ Designi e o código-fonte atual não foram auditados; o desenvolvimento depende de validação técnica.
+ Nomes dos planos, fontes, volumes de entrega e condições comerciais são propostas sujeitas à aprovação
+ da NÓS.
+
+
+
+
+Sua história, nosso olhar.                                                                                       11
+
