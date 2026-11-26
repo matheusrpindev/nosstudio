@@ -49,6 +49,12 @@ export type AgendaItem = {
   people: string[];
   /** Em item mascarado: quem está ocupado. */
   ownerName: string | null;
+  /** Quem está vendo pode alterar este compromisso (reagendar, arrastar)? Sempre `false` em camadas e mascarados. */
+  editable: boolean;
+  /** Em séries: a data da primeira ocorrência (a pergunta "só este / seguintes / todos" depende dela). */
+  seriesStart: ISODate | null;
+  /** Projeto ligado (nulo em item mascarado). */
+  projectId: number | null;
 };
 
 /** `09:00 – 10:30` · `09:00` · `Dia inteiro`. */
@@ -57,7 +63,16 @@ export function timeLabel(item: Pick<AgendaItem, "startTime" | "endTime">): stri
   return item.endTime ? `${item.startTime} – ${item.endTime}` : item.startTime;
 }
 
-export const isAllDay = (item: Pick<AgendaItem, "startTime" | "date" | "endDate">) => item.startTime === null || item.endDate > item.date;
+/**
+ * Compromisso COM HORA que vira a noite e dura menos de um dia (22:00 de um dia às 02:00 do seguinte): é
+ * desenhado na grade de horas, um trecho em cada dia. Sem hora de fim, ou de 24 h para cima, vai para a faixa do topo.
+ */
+export const isOvernight = (item: Pick<AgendaItem, "startTime" | "endTime" | "date" | "endDate">) =>
+  item.startTime !== null && item.endTime !== null && addDays(item.date, 1) === item.endDate && item.endTime <= item.startTime;
+
+/** Vai para a faixa "dia inteiro" (sem hora, ou de vários dias que não cabe na grade de horas). */
+export const isAllDay = (item: Pick<AgendaItem, "startTime" | "endTime" | "date" | "endDate">) =>
+  item.startTime === null || (item.endDate > item.date && !isOvernight(item));
 
 /** Ordem dentro do dia: dia inteiro primeiro, depois por horário; compromissos antes das camadas. */
 export function compareItems(a: AgendaItem, b: AgendaItem): number {
@@ -94,8 +109,26 @@ export type ViewRange = {
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 export const LIST_DAYS = 60;
 
+/** Semanas mostradas na linha do tempo, por escala (3 ou 6 meses). */
+export const TIMELINE_WEEKS: Record<3 | 6, number> = { 3: 13, 6: 26 };
+
+export type ViewOptions = {
+  /** Disponibilidade: um dia (colunas por pessoa) ou a semana (linhas por pessoa). */
+  mode?: "dia" | "semana";
+  /** Linha do tempo: 3 ou 6 meses. */
+  months?: 3 | 6;
+};
+
 /** Janela, título e vizinhos de cada visão a partir da data-âncora. */
-export function viewRange(view: AgendaView, date: ISODate): ViewRange {
+export function viewRange(view: AgendaView, date: ISODate, options: ViewOptions = {}): ViewRange {
+  if (view === "disponibilidade") return viewRange(options.mode === "semana" ? "semana" : "dia", date);
+  if (view === "linha") {
+    // começa uma semana antes da semana da data: o que acabou de passar continua à vista
+    const from = addDays(startOfWeek(date), -7);
+    const to = addDays(from, TIMELINE_WEEKS[options.months ?? 3] * 7 - 1);
+    const title = `${capitalize(formatMonth(from))} – ${formatMonth(to)}`;
+    return { from, to, days: [], title, previous: addDays(date, -28), next: addDays(date, 28) };
+  }
   if (view === "dia") {
     return { from: date, to: date, days: [date], title: `${capitalize(formatWeekday(date, true))}, ${formatDateLong(date)}`, previous: addDays(date, -1), next: addDays(date, 1) };
   }

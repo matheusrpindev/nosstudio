@@ -1,6 +1,7 @@
 /** Opções do formulário de compromisso, carregadas uma vez por página (criar e editar). */
 import "server-only";
 import type { AgendaCalendar } from "@/db/schema";
+import type { AgendaAccess } from "@/server/agenda/access";
 import { listCalendars, listCategories, listChecklistTemplates } from "@/server/agenda/queries";
 import { getClientOptions, getProjectOptions, getUserOptions } from "@/server/options";
 import type { EventFormCategory } from "./event-form";
@@ -9,15 +10,19 @@ export const calendarLabel = (calendar: Pick<AgendaCalendar, "name" | "kind">) =
 
 /**
  * `userId`: só a agenda pessoal de quem está usando entra na lista (as dos outros, não).
- * `keep`: categoria e agenda atuais do compromisso, mesmo desativadas (ou de outra pessoa), continuam escolhidas.
+ * `keep`: categoria, agenda e projeto atuais do compromisso, mesmo desativados (ou de outra pessoa), continuam escolhidos.
+ * `access`: quem só altera os próprios compromissos não escolhe cliente (a lista vem vazia: o cliente acompanha o
+ * projeto) e só vê os projetos em que pode editar.
  */
-export async function loadFormOptions(userId: number, keep: { categoryId?: number | null; calendarId?: number | null } = {}) {
+export async function loadFormOptions(access: AgendaAccess, keep: { categoryId?: number | null; calendarId?: number | null; projectId?: number | null } = {}) {
+  const userId = access.userId;
+  const full = access.edit === "todos";
   const [categories, calendars, templates, clients, projects, people] = await Promise.all([
     listCategories({ includeInactive: true }),
     listCalendars({ includeInactive: true }),
     listChecklistTemplates(),
-    getClientOptions(),
-    getProjectOptions(),
+    full ? getClientOptions() : Promise.resolve([]),
+    getProjectOptions(null, full ? "todos" : [...new Set([...access.editProjectIds, ...(keep.projectId ? [keep.projectId] : [])])]),
     getUserOptions(),
   ]);
   return {

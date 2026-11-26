@@ -9,6 +9,7 @@ const noStore = { "Cache-Control": "no-store" };
  * GET /painel/config/dados/exportar            → JSON completo (todas as tabelas de negócio)
  * GET /painel/config/dados/exportar?csv=clientes|leads|financeiro → CSV (";" + BOM UTF-8)
  * Exige a permissão "baixar" em Exportação de dados (admin e sócio). Nunca inclui senhas, sessões nem tokens.
+ * Compromissos particulares da agenda de OUTRAS pessoas saem só como "Ocupado" (regra em `src/server/config/data.ts`).
  */
 export async function GET(request: Request) {
   const user = await authorizePermission("dados", "baixar");
@@ -27,9 +28,16 @@ export async function GET(request: Request) {
     });
   }
 
-  const { json, counts } = await exportAllJson(new Date());
+  const { json, counts, maskedPrivateEvents } = await exportAllJson(new Date(), user);
   const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-  await logAudit({ user, action: "export", entity: "dados", summary: `Exportação completa em JSON (${Object.keys(counts).length} tabelas, ${total} registros)` });
+  await logAudit({
+    user,
+    action: "export",
+    entity: "dados",
+    summary:
+      `Exportação completa em JSON (${Object.keys(counts).length} tabelas, ${total} registros)` +
+      (maskedPrivateEvents ? ` — ${maskedPrivateEvents} compromisso(s) particular(es) de outras pessoas só como "Ocupado"` : ""),
+  });
   return new Response(json, {
     headers: { ...noStore, "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="nos-dados-${today}.json"` },
   });

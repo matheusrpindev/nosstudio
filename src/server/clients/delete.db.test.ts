@@ -1,7 +1,8 @@
 import { eq, inArray } from "drizzle-orm";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { agendaEvents, clientInteractions, clients, contentItems, contracts, financeEntries, leads, projects, proposals, tasks } from "@/db/schema";
+import { makeAccount, removeAccounts, type TestAccount } from "@/test/accounts";
 import { deleteClient } from "./admin";
 import { describeRemaining, exportClientSubjectData, getClientFootprint } from "./subject-data";
 
@@ -9,7 +10,14 @@ const leadIds: number[] = [];
 const clientIds: number[] = [];
 const cleanup: (() => Promise<unknown>)[] = [];
 
+/** Quem olha a contagem e exporta (os compromissos da agenda saem pela privacidade, para esta pessoa). */
+let viewer: TestAccount;
+beforeAll(async () => {
+  viewer = await makeAccount("admin");
+});
+
 afterAll(async () => {
+  await removeAccounts();
   for (const run of cleanup) await run();
   if (leadIds.length) await db.delete(leads).where(inArray(leads.id, leadIds));
   if (clientIds.length) await db.delete(clients).where(inArray(clients.id, clientIds));
@@ -37,7 +45,7 @@ async function clientWithLeads(howMany: number) {
 describe("exclusão de cliente (eliminação de dados)", () => {
   it("sem a opção, os leads de origem continuam (sem vínculo) — e a tela sabe quantos são", async () => {
     const client = await clientWithLeads(2);
-    expect((await getClientFootprint(client.id))?.leads).toBe(2);
+    expect((await getClientFootprint(client.id, viewer))?.leads).toBe(2);
     expect(await deleteClient(client.id)).toEqual({ id: client.id, leadsDeleted: 0 });
     expect(await db.select().from(clients).where(eq(clients.id, client.id))).toHaveLength(0);
     expect(await db.select().from(clientInteractions).where(eq(clientInteractions.clientId, client.id))).toHaveLength(0);
@@ -52,7 +60,7 @@ describe("exclusão de cliente (eliminação de dados)", () => {
     const mine = leadIds.slice(-2);
     expect(await deleteClient(client.id, { withLeads: true })).toEqual({ id: client.id, leadsDeleted: 2 });
     expect(await db.select().from(leads).where(inArray(leads.id, mine))).toHaveLength(0);
-    expect((await getClientFootprint(other.id))?.leads).toBe(1);
+    expect((await getClientFootprint(other.id, viewer))?.leads).toBe(1);
   });
 
   it("pedido com o mesmo WhatsApp ou e-mail, mesmo sem vínculo, conta e é apagado junto; de outra pessoa, não", async () => {
@@ -62,7 +70,7 @@ describe("exclusão de cliente (eliminação de dados)", () => {
     const [stranger] = await db.insert(leads).values({ name: "[Teste] Outra pessoa", whatsapp: "11900000002", email: "outra@exemplo.org", message: "nada a ver" }).returning();
     leadIds.push(samePhone.id, sameEmail.id, stranger.id);
 
-    expect((await getClientFootprint(client.id))?.leads).toBe(3);
+    expect((await getClientFootprint(client.id, viewer))?.leads).toBe(3);
     expect(await deleteClient(client.id, { withLeads: true })).toEqual({ id: client.id, leadsDeleted: 3 });
     const left = await db.select({ id: leads.id }).from(leads).where(inArray(leads.id, [samePhone.id, sameEmail.id, stranger.id]));
     expect(left.map((row) => row.id)).toEqual([stranger.id]);
@@ -73,15 +81,15 @@ describe("exclusão de cliente (eliminação de dados)", () => {
     clientIds.push(client.id);
     const [lead] = await db.insert(leads).values({ name: "[Teste] Lead qualquer", whatsapp: "", message: "x" }).returning();
     leadIds.push(lead.id);
-    expect((await getClientFootprint(client.id))?.leads).toBe(0);
+    expect((await getClientFootprint(client.id, viewer))?.leads).toBe(0);
     expect(await deleteClient(client.id, { withLeads: true })).toEqual({ id: client.id, leadsDeleted: 0 });
     expect(await db.select().from(leads).where(eq(leads.id, lead.id))).toHaveLength(1);
   });
 
   it("cliente inexistente: nada é apagado", async () => {
     expect(await deleteClient(999_999, { withLeads: true })).toBeNull();
-    expect(await getClientFootprint(999_999)).toBeNull();
-    expect(await exportClientSubjectData(999_999, new Date())).toBeNull();
+    expect(await getClientFootprint(999_999, viewer)).toBeNull();
+    expect(await exportClientSubjectData(999_999, new Date(), viewer)).toBeNull();
   });
 });
 
@@ -115,7 +123,7 @@ describe("o que fica e o que sai (contagem do diálogo e exportação do titular
 
   it("a contagem bate com o que existe, e a frase só cita o que há", async () => {
     const { client } = await fullClient();
-    const footprint = await getClientFootprint(client.id);
+    const footprint = await getClientFootprint(client.id, viewer);
     expect(footprint).toEqual({ interactions: 1, contentItems: 1, leads: 1, proposals: 1, projects: 1, contracts: 1, financeEntries: 2, events: 1, tasks: 1 });
     expect(describeRemaining(footprint!)).toBe("1 orçamento, 1 projeto, 1 contrato, 2 lançamentos financeiros, 1 compromisso na agenda e 1 tarefa");
     const none = { interactions: 3, contentItems: 0, leads: 2, proposals: 0, projects: 0, contracts: 0, financeEntries: 0, events: 0, tasks: 0 };
@@ -126,7 +134,7 @@ describe("o que fica e o que sai (contagem do diálogo e exportação do titular
 
   it("a exportação traz os dados do titular de todos os módulos — sem custos internos", async () => {
     const { client } = await fullClient();
-    const result = await exportClientSubjectData(client.id, new Date("2026-11-18T12:00:00Z"));
+    const result = await exportClientSubjectData(client.id, new Date("2026-11-18T12:00:00Z"), viewer);
     expect(result).not.toBeNull();
     const data = JSON.parse(result!.json);
     expect(data.geradoEm).toBe("2026-11-18T12:00:00.000Z");

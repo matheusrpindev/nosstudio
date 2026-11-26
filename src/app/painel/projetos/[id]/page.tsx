@@ -12,10 +12,10 @@ import { ActionForm, Field, FieldRow, SubmitButton } from "@/components/ui/form"
 import { DateInput, Input, Select } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText, Money } from "@/components/ui/text";
-import { canEverywhere, canUsePanelModule } from "@/lib/auth";
+import { canEverywhere } from "@/lib/auth";
+import { cn } from "@/lib/cn";
 import { todayISO } from "@/lib/dates";
 import {
-  AGENDA_KIND_LABELS,
   BACKUP_STATUS_LABELS,
   CONTRACT_STATUS_LABELS,
   PROJECT_STAGE_LABELS,
@@ -27,12 +27,13 @@ import {
   countProjectTasks,
   getProject,
   listProjectContracts,
-  listProjectEvents,
   listProjectFinance,
   listProjectTasks,
 } from "@/server/projects/admin";
 import { canInProject, requireProjectPermission } from "@/server/access";
+import { listProjectEvents } from "@/server/agenda-related";
 import { linkHost, projectLinkEntries } from "@/server/projects/logic";
+import { AgendaItemCategory, AgendaItemTitle, agendaListHref } from "../../_shared/agenda-item";
 import { addProjectTaskAction, deleteProjectAction, updateProjectStageAction } from "../actions";
 import { Checklist } from "../_components/checklist";
 import { ProjectTeam } from "../_components/project-team";
@@ -63,8 +64,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const sees = {
     client: canEverywhere(user, "clientes", "ver"),
     proposal: canEverywhere(user, "propostas", "ver"),
-    agenda: canUsePanelModule(user, "agenda", "ver"),
-    agendaEdit: canUsePanelModule(user, "agenda", "editar"),
+    // módulo INTEIRO (como na visão geral): quem só vê a agenda "nos projetos em que está" ainda não a vê aqui
+    agenda: canEverywhere(user, "agenda", "ver"),
+    agendaEdit: canEverywhere(user, "agenda", "editar"),
     contracts: canEverywhere(user, "contratos", "ver"),
     contractsEdit: canEverywhere(user, "contratos", "editar"),
     finance: canEverywhere(user, "financeiro", "ver"),
@@ -73,13 +75,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     teamEdit: canEverywhere(user, "equipe", "editar"),
   };
 
+  const today = todayISO();
   const [tasks, events, contracts, finance] = await Promise.all([
     canSeeTasks ? listProjectTasks(id) : [],
-    sees.agenda ? listProjectEvents(id) : [],
+    sees.agenda ? listProjectEvents(user, id, today) : [],
     sees.contracts ? listProjectContracts(id) : [],
     sees.finance ? listProjectFinance(id) : [],
   ]);
-  const today = todayISO();
   const links = projectLinkEntries(project);
   const openTasks = tasks.filter((task) => !task.done).length;
   const clientQuery = project.clientId ? `&cliente=${project.clientId}` : "";
@@ -296,20 +298,36 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 }
               />
               {events.length > 0 ? (
-                <ul className="divide-borda divide-y">
-                  {events.map((event) => (
-                    <li key={event.id}>
-                      <Link href={`/painel/agenda/${event.id}`} className="hover:text-detalhe flex min-h-11 flex-col justify-center py-2">
-                        <span className="text-texto text-sm font-semibold break-words">{event.title}</span>
-                        <span className="text-texto-suave text-[0.8125rem]">
-                          {AGENDA_KIND_LABELS[event.kind]} · <DateText value={event.date} />
-                          {event.startTime ? ` às ${event.startTime}` : ""}
-                          {event.location ? ` · ${event.location}` : ""}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="divide-borda divide-y">
+                    {events.map((event) => (
+                      <li key={event.key}>
+                        <Link href={event.href} className={cn("hover:text-detalhe flex min-h-11 flex-col justify-center py-2", event.endDate < today && "opacity-75")}>
+                          <AgendaItemTitle item={event} className="text-texto text-sm font-semibold" />
+                          <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+                            <AgendaItemCategory item={event} />
+                            <span>
+                              <DateText value={event.date} />
+                              {event.endDate > event.date ? (
+                                <>
+                                  {" a "}
+                                  <DateText value={event.endDate} />
+                                </>
+                              ) : null}
+                              {event.startTime ? ` às ${event.startTime}` : ""}
+                            </span>
+                            {event.location ? <span className="break-words">{event.location}</span> : null}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2">
+                    <ButtonLink href={agendaListHref({ projectId: project.id })} size="sm" variant="ghost">
+                      Ver na agenda
+                    </ButtonLink>
+                  </p>
+                </>
               ) : (
                 <p className="text-texto-suave text-sm">Nenhum compromisso. Marque a gravação, reuniões e a entrega na agenda.</p>
               )}

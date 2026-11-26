@@ -15,7 +15,8 @@ import { findConflicts, type BusySlot } from "@/lib/agenda/conflicts";
 import { expandEvent } from "@/lib/agenda/expand";
 import { lastOccurrence, type Recurrence } from "@/lib/agenda/recurrence";
 import { addDays, diffDays, type ISODate } from "@/lib/dates";
-import type { AgendaStatus } from "@/lib/domain";
+import { AGENDA_BUSY_LABEL, type AgendaStatus } from "@/lib/domain";
+import { inViewScope, type AgendaAccess } from "./access";
 import { toVisibleEvent, type EventRecord } from "./privacy";
 import { loadEventRecords, windowCondition } from "./records";
 
@@ -57,9 +58,10 @@ export function busyPeople(event: Pick<EventRecord, "people" | "createdBy">): nu
 
 /**
  * Choques do candidato com o que já está na agenda. `excludeIds`: compromissos a ignorar (o próprio, ao editar).
- * `viewerId` decide o que aparece no aviso (particulares de terceiros viram "Ocupado").
+ * `access` decide o que aparece no aviso: particulares de terceiros e compromissos fora do alcance de quem está
+ * salvando viram "Ocupado" (o choque existe; o conteúdo não é dela).
  */
-export async function findEventConflicts(viewerId: number, candidate: ConflictCandidate, excludeIds: readonly number[] = []): Promise<ConflictReport> {
+export async function findEventConflicts(access: AgendaAccess, candidate: ConflictCandidate, excludeIds: readonly number[] = []): Promise<ConflictReport> {
   if (candidate.status === "cancelado" || candidate.people.length === 0) return { conflicts: [], total: 0 };
   const span = candidate.endDate && candidate.endDate > candidate.date ? diffDays(candidate.date, candidate.endDate) : 0;
   const last = lastOccurrence(candidate.date, candidate.recurrence);
@@ -90,11 +92,12 @@ export async function findEventConflicts(viewerId: number, candidate: ConflictCa
   for (const record of records) {
     const people = busyPeople(record).filter((id) => candidate.people.includes(id));
     if (people.length === 0) continue;
-    const visible = toVisibleEvent(record, viewerId);
+    const visible = toVisibleEvent(record, access.userId);
+    const hidden = visible.masked || !inViewScope(access, record);
     for (const occurrence of expandEvent(record, from, to)) {
       for (const slot of busySlots({
         key: `e-${record.id}@${occurrence.date}`,
-        title: visible.title,
+        title: hidden ? AGENDA_BUSY_LABEL : visible.title,
         date: occurrence.date,
         endDate: occurrence.endDate,
         startTime: record.startTime,

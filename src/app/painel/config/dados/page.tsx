@@ -64,7 +64,7 @@ export default async function DataPage() {
             <CardSection>
               <p className="text-texto-suave flex items-start gap-2 text-[0.8125rem] leading-relaxed">
                 <ShieldCheck aria-hidden="true" className="text-detalhe mt-0.5 size-4 shrink-0" />
-                As exportações trazem dados pessoais de clientes e leads (LGPD): guarde em local seguro. Senhas, sessões de login e tokens nunca são exportados.
+                As exportações trazem dados pessoais de clientes e leads (LGPD): guarde em local seguro. Senhas, sessões de login e tokens nunca são exportados. Compromissos particulares de outras pessoas saem só como “Ocupado”, como na agenda.
               </p>
             </CardSection>
           </Card>

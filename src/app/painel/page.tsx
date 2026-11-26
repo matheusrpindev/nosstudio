@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { canEverywhere, canUsePanelModule, requirePanelUser } from "@/lib/auth";
-import { addDays, formatDateLong, formatWeekday, todayISO } from "@/lib/dates";
-import { dashboardAccess, getIssues, getSetupGaps, getSummary, listEvents, listImportantTasks } from "@/server/dashboard/queries";
+import { formatDateLong, formatWeekday, todayISO } from "@/lib/dates";
+import { dashboardAccess, getIssues, getSetupGaps, getSummary, listImportantTasks, listUpcomingShoots, listWeekEvents } from "@/server/dashboard/queries";
 import { WeekAgenda, UpcomingShoots } from "./_dashboard/agenda-cards";
 import { Notices } from "./_dashboard/notices";
 import { Shortcuts } from "./_dashboard/shortcuts";
@@ -26,8 +26,8 @@ export default async function PainelHomePage() {
 
   const [summary, weekEvents, shoots, importantTasks, issues, gaps] = await Promise.all([
     getSummary(today, access),
-    access.agenda ? listEvents(today, addDays(today, 6)) : null,
-    access.agenda ? listEvents(today, addDays(today, 30), ["gravacao", "evento"], 6) : null,
+    access.agenda ? listWeekEvents(user, today) : null,
+    access.agenda ? listUpcomingShoots(user, today) : null,
     access.tasks ? listImportantTasks(today, access.tasks) : null,
     getIssues(today, access),
     getSetupGaps(access),
@@ -59,7 +59,7 @@ export default async function PainelHomePage() {
         <div className="grid items-start gap-6 lg:grid-cols-2">
           {weekEvents ? (
             <div className="space-y-6">
-              <WeekAgenda events={weekEvents} today={today} />
+              <WeekAgenda events={weekEvents} today={today} canCreate={shortcuts.event} />
             </div>
           ) : null}
           <div className="space-y-6">

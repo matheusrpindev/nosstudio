@@ -4,10 +4,11 @@
  * - Arquivos privados (contratos, comprovantes, materiais): guardados como estão, servidos só com sessão.
  */
 import "server-only";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { db } from "@/db";
 import {
+  agendaEvents,
   brandAssets,
   contracts,
   financeEntries,
@@ -178,10 +179,26 @@ export function collectMediaIds(value: unknown): number[] {
 
 const jsonReferencesMedia = (value: unknown, id: number) => collectMediaIds(value).includes(id);
 
-/** Onde a mídia está em uso (lista de descrições em pt-BR). Vazio = pode ser apagada. */
+/**
+ * Ids dos compromissos da agenda que têm este arquivo como anexo (`agenda_events.attachments`).
+ * Só ids: o conteúdo de um compromisso (que pode ser particular) só sai pelas consultas da agenda.
+ */
+export async function agendaEventIdsUsingMedia(id: number): Promise<number[]> {
+  const rows = await db
+    .select({ id: agendaEvents.id })
+    .from(agendaEvents)
+    .where(sql`exists (select 1 from json_each(${agendaEvents.attachments}) where json_each.value = ${id})`);
+  return rows.map((row) => row.id);
+}
+
+/**
+ * Onde a mídia está em uso (lista de descrições em pt-BR). Vazio = pode ser apagada.
+ * Anexo de compromisso da agenda aparece sem título nem data: esta lista vai para quem gerencia arquivos, e o
+ * compromisso pode ser particular.
+ */
 export async function findMediaUsage(id: number): Promise<string[]> {
   const usage: string[] = [];
-  const [serviceRows, portfolioRows, testimonialRows, contractRows, financeRows, brandRows, contentRows] = await Promise.all([
+  const [serviceRows, portfolioRows, testimonialRows, contractRows, financeRows, brandRows, contentRows, eventIds] = await Promise.all([
     db.select({ title: services.title, cover: services.coverMediaId, gallery: services.gallery }).from(services),
     db
       .select({ title: portfolioProjects.title, cover: portfolioProjects.coverMediaId, gallery: portfolioProjects.gallery })
@@ -191,6 +208,7 @@ export async function findMediaUsage(id: number): Promise<string[]> {
     db.select({ description: financeEntries.description }).from(financeEntries).where(eq(financeEntries.receiptMediaId, id)),
     db.select({ title: brandAssets.title }).from(brandAssets).where(eq(brandAssets.mediaId, id)),
     db.select().from(siteContent),
+    agendaEventIdsUsingMedia(id),
   ]);
   for (const row of serviceRows) if (row.cover === id || row.gallery.includes(id)) usage.push(`serviço "${row.title}"`);
   for (const row of portfolioRows) if (row.cover === id || row.gallery.includes(id)) usage.push(`projeto "${row.title}"`);
@@ -199,6 +217,7 @@ export async function findMediaUsage(id: number): Promise<string[]> {
   for (const row of financeRows) usage.push(`lançamento "${row.description}"`);
   for (const row of brandRows) usage.push(`material da marca "${row.title}"`);
   for (const row of contentRows) if (jsonReferencesMedia(row.value, id)) usage.push(`conteúdo do site (${row.key})`);
+  if (eventIds.length > 0) usage.push(eventIds.length === 1 ? "um compromisso da agenda (anexo)" : `${eventIds.length} compromissos da agenda (anexo)`);
   return usage;
 }
 

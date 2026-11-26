@@ -23,6 +23,8 @@ Cliente (seção 7.3) e as pendências da seção 10.
 | Convites | `src/server/access/invites.ts`, `invite-actions.ts` | criar, convidar de novo, revogar, aceitar |
 | Telas | `painel/config/usuarios/**`, `(auth)/convite`, `(auth)/conta/senha`, `painel/projetos/_components/project-team*`, `painel/clientes/client-access*` | usuários, convites, permissões por conta, aceite, troca de senha fora do painel, equipe do projeto, acessos do cliente |
 | Arquivos privados | `src/server/access/media.ts` | quem abre cada arquivo de `/media` |
+| Privacidade da agenda | `src/server/agenda/privacy.ts`, `src/server/agenda/queries.ts` | `toVisibleEvent`: compromisso particular só sai inteiro para quem participa (seção 6.1) |
+| A agenda vista de fora | `src/server/agenda-related.ts` | o que a visão geral, a ficha do cliente, o projeto, as exportações e `/media` leem da agenda — sempre pelas consultas da agenda |
 
 `src/lib/permissions` é **puro** (sem banco, sem Next): serve para esconder botões no cliente e para barrar no
 servidor. Quem manda é sempre o servidor.
@@ -193,6 +195,9 @@ Configurações › Usuários e da linha de comando).
 - Limites: 30 convites/hora por quem convida; 10 tentativas de aceite a cada 15 min por IP.
 - Auditoria: `convite_criado`, `convite_revogado`, `convite_aceito` (sem e-mail nem nome do convidado).
 - A exportação de dados não inclui `user_invites`.
+- Regra geral da exportação completa: tabela nova do schema entra sozinha, a menos que esteja em
+  `EXPORT_EXCLUDED_TABLES` (`src/server/config/logic.ts`). O teste `config/dados/labels.test.ts` falha enquanto uma
+  tabela nova não tiver rótulo (entra) nem exclusão (não entra) — a decisão é obrigatória.
 
 Telas: **Configurações › Usuários** (aba Convites: pendentes, aceitos, expirados, revogados; "Convidar pessoa",
 "Convidar de novo", "Revogar"), a ficha do cliente (bloco "Acessos do cliente") e o aceite público
@@ -242,6 +247,38 @@ checklist e tarefas; com "baixar": os links dos arquivos) e as tarefas dos proje
 projeto, backup, proposta de origem, contratos, financeiro, agenda nem a equipe; não cria nem exclui projeto ou
 tarefa fora dos projetos em que pode editar; não escolhe cliente nem passa tarefa para outra pessoa.
 
+### 6.1 Compromisso particular: além da matriz
+
+A matriz diz quem usa a Agenda; **dentro** dela, um compromisso `particular` só existe por inteiro para quem o
+criou e para quem está nele (responsáveis e participantes). Para todas as outras pessoas — **inclusive admin e
+sócio** — é "Ocupado": data, horário, repetição e dono. Função única: `toVisibleEvent` (`privacy.ts`).
+
+Fora da tela da Agenda vale a mesma regra, porque ninguém mais lê a tabela `agenda_events`: tudo passa por
+`src/server/agenda-related.ts`, que chama `listAgenda` / `getEventView` (séries expandidas, mascaramento aplicado).
+
+| Onde | Particular de outra pessoa |
+| --- | --- |
+| Visão geral — "Compromissos da semana" | "Ocupado" no horário, com o nome do dono |
+| Visão geral — "Próximas gravações e eventos" (filtro por categoria de produção) | não aparece |
+| Ficha do cliente (próximos compromissos) e projeto (agenda do projeto) | **não aparece**: lista filtrada por cliente/projeto não devolve item mascarado (o filtro revelaria o vínculo) |
+| Contagem do diálogo "Excluir cliente" | não conta (ao excluir, o compromisso só perde o vínculo, como os outros) |
+| Anexo (`/media`) | 404 para quem não participa — mesmo com `arquivos:ver` |
+| "Arquivo em uso" (`DELETE /painel/api/media/[id]`) | "um compromisso da agenda", sem título nem data |
+| **Dados deste titular** (LGPD, `/painel/clientes/[id]/dados`) | conteúdo **não entra**; o arquivo avisa "resposta incompleta": quantos ficaram de fora e de quem são (sem data nem horário); a auditoria registra o número |
+| **Exportação completa** (`/painel/config/dados/exportar`) | linha `oculto: true` com data, horário, repetição e dono; pessoas (`agenda_event_people`) e nome/descrição dos anexos (`media`) em branco; a auditoria registra quantos |
+| Avisos e lembretes (`notifications`, `agenda_reminder_deliveries`) | o lembrete de um particular vai só para quem participa; as duas tabelas **não entram** na exportação completa (trariam título, local e participantes) |
+
+Por que a exportação completa não leva tudo, sendo de administrador: (1) a promessa da tela é "os outros veem só
+Ocupado", e os dois sócios são administradores — se o JSON trouxesse o conteúdo, um clique desfaria a regra; (2) o
+JSON não é o caminho de restauração: a cópia integral é o **backup do servidor** (`npm run backup`, feito por quem
+tem acesso à máquina, fora do painel); (3) quem exporta recebe inteiros os particulares de que participa, então
+cada pessoa consegue levar os seus. Quem exporta sem enxergar a agenda recebe todo particular mascarado (falha
+fechada).
+
+Por que "dados deste titular" avisa em vez de calar: quem responde ao pedido (LGPD, art. 18) precisa saber que a
+resposta está incompleta e a quem pedir o resto. É a única informação que sai sobre o compromisso (existe, é de
+fulano, está ligado a este cliente), só para quem tem `dados:baixar`, e fica na auditoria.
+
 ## 7. Tabela rota → permissão
 
 ### 7.1 Já aplicado
@@ -258,7 +295,7 @@ action exportada não começar por um guarda, ou usar `requireUser()` genérico.
 | `contratos/actions.ts` | `contratos` | — |
 | `projetos/actions.ts` | `projetos` | etapa, quadro e checklist → `requireScopedPermission("projetos","editar")` + `scopeAllows`; `addProjectTaskAction` → idem com `projetos:ver` + `tarefas:editar`; criar, editar o cadastro e excluir → módulo inteiro; equipe do projeto → `equipe:editar` |
 | `tarefas/actions.ts` | `tarefas` | criar, editar, concluir → `requireScopedPermission("tarefas","editar")` + projeto da tarefa lido do banco; excluir → `tarefas:excluir` (módulo inteiro) |
-| `agenda/actions.ts` | `agenda` | — |
+| `agenda/actions.ts`, `agenda/config/actions.ts` | `agenda` | além da permissão, compromisso **particular** só é alterado por quem participa dele (`src/server/agenda`) |
 | `conteudo/actions.ts` | `conteudo` | — |
 | `financeiro/actions.ts` | `financeiro` | — |
 | `marca/actions.ts` | `marca` | — |
@@ -275,12 +312,12 @@ action exportada não começar por um guarda, ou usar `requireUser()` genérico.
 
 | Rota | Exige |
 | --- | --- |
-| `GET /media/[...key]` (arquivo privado ou imagem fora do ar) | sessão do painel + módulo dono do arquivo: comprovante → `financeiro:baixar`; contrato → `contratos:baixar`; marca → `marca:baixar`; sem dono → quem enviou ou `arquivos:ver`; imagem pública não publicada → `site:ver`. Senão **404** |
+| `GET /media/[...key]` (arquivo privado ou imagem fora do ar) | sessão do painel + módulo dono do arquivo: comprovante → `financeiro:baixar`; contrato → `contratos:baixar`; marca → `marca:baixar`; **anexo de compromisso → `agenda:ver` no módulo inteiro + ver o compromisso por inteiro** (anexo de particular: só quem participa); sem dono → quem enviou ou `arquivos:ver`; imagem pública não publicada → `site:ver`. Quem enviou o arquivo sempre o abre. Senão **404** |
 | `POST /painel/api/media`, `PATCH /painel/api/media/[id]` | `arquivos:editar` + mesma origem |
-| `DELETE /painel/api/media/[id]` | `arquivos:excluir` + mesma origem |
+| `DELETE /painel/api/media/[id]` | `arquivos:excluir` + mesma origem; **409** se o arquivo está em uso — inclusive como anexo da agenda (a mensagem diz "um compromisso da agenda", sem título nem data) |
 | `GET /painel/orcamentos/[id]/pdf` | `propostas:ver`; com `?baixar=1`, `propostas:baixar` |
-| `GET /painel/config/dados/exportar` | `dados:baixar` |
-| `GET /painel/clientes/exportar`, `GET /painel/clientes/[id]/dados` | `dados:baixar` + `clientes:ver` |
+| `GET /painel/config/dados/exportar` | `dados:baixar`; compromissos particulares de outras pessoas saem mascarados (seção 6.1) |
+| `GET /painel/clientes/exportar`, `GET /painel/clientes/[id]/dados` | `dados:baixar` + `clientes:ver`; em `/dados`, particulares de outras pessoas ficam de fora, com aviso (seção 6.1) |
 | `GET /painel/financeiro/exportar` | `dados:baixar` + `financeiro:ver` |
 
 ### 7.2 Páginas (aplicado)
@@ -292,16 +329,16 @@ como a tabela manda; página nova sem linha na tabela do teste faz o teste falha
 | Página | Guarda |
 | --- | --- |
 | `_shell/shell.tsx` (casca) | `requirePanelUser({ allowPasswordChange: true })`; menu, atalhos do celular e contador de leads filtrados por `canUsePanelModule(user, módulo, "ver")` (`nav.ts`: cada item tem `module`) |
-| `/painel` (visão geral) | `requirePanelUser()`; cartões, avisos, atalhos e listas por módulo (`dashboardAccess`): o que a pessoa não vê **não é consultado**; projetos e tarefas filtrados pelo escopo |
+| `/painel` (visão geral) | `requirePanelUser()`; cartões, avisos, atalhos e listas por módulo (`dashboardAccess`): o que a pessoa não vê **não é consultado**; projetos e tarefas filtrados pelo escopo; os cartões da agenda exigem `agenda:ver` no **módulo inteiro** (`canEverywhere`) e leem por `listAgenda` (particular de outra pessoa: "Ocupado") |
 | `/painel/[...resto]`, `/painel/ajuda`, `/painel/conta` | `requirePanelUser()` |
 | `/painel/conta/senha` | `requirePanelUser({ allowPasswordChange: true })` |
 | `/painel/leads`, `/leads/[id]` · `/leads/novo` | `leads:ver` · `leads:editar` |
 | `/painel/clientes`, `/clientes/[id]` · `/clientes/novo`, `/[id]/editar` | `clientes:ver` · `clientes:editar` (na ficha, abas de propostas/projetos/contratos/financeiro/agenda/tarefas por `canEverywhere`; o que não pode ver não é consultado) |
 | `/painel/orcamentos`, `/[id]`, `/modelos` · `/novo` | `propostas:ver` · `propostas:editar` (em `/[id]`, os lançamentos do financeiro só vão ao navegador para quem tem `financeiro:ver`) |
 | `/painel/contratos`, `/[id]`, `/modelos`, `/modelos/[id]` · `/novo`, `/[id]/editar`, `/modelos/novo` | `contratos:ver` · `contratos:editar` |
-| `/painel/projetos` · `/projetos/[id]` · `/novo`, `/[id]/editar` | `requireScopedPermission("projetos", "ver")` (lista com `inScope`) · `requireProjectPermission("projetos", "ver", id)` · `projetos:editar` |
+| `/painel/projetos` · `/projetos/[id]` · `/novo`, `/[id]/editar` | `requireScopedPermission("projetos", "ver")` (lista com `inScope`) · `requireProjectPermission("projetos", "ver", id)` · `projetos:editar` (em `/[id]`, o cartão "Agenda do projeto" exige `agenda:ver` no módulo inteiro e não mostra particulares de outra pessoa) |
 | `/painel/tarefas` | `requireScopedPermission("tarefas", "ver")` (lista com `inScope`) |
-| `/painel/agenda/**` | em reescrita por outra frente: `/agenda` já usa `agenda:ver`; `/agenda/[id]` e `/agenda/novo` devem usar `agenda:ver` / `agenda:editar` (hoje `requireUser()`, mais estreito: o gestor não abre) |
+| `/painel/agenda`, `/agenda/[id]` · `/agenda/novo`, `/agenda/[id]/editar`, `/agenda/config` | `agenda:ver` · `agenda:editar`. Em `/agenda/[id]`, compromisso particular de outra pessoa abre só como "Ocupado"; `/agenda/[id]/editar` responde **404** para quem não participa dele. `/agenda/config` (categorias, agendas, modelos de checklist) é de quem edita a agenda: as actions de `agenda/config/actions.ts` usam `agenda:editar` (excluir modelo: `agenda:excluir`) |
 | `/painel/conteudo`, `/conteudo/[id]` · `/conteudo/novo` | `conteudo:ver` · `conteudo:editar` |
 | `/painel/financeiro`, `/financeiro/[id]` · `/novo`, `/novo/parcelas` | `financeiro:ver` · `financeiro:editar` |
 | `/painel/marca`, `/marca/[id]` · `/marca/novo` | `marca:ver` · `marca:editar` |
@@ -347,6 +384,8 @@ Ajustes de interface aplicados (não são barreira de segurança — o servidor 
 | `src/server/access/scope.db.test.ts` | A não vê projeto de B trocando o id; cliente A × cliente B; filtros de lista; nada interno nas visões; revogação |
 | `src/server/access/invites.db.test.ts` | expirado, revogado, reutilizado (inclusive simultâneo), e-mail divergente, senha, limites, vínculos |
 | `src/server/access/routes.db.test.ts` | `/media`, PDF, exportações e API de upload com cada perfil |
+| `src/server/agenda-related.db.test.ts` | **sentinelas**: um compromisso particular (ligado a cliente e projeto, com anexo) não chega a outra administradora pela visão geral, ficha do cliente, projeto, contagem de exclusão, "dados deste titular", exportação completa, `/media` nem pela mensagem de "arquivo em uso"; quem participa vê; séries expandidas; nenhum arquivo fora da agenda lê `agenda_events` (lista fechada) |
+| `src/server/agenda/agenda.db.test.ts`, `privacy.test.ts` | a mesma privacidade dentro da agenda (consultas, conflitos, actions) |
 | `src/app/painel/actions-access.db.test.ts` | todas as Server Actions do painel × perfis (lista fechada das que aceitam escopo por projeto) |
 | `src/app/painel/pages-access.db.test.ts` | **todas as páginas do painel × perfis**: tabela página → guarda (renderiza, redireciona ou 404), sem sessão, senha provisória; proposta: gestor não recebe o financeiro |
 | `src/app/painel/funcionario-scope.db.test.ts` | funcionário × projeto alheio/inexistente/só-ver/tarefa sem projeto: páginas, listas, visão geral e todas as actions de projeto e tarefa; equipe do projeto; revogação na requisição seguinte |
@@ -365,9 +404,11 @@ migration. `npm run db:seed -- --dev --demo` cria uma conta de exemplo por perfi
 ## 10. Pendências conhecidas
 
 - **Funcionário sem agenda, conteúdo, marca e arquivos** (falha fechada; a matriz prevê "(P)"):
-  - `agenda`: as telas exigem o módulo inteiro (o módulo está em reescrita). Para abrir: listas com
-    `inScope(agendaEvents.projectId, scope)`, actions com o projeto do compromisso lido do banco, e incluir
-    `"agenda"` em `PROJECT_SCOPED_PANEL_MODULES`.
+  - `agenda`: o alcance por projeto é calculado dentro da própria agenda (`src/server/agenda/access.ts`, em
+    andamento) e só vale quando `"agenda"` entrar em `PROJECT_SCOPED_PANEL_MODULES`. Mesmo depois disso, três
+    pontos **de fora da agenda** continuam exigindo o módulo inteiro (`canEverywhere(user, "agenda", "ver")`),
+    por falha fechada, até decisão em contrário: os cartões da visão geral (`dashboardAccess`), o cartão "Agenda
+    do projeto" e os anexos em `/media`.
   - `conteudo` e `marca`: `content_items` e `brand_assets` **não têm coluna de projeto** — não há como filtrar.
     Precisa de migration (`project_id`) e de decisão dos sócios sobre o vínculo.
   - `arquivos`: `POST /painel/api/media` exige `arquivos:editar` no módulo inteiro; o envio por projeto

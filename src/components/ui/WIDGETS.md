@@ -80,26 +80,34 @@ Grade domingo→sábado, sem estado (não tem `"use client"`). Abaixo de 640px v
 | `month` | `YYYY-MM-01` | use `parseMonthParam(params.mes, today)` |
 | `today` | `YYYY-MM-DD` | `todayISO()` depois de `await requireUser()` |
 | `items` | `{ id; date: "YYYY-MM-DD"; title; time?: "HH:mm" \| null; tone?; href? }[]` | com `href` o item vira link; sem horário vem primeiro |
-| `baseHref` | `string` | caminho da página; pode já ter query (`/painel/agenda?tipo=x`) |
+| `baseHref` | `string` | caminho da página; pode já ter query (`/painel/conteudo?vista=calendario`) |
 | `param` | `string` (padrão `"mes"`) | nome do parâmetro de mês |
 | `maxPerDay` | `number` (padrão 3) | o excedente fica num "+N" que expande |
 | `daySlot` | `(date) => ReactNode` | extra por dia (ex.: link "novo" com a data) |
 | `label` | `string` | nome acessível |
 
 ```tsx
-export default async function AgendaPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  await requireUser();
+// conteudo/page.tsx (visão "Calendário") — quem usa este widget hoje é o calendário editorial
+export default async function ContentPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requirePermission("conteudo", "ver");
   const today = todayISO();
   const month = parseMonthParam((await searchParams).mes, today);
-  const events = await listEvents(addDays(month, -7), addDays(endOfMonth(month), 7)); // a grade mostra dias vizinhos
+  const { entries } = await listCalendar({}, addDays(month, -7), addDays(endOfMonth(month), 7)); // a grade mostra dias vizinhos
   return (
-    <MonthCalendar month={month} today={today} baseHref="/painel/agenda" label="Agenda"
-      items={events.map((e) => ({ id: e.id, date: e.date, time: e.startTime, title: e.title, tone: "roxo", href: `/painel/agenda/${e.id}` }))}
-      daySlot={(date) => <Link href={`/painel/agenda/novo?data=${date}`} aria-label={`Novo compromisso em ${formatDate(date)}`}>+</Link>}
+    <MonthCalendar month={month} today={today} baseHref="/painel/conteudo?vista=calendario" label="Calendário editorial"
+      items={entries.map((e) => ({ id: e.key, date: e.date, title: e.title, tone: "roxo", href: `/painel/conteudo/${e.id}` }))}
+      daySlot={(date) => <Link href={`/painel/conteudo/novo?data=${date}`} aria-label={`Novo conteúdo em ${formatDate(date)}`}>+</Link>}
     />
   );
 }
 ```
+
+**A Agenda do painel não usa mais este widget.** Ela tem visões próprias (dia, semana, mês, ano, lista) em
+`src/app/painel/agenda/_views`, alimentadas por `listAgenda(user, de, até, filtros)` de `@/server/agenda/queries`, que
+expande as repetições e mascara compromissos particulares ("Ocupado"). Não monte um calendário de compromissos lendo
+`agenda_events` direto: fora da agenda, use `@/server/agenda-related` (ver `docs/permissoes.md`, seção 6.1) e as
+peças `AgendaItemTitle` / `AgendaItemCategory` de `src/app/painel/_shared/agenda-item.tsx`. `MonthCalendar` segue
+valendo para calendários simples, de um item por data (calendário editorial).
 
 A célula do dia tem a classe `group/dia` (dá para revelar o slot no hover: `sm:opacity-0 sm:group-hover/dia:opacity-100
 sm:focus-visible:opacity-100`). No celular o slot aparece no cabeçalho do dia — dê a ele alvo de 44px (`size-11 sm:size-7`).

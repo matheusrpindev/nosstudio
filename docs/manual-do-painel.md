@@ -379,9 +379,92 @@ A **assinatura eletrônica não faz parte desta fase**. Para guardar o contrato 
 
 **Marca** reúne as cores oficiais (toque no código para copiar), as versões do logo (use **Baixar SVG**), a tipografia (Montserrat) e uma biblioteca de links e arquivos por categoria, com **Adicionar item**. É tudo interno. Lembre: o lima nunca vai como texto sobre fundo claro, por falta de contraste.
 
-### Agenda e Tarefas
+### Agenda
 
-Em **Agenda**, use **Novo compromisso** para gravações, eventos, reuniões e entregas. Os prazos dos projetos aparecem em vermelho, só para consulta. Em **Tarefas**, escreva em **Nova tarefa**, defina prazo e responsável e toque em **Adicionar**. Marque a caixa para concluir; a tarefa fica em "Concluídas recentemente" por 14 dias, caso precise desfazer.
+A **Agenda** reúne tudo o que tem dia e hora: gravações, reuniões, eventos, entregas, férias. Cada compromisso tem uma **categoria** (que dá a cor e o ícone) e fica numa **agenda** (a geral da NÓS, a pessoal de cada um, Produções, Comercial, Colaboradores).
+
+#### As visões
+
+No topo, escolha como olhar: **Dia**, **Semana** (a que abre), **Mês**, **Ano** ou **Lista**. As setas andam para trás e para a frente, e **Hoje** volta para o dia atual.
+
+- **Dia** e **Semana**: grade de horas. Compromissos de dia inteiro ou de vários dias ficam na faixa do topo; os que se sobrepõem aparecem lado a lado.
+- **Mês**: os compromissos de cada dia. No celular, toque no dia para ver a lista dele.
+- **Ano**: os doze meses, com os dias mais cheios mais escuros. Toque num dia para abri-lo.
+- **Lista**: os próximos 60 dias em ordem. É também onde aparece o resultado da **busca** (título, descrição, local, cliente, projeto e pessoas), que olha de seis meses atrás até um ano à frente.
+
+Ao lado (no celular, no botão **Filtros**) ficam o mini-calendário e as caixas para ligar e desligar **Agendas**, **Categorias** e **Camadas**, além dos filtros por **cliente** e por **pessoa**. O que você escolhe fica no endereço da página: dá para guardar nos favoritos ou mandar o link para o sócio.
+
+#### Criar um compromisso
+
+- **Jeito rápido**: na grade de Dia ou Semana, toque num horário vazio (no Mês, pelo computador, clique num dia). Abre uma janelinha com título, data, horário, categoria e agenda. **Salvar** grava; **Mais opções** leva o que você digitou para o formulário completo.
+- **Formulário completo**: botão **Novo compromisso**. Além do essencial, tem **Cliente e projeto**, **Pessoas** (responsáveis, participantes e participantes externos, que entram só pelo nome), **Local e links** (endereço, link do mapa, link da reunião virtual), **Checklist** (dá para puxar um modelo pronto), **Anexos**, **Observações internas**, **Prioridade** e **Status** (confirmado, a confirmar, cancelado, concluído).
+- **Dia inteiro** tira o horário; **Dura mais de um dia** pede o último dia (viagem, evento de fim de semana, férias).
+
+Pela ficha do **cliente** (aba Agenda, botão **Agendar**) e pelo **projeto** (cartão "Agenda do projeto", botão **Novo**) o compromisso já nasce ligado a eles.
+
+Abrindo um compromisso você pode **Editar**, **Reagendar** (só data e horário), **Duplicar** (a cópia nasce "a confirmar", sem repetição e sem anexos), **Marcar como concluído**, **Cancelar** e **Excluir**. Cancelar deixa o compromisso riscado na agenda e ele para de contar como horário ocupado; excluir apaga de vez. Na dúvida, cancele.
+
+#### Repetição
+
+Em **Repetição**, escolha todo dia, toda semana (em quais dias), todo mês ou todo ano, ou monte uma regra **Personalizada** (a cada 2 semanas, por exemplo). A série pode não ter fim, terminar **em uma data** ou **depois de um número de vezes**. O formulário mostra um resumo em palavras ("Toda semana, segunda e quarta, até 20/12/2026").
+
+Ao editar, reagendar, cancelar ou excluir um compromisso que se repete, o painel pergunta a quem aplicar:
+
+- **Só este**: muda apenas aquele dia; os outros continuam como estão.
+- **Este e os seguintes**: a série antiga termina no dia anterior e uma nova começa ali.
+- **Todos da série**: muda a série inteira.
+
+#### Compromisso particular ("Ocupado")
+
+Ligue **Compromisso particular** (bloco **Privacidade**) para consulta médica, assunto de família ou qualquer coisa que os outros não precisam ler. O efeito:
+
+- **Quem está no compromisso** (quem criou, responsáveis e participantes) vê tudo, normalmente.
+- **Todas as outras pessoas, inclusive o outro sócio e administradores**, veem só um bloco hachurado **Ocupado** naquele horário, com o nome de quem está ocupado. Nada de título, local, cliente, projeto, links, anexos, checklist ou participantes.
+
+Isso vale no painel inteiro, não só na tela da Agenda:
+
+- na **Visão geral**, aparece como "Ocupado" em "Compromissos da semana" e não entra em "Próximas gravações e eventos";
+- na ficha do **cliente** e no **projeto**, um particular de outra pessoa **não aparece** (se aparecesse ali, já revelaria com quem é);
+- o **anexo** de um compromisso particular só abre para quem participa;
+- nas **exportações** ele sai só como "Ocupado" (veja "Exportar dados" e "Atender um pedido de acesso aos dados").
+
+O horário continua contando: quem tentar marcar algo com você naquela hora recebe o aviso de conflito, sem saber o motivo.
+
+#### Conflito de horário
+
+Ao salvar, o painel confere se algum **responsável** ou **participante** (sem ninguém marcado, quem criou) já tem compromisso naquele horário (ou está de férias, numa categoria marcada como "Ocupa o dia"). Se tiver, aparece o aviso **Conflito de horário** com quem, quando e, se você puder ver, qual compromisso. Você decide: ajusta a data, o horário ou as pessoas, ou toca em **Salvar mesmo assim**. O painel **avisa, não impede**: às vezes duas coisas no mesmo horário são de propósito. Compromissos cancelados não contam.
+
+#### Categorias e agendas
+
+O botão da **engrenagem**, no topo da Agenda, abre **Configurar agenda**:
+
+- **Categorias**: nome, cor e ícone. Duas marcações mudam o comportamento: **Produção** (mostra o bloco "Planejamento de gravação" no compromisso) e **Ocupa o dia** (um dia inteiro dessa categoria conta como pessoa indisponível, caso de férias). O painel já vem com Reuniões internas, Reuniões com clientes, Gravações, Sessões fotográficas, Eventos, Casamentos, Edição e pós-produção, Entregas, Férias e indisponibilidade e outras; renomeie, troque a cor ou crie as suas.
+- **Agendas**: a **Agenda geral da NÓS**, uma **pessoal** para cada pessoa do painel, **Produções**, **Comercial** e **Colaboradores**. Crie outras se fizer sentido. **Financeira** e **Editorial** não guardam compromissos: são as camadas descritas abaixo, e ali você só muda nome, cor e se aparecem.
+- **Modelos de checklist**: listas prontas (gravação externa, casamento, ensaio…) para inserir num compromisso com **Usar modelo**.
+
+Nada é apagado nessa tela: **desativar** uma categoria ou agenda só a tira das listas de escolha. Os compromissos de uma agenda desativada deixam de aparecer nas telas, mas continuam guardados.
+
+#### Planejamento de gravação
+
+Compromissos de categorias marcadas como **Produção** (Gravações, Sessões fotográficas, Eventos, Casamentos) ganham o bloco **Planejamento de gravação**: endereço da gravação, **chegada da equipe**, roteiro, referências, equipamentos, quantidade de conteúdos previstos, tempo estimado, **prazo de edição**, **data de entrega** e um **checklist de preparação**. No dia, abra o compromisso no celular e vá marcando o checklist; cada toque já fica salvo.
+
+#### Camadas: prazos, financeiro e editorial
+
+Além dos compromissos, a agenda pode mostrar por cima, **só para consulta**, datas que vêm de outros módulos:
+
+- **Prazos de projeto** (marca ◆): data do evento, prazo de gravação e prazo de entrega dos projetos.
+- **Editorial** (marca ✎): as datas de publicação do calendário de **Conteúdo**.
+- **Financeira** (marca $): vencimentos a receber e a pagar e, para quem vê Contratos, o fim de vigência dos contratos. Vem desligada, para não poluir o dia a dia, e só existe para quem vê o Financeiro.
+
+Esses itens aparecem só com contorno, sem preenchimento. Para mudar a data, toque no item: ele abre no módulo de origem (o projeto, o conteúdo, o lançamento ou o contrato).
+
+#### Lembretes
+
+No bloco **Lembretes** você escolhe a antecedência (15 minutos, 1 hora, 1 dia, 7 dias ou outra) e o canal (aviso no painel ou e-mail). **Por enquanto os lembretes ficam apenas registrados no compromisso: o painel ainda não envia aviso nem e-mail.** O envio entra na próxima etapa da agenda. Até lá, não conte com ele para lembrar de nada.
+
+### Tarefas
+
+Em **Tarefas**, escreva em **Nova tarefa**, defina prazo e responsável e toque em **Adicionar**. Marque a caixa para concluir; a tarefa fica em "Concluídas recentemente" por 14 dias, caso precise desfazer.
 
 ## Configurações
 
@@ -471,6 +554,8 @@ Em **Propostas**, defina a validade (dias), a entrada (%), as condições de pag
 
 Em **Dados**, **Baixar tudo (JSON)** gera uma cópia completa e há planilhas (CSV) de **Clientes**, **Leads** e **Lançamentos financeiros**. Os arquivos trazem dados pessoais: guarde em local seguro. Senhas e sessões nunca são exportadas. Cada download fica registrado na auditoria.
 
+**Compromissos particulares**: o arquivo sai para quem está exportando. Os particulares de que você participa vão inteiros; os de outras pessoas vão como a agenda os mostra para você, só "Ocupado" com data, horário e de quem é (marcados com `oculto`), sem título, local, notas, pessoas nem nome de anexo. A auditoria registra quantos saíram assim. A cópia integral do banco é o **backup** feito no servidor (veja "Backup").
+
 Toda exportação é **só para administradores**: esta tela, o **Exportar CSV** de Clientes e do Financeiro e o botão **Dados deste titular (JSON)** da ficha do cliente (veja "Atender um pedido de acesso aos dados").
 
 ### Auditoria
@@ -493,6 +578,7 @@ Se alguém pedir uma cópia do que a NÓS guarda sobre ela:
 1. Abra a ficha em **Clientes**. Na aba **Resumo**, no cartão dos dados de contato, toque em **Dados deste titular (JSON)** (só administradores).
 2. O arquivo reúne o cadastro, o histórico de atendimento, os pedidos enviados pelo site (inclusive os de mesmo WhatsApp ou e-mail), orçamentos, projetos, contratos, pagamentos, agenda, tarefas e conteúdos ligados ao cadastro. Não inclui o cálculo interno dos orçamentos nem as despesas da NÓS.
 3. **Revise antes de entregar**: o arquivo traz anotações internas de vocês (observações e histórico). Arquivos enviados (contrato assinado, comprovantes) não vão dentro dele; o arquivo só indica onde existem.
+4. **Compromissos particulares**: se outra pessoa tiver um compromisso particular ligado a esse cliente, ele não entra no seu arquivo. O próprio arquivo avisa no começo ("ATENÇÃO — resposta incompleta"), dizendo quantos ficaram de fora e de quem são. Peça a essa pessoa que gere a exportação ela mesma, ou que informe o que consta ali sobre o cliente, e só então responda.
 
 Cada download fica na auditoria. Se a pessoa nunca virou cliente, os dados dela estão só no lead: abra o lead e copie de lá.
 
@@ -502,7 +588,7 @@ Se alguém pedir que seus dados sejam apagados:
 
 1. **Se a pessoa é só um lead**: em **Leads**, abra o lead e use **Excluir lead**. Isso apaga o contato de forma definitiva.
 2. **Se virou cliente**: abra a ficha em **Clientes**. Antes de excluir, passe pelas abas da ficha e apague ou edite o que cita a pessoa: orçamentos (em especial **Nome na capa do PDF** e **Contato**), projetos, contratos, lançamentos financeiros, compromissos e tarefas. Rascunhos de proposta podem ser excluídos; propostas enviadas ficam como histórico.
-3. Toque em **Excluir**. O aviso de confirmação mostra a conta exata do que será apagado (o cadastro, o histórico de atendimento e os itens do calendário de conteúdo do cliente) e do que **continua existindo sem cliente vinculado** ("1 orçamento, 1 contrato e 2 lançamentos financeiros", por exemplo).
+3. Toque em **Excluir**. O aviso de confirmação mostra a conta exata do que será apagado (o cadastro, o histórico de atendimento e os itens do calendário de conteúdo do cliente) e do que **continua existindo sem cliente vinculado** ("1 orçamento, 1 contrato e 2 lançamentos financeiros", por exemplo). Compromissos particulares de outra pessoa ligados ao cliente não entram nessa conta (você não os vê); eles também só perdem o vínculo com o cliente.
 4. Se a pessoa enviou pedidos pelo site, o aviso traz a opção **Excluir também os pedidos que esta pessoa enviou pelo site**. Ela vale para os leads ligados ao cadastro e para os de **mesmo WhatsApp ou e-mail**. Marque para apagar tudo de uma vez. Sem marcar, os pedidos continuam em **Leads**.
 5. Fotos: se a pessoa aparece em um depoimento ou projeto do portfólio, exclua o item em **Editar site** (isso apaga também as fotos do servidor).
 6. Registros financeiros e contratos podem precisar ser guardados por obrigação legal ou fiscal. Na dúvida, converse com o contador ou com o advogado antes de apagar.

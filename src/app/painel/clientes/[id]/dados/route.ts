@@ -10,6 +10,8 @@ const noStore = { "Cache-Control": "no-store" };
  * cliente (LGPD: pedido de acesso/portabilidade). Exige "baixar" em Exportação de dados (admin e sócio), como as
  * outras exportações, e "ver" em Clientes; cada download
  * fica na auditoria (sem o nome da pessoa — a auditoria não é apagada quando o cliente é excluído).
+ * Compromissos particulares de OUTRA pessoa ligados ao cliente não entram: o arquivo e a auditoria dizem quantos
+ * ficaram de fora (regra em `src/server/clients/subject-data.ts`).
  */
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const user = await authorizePermission("dados", "baixar");
@@ -18,10 +20,13 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   if (canSeeClients instanceof Response) return canSeeClients;
 
   const id = Number((await context.params).id);
-  const result = Number.isInteger(id) && id > 0 ? await exportClientSubjectData(id, new Date()) : null;
+  const result = Number.isInteger(id) && id > 0 ? await exportClientSubjectData(id, new Date(), user) : null;
   if (!result) return Response.json({ error: "Cliente não encontrado." }, { status: 404, headers: noStore });
 
-  await logAudit({ user, action: "export", entity: "client", entityId: id, summary: `Exportou os dados deste titular em JSON (${result.total} registro(s))` });
+  await logAudit({ user, action: "export", entity: "client", entityId: id, summary:
+      `Exportou os dados deste titular em JSON (${result.total} registro(s))` +
+      (result.withheldEvents ? ` — ${result.withheldEvents} compromisso(s) da agenda sem acesso para quem exportou (particulares de outra pessoa) ficou(aram) de fora` : ""),
+  });
   return new Response(result.json, {
     headers: { ...noStore, "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="dados-do-titular-cliente-${id}-${todayISO()}.json"` },
   });

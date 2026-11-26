@@ -9,12 +9,14 @@
 import "server-only";
 import { and, asc, count, eq, gt, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { agendaEvents, clients, faqs, financeEntries, leads, projects, proposals, tasks } from "@/db/schema";
+import { clients, faqs, financeEntries, leads, projects, proposals, tasks } from "@/db/schema";
+import type { AgendaItem } from "@/lib/agenda/view";
 import { smtpConfigured } from "@/lib/env";
 import { addDays, type ISODate } from "@/lib/dates";
-import { CLIENT_ACTIVE_STATUSES, PROJECT_OPEN_STAGES, type AgendaKind, type TaskPriority } from "@/lib/domain";
+import { CLIENT_ACTIVE_STATUSES, PROJECT_OPEN_STAGES, type TaskPriority } from "@/lib/domain";
 import { canEverywhere, canUsePanelModule, isAdminRole } from "@/lib/permissions";
 import { inScope, moduleScope, type AccessUser, type IdScope } from "@/server/access/scope";
+import { listRelatedAgenda, productionCategoryIds, type AgendaViewer } from "@/server/agenda-related";
 import { getSiteContentForEdit } from "@/server/site/content";
 import { PROPOSAL_SOON_DAYS, sortImportantTasks } from "./logic";
 
@@ -46,7 +48,8 @@ export async function dashboardAccess(user: AccessUser): Promise<DashboardAccess
     proposals: canEverywhere(user, "propostas", "ver"),
     clients: canEverywhere(user, "clientes", "ver"),
     finance: canEverywhere(user, "financeiro", "ver"),
-    agenda: canUsePanelModule(user, "agenda", "ver"),
+    // módulo INTEIRO: a visão geral não filtra a agenda por projeto (quem só a vê "nos projetos em que está" fica sem o cartão)
+    agenda: canEverywhere(user, "agenda", "ver"),
     site: canEverywhere(user, "site", "editar"),
     admin: isAdminRole(user.role),
     projects,
@@ -112,40 +115,33 @@ export async function getSummary(today: ISODate, access: DashboardAccess): Promi
 }
 
 // ------------------------------------------------------------------- agenda
-export type DashboardEvent = {
-  id: number;
-  title: string;
-  kind: AgendaKind;
-  date: ISODate;
-  startTime: string | null;
-  endTime: string | null;
-  location: string;
-  clientName: string | null;
-};
+/**
+ * Um compromisso na visão geral: uma OCORRÊNCIA já passada pela privacidade da agenda (`listAgenda`). Particular
+ * de outra pessoa chega com `masked: true`, título "Ocupado" e nenhum outro conteúdo.
+ */
+export type DashboardEvent = AgendaItem;
 
-const eventColumns = {
-  id: agendaEvents.id,
-  title: agendaEvents.title,
-  kind: agendaEvents.kind,
-  date: agendaEvents.date,
-  startTime: agendaEvents.startTime,
-  endTime: agendaEvents.endTime,
-  location: agendaEvents.location,
-  clientName: clients.name,
-};
+/** Dias à frente em "Compromissos da semana" (hoje + 6) e em "Próximas gravações e eventos". */
+export const WEEK_AHEAD_DAYS = 6;
+export const SHOOTS_AHEAD_DAYS = 30;
 
 /**
- * Compromissos de `from` até `to` (inclusive), por data e horário (dia inteiro primeiro).
+ * Compromissos de hoje aos próximos 6 dias, por data e horário, com as séries expandidas.
  * Só chame para quem vê a Agenda no módulo inteiro (`access.agenda`): esta consulta não filtra por projeto.
  */
-export async function listEvents(from: ISODate, to: ISODate, kinds?: AgendaKind[], limit = 60): Promise<DashboardEvent[]> {
-  return db
-    .select(eventColumns)
-    .from(agendaEvents)
-    .leftJoin(clients, eq(clients.id, agendaEvents.clientId))
-    .where(and(sql`${agendaEvents.date} >= ${from}`, lte(agendaEvents.date, to), kinds ? inArray(agendaEvents.kind, kinds) : undefined))
-    .orderBy(asc(agendaEvents.date), sql`${agendaEvents.startTime} is not null`, asc(agendaEvents.startTime), asc(agendaEvents.id))
-    .limit(limit);
+export async function listWeekEvents(viewer: AgendaViewer, today: ISODate, limit = 60): Promise<DashboardEvent[]> {
+  return (await listRelatedAgenda(viewer, today, addDays(today, WEEK_AHEAD_DAYS))).slice(0, limit);
+}
+
+/**
+ * Próximas gravações, sessões, eventos e casamentos (categorias de produção) nos próximos 30 dias.
+ * Como a lista é filtrada por categoria, particulares de outra pessoa NÃO entram (nem como "Ocupado"): o filtro
+ * revelaria o tipo do compromisso. Mesma ressalva de `listWeekEvents` quanto a `access.agenda`.
+ */
+export async function listUpcomingShoots(viewer: AgendaViewer, today: ISODate, limit = 6): Promise<DashboardEvent[]> {
+  const categoryIds = await productionCategoryIds();
+  if (categoryIds.length === 0) return [];
+  return (await listRelatedAgenda(viewer, today, addDays(today, SHOOTS_AHEAD_DAYS), { categoryIds })).slice(0, limit);
 }
 
 // ------------------------------------------------------------------- tarefas

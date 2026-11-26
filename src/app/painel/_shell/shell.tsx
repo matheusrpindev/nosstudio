@@ -9,8 +9,10 @@ import { canUsePanelModule, requirePanelUser, type CurrentUser } from "@/lib/aut
 import { logoutAction } from "@/lib/auth/actions";
 import { countNewLeads } from "@/server/leads/admin";
 import { visibleNavHrefs, type NavBadges } from "../nav";
+import { getNotificationSummary } from "../notificacoes/summary";
 import { MobileNav } from "./mobile-nav";
 import { NavList } from "./nav-list";
+import { NotificationBell, NotificationsProvider } from "./notifications";
 
 /**
  * Moldura do painel: barra lateral (desktop) ou barras superior/inferior (celular) + área de conteúdo.
@@ -24,20 +26,26 @@ export async function Shell({ children }: { children: ReactNode }) {
   const allowed = visibleNavHrefs(user);
   // contadores só de módulos que a pessoa pode ver (um número também é informação)
   const badges: NavBadges = canUsePanelModule(user, "leads", "ver") ? { newLeads: await countNewLeads() } : {};
+  // o sino: só as notificações de quem está logado (durante a troca obrigatória de senha, nada)
+  const notifications = user.mustChangePassword ? { unread: 0, items: [] } : await getNotificationSummary(user.id);
 
   return (
-    <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:pl-64">
-      <a href="#conteudo" className="btn btn-primary fixed top-2 left-2 z-[80] -translate-y-20 focus-visible:translate-y-0">
+    <NotificationsProvider initial={notifications}>
+    <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:pl-64 print:!pl-0">
+      <a href="#conteudo" className="btn btn-primary fixed top-2 left-2 z-[80] -translate-y-20 focus-visible:translate-y-0 print:hidden">
         Pular para o conteúdo
       </a>
 
-      <aside className="bg-menu border-menu-borda fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r text-white lg:flex">
-        <Link href="/painel" className="flex h-[4.5rem] shrink-0 items-center gap-2.5 px-6 focus-visible:outline-white" aria-label="NÓS Studio — painel, visão geral">
-          <Logo variant="wordmark" tone="branco" label="" className="h-6" />
-          <span aria-hidden="true" className="text-lavanda mt-0.5 text-sm font-medium tracking-wide">
-            / painel
-          </span>
-        </Link>
+      <aside className="bg-menu border-menu-borda fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r text-white lg:flex print:!hidden">
+        <div className="flex h-[4.5rem] shrink-0 items-center gap-1 pr-3 pl-6">
+          <Link href="/painel" className="flex h-11 min-w-0 flex-1 items-center gap-2.5 focus-visible:outline-white" aria-label="NÓS Studio — painel, visão geral">
+            <Logo variant="wordmark" tone="branco" label="" className="h-6" />
+            <span aria-hidden="true" className="text-lavanda mt-0.5 text-sm font-medium tracking-wide">
+              / painel
+            </span>
+          </Link>
+          <NotificationBell />
+        </div>
         <nav aria-label="Menu do painel" className="menu-rolagem min-h-0 flex-1 overflow-y-auto px-3 pb-4">
           <NavList allowed={allowed} badges={badges} />
         </nav>
@@ -51,11 +59,14 @@ export async function Shell({ children }: { children: ReactNode }) {
         account={<AccountBlock user={user} />}
       />
 
-      <main id="conteudo" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-10 lg:pt-9 lg:pb-14">
+      <main id="conteudo" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-10 lg:pt-9 lg:pb-14 print:!max-w-none print:!p-0">
         {children}
       </main>
-      <Toaster />
+      <div className="print:hidden">
+        <Toaster />
+      </div>
     </div>
+    </NotificationsProvider>
   );
 }
 

@@ -2,8 +2,9 @@
  * Projetos no PAINEL: consultas e mutações (só falam com o banco; autorização, validação e auditoria ficam nas
  * Server Actions de `src/app/painel/projetos/actions.ts`). As regras puras (prazos, links) estão em `logic.ts`.
  *
- * Tarefas, agenda, contratos e financeiro têm módulos próprios: aqui só LEMOS essas tabelas para o detalhe do projeto
- * (e inserimos tarefas rápidas do projeto).
+ * Tarefas, contratos e financeiro têm módulos próprios: aqui só LEMOS essas tabelas para o detalhe do projeto
+ * (e inserimos tarefas rápidas do projeto). A AGENDA do projeto é lida por `@/server/agenda-related` (privacidade);
+ * daqui a tabela `agenda_events` só é tocada para desligar o projeto excluído.
  */
 import "server-only";
 import { and, asc, count, desc, eq, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
@@ -17,7 +18,6 @@ import {
   proposals,
   tasks,
   users,
-  type AgendaEvent,
   type ChecklistItem,
   type Contract,
   type FinanceEntry,
@@ -183,24 +183,8 @@ export async function listProjectTasks(projectId: number): Promise<ProjectTask[]
   return rows;
 }
 
-export type ProjectEvent = Pick<AgendaEvent, "id" | "title" | "kind" | "date" | "startTime" | "endTime" | "location">;
-
-export async function listProjectEvents(projectId: number): Promise<ProjectEvent[]> {
-  return db
-    .select({
-      id: agendaEvents.id,
-      title: agendaEvents.title,
-      kind: agendaEvents.kind,
-      date: agendaEvents.date,
-      startTime: agendaEvents.startTime,
-      endTime: agendaEvents.endTime,
-      location: agendaEvents.location,
-    })
-    .from(agendaEvents)
-    .where(eq(agendaEvents.projectId, projectId))
-    .orderBy(asc(agendaEvents.date), sql`${agendaEvents.startTime} is null`, asc(agendaEvents.startTime))
-    .limit(50);
-}
+// Os compromissos do projeto NÃO são lidos aqui: use `listProjectEvents(viewer, projectId, today)` de
+// `@/server/agenda-related` (passa pela privacidade da agenda e expande as séries).
 
 export type ProjectContract = Pick<Contract, "id" | "title" | "kind" | "status" | "signedAt">;
 

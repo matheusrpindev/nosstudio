@@ -3,11 +3,10 @@
  * são as Server Actions em `src/app/painel/clientes/actions.ts`.
  */
 import "server-only";
-import { and, asc, count, desc, eq, gte, inArray, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
-  agendaEvents,
   clientInteractions,
   clients,
   contracts,
@@ -32,9 +31,11 @@ import {
   type InteractionKind,
   type ServiceInterest,
 } from "@/lib/domain";
+import type { AgendaItem } from "@/lib/agenda/view";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatPhone, onlyDigits } from "@/lib/format";
 import { clientNumbers } from "@/lib/proposals/calc";
+import { listClientUpcomingEvents, type AgendaViewer } from "@/server/agenda-related";
 import { buildCsv } from "./csv";
 import { subjectLeadsWhere } from "./subject-data";
 
@@ -315,7 +316,8 @@ export type ClientRelated = {
     entries: { id: number; type: "receita" | "despesa"; description: string; amountCents: number; dueDate: string; paidAt: string | null; installmentLabel: string }[];
     total: number;
   };
-  events: { id: number; title: string; kind: (typeof agendaEvents.$inferSelect)["kind"]; date: string; startTime: string | null }[];
+  /** Próximos compromissos, já pela privacidade da agenda (`listAgenda`): particulares de terceiros não entram. */
+  events: AgendaItem[];
   tasks: { id: number; title: string; dueDate: string | null; priority: (typeof tasks.$inferSelect)["priority"]; ownerName: string | null }[];
 };
 
@@ -326,9 +328,10 @@ const ALL_RELATED: ClientRelatedAccess = { proposals: true, projects: true, cont
 /**
  * Tudo o que a ficha mostra ligado ao cliente — só leitura, consultas simples às tabelas dos outros módulos.
  * `include` diz o que a pessoa pode ver: o que não pode NÃO É CONSULTADO e volta vazio (o gestor, por exemplo,
- * não recebe os lançamentos financeiros do cliente).
+ * não recebe os lançamentos financeiros do cliente). `viewer` é quem está olhando: os compromissos saem pela
+ * privacidade da agenda (um particular de outra pessoa ligado a este cliente não aparece).
  */
-export async function getClientRelated(clientId: number, today: string, include: ClientRelatedAccess = ALL_RELATED): Promise<ClientRelated> {
+export async function getClientRelated(viewer: AgendaViewer, clientId: number, today: string, include: ClientRelatedAccess = ALL_RELATED): Promise<ClientRelated> {
   const taskOwner = alias(users, "task_owner");
   const [proposalRows, projectRows, contractRows, financeAgg, financeRows, eventRows, taskRows] = await Promise.all([
     include.proposals ? listClientProposals(clientId) : [],
@@ -374,14 +377,8 @@ export async function getClientRelated(clientId: number, today: string, include:
         .where(eq(financeEntries.clientId, clientId))
         .orderBy(asc(financeEntries.dueDate), asc(financeEntries.id))
         .limit(30),
-    !include.events
-      ? []
-      : db
-        .select({ id: agendaEvents.id, title: agendaEvents.title, kind: agendaEvents.kind, date: agendaEvents.date, startTime: agendaEvents.startTime })
-        .from(agendaEvents)
-        .where(and(eq(agendaEvents.clientId, clientId), gte(agendaEvents.date, today)))
-        .orderBy(asc(agendaEvents.date), asc(sql`coalesce(${agendaEvents.startTime}, '')`))
-        .limit(10),
+    // a agenda nunca é lida direto daqui: `listClientUpcomingEvents` passa pela privacidade e expande as séries
+    !include.events ? [] : listClientUpcomingEvents(viewer, clientId, today),
     !include.tasks
       ? []
       : db

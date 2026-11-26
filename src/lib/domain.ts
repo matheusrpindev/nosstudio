@@ -363,9 +363,20 @@ export const AGENDA_LAYER_LABELS = labels(AGENDA_LAYERS, {
 /** Ligadas quando a pessoa ainda não escolheu (a financeira fica de fora para não poluir a operação). */
 export const AGENDA_DEFAULT_LAYERS: readonly AgendaLayer[] = ["prazos", "editorial"];
 
-export const AGENDA_VIEWS = ["dia", "semana", "mes", "ano", "lista"] as const;
+/** Visões de CALENDÁRIO (as cinco do seletor) e, depois delas, as duas de PLANEJAMENTO. */
+export const AGENDA_VIEWS = ["dia", "semana", "mes", "ano", "lista", "disponibilidade", "linha"] as const;
 export type AgendaView = (typeof AGENDA_VIEWS)[number];
-export const AGENDA_VIEW_LABELS = labels(AGENDA_VIEWS, { dia: "Dia", semana: "Semana", mes: "Mês", ano: "Ano", lista: "Lista" });
+export const AGENDA_VIEW_LABELS = labels(AGENDA_VIEWS, {
+  dia: "Dia",
+  semana: "Semana",
+  mes: "Mês",
+  ano: "Ano",
+  lista: "Lista",
+  disponibilidade: "Disponibilidade",
+  linha: "Linha do tempo",
+});
+export const AGENDA_CALENDAR_VIEWS = ["dia", "semana", "mes", "ano", "lista"] as const satisfies readonly AgendaView[];
+export const AGENDA_PLANNING_VIEWS = ["disponibilidade", "linha"] as const satisfies readonly AgendaView[];
 
 export const AGENDA_STATUSES = ["confirmado", "a_confirmar", "cancelado", "concluido"] as const;
 export type AgendaStatus = (typeof AGENDA_STATUSES)[number];
@@ -405,6 +416,23 @@ export const AGENDA_REMINDER_PRESETS = [
   { minutes: 10080, label: "7 dias antes" },
 ] as const;
 export const AGENDA_REMINDER_MAX_MINUTES = 60 * 24 * 60; // 60 dias
+/** Compromisso de dia inteiro não tem hora: os lembretes dele contam a partir deste horário do dia. */
+export const AGENDA_ALL_DAY_REMINDER_TIME = "09:00";
+/** Expediente considerado na consulta de disponibilidade (janelas livres em comum). */
+export const AGENDA_WORKDAY = { start: "08:00", end: "20:00" } as const;
+
+// ------------------------------------------------------------ notificações
+/**
+ * Tipos de notificação interna (central de notificações — briefing v2, seção 30). Por enquanto só a agenda
+ * envia; cada módulo que passar a notificar acrescenta o seu tipo aqui.
+ */
+export const NOTIFICATION_TYPES = ["agenda_lembrete"] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+export const NOTIFICATION_TYPE_LABELS = labels(NOTIFICATION_TYPES, { agenda_lembrete: "Lembrete da agenda" });
+
+/** Como terminou a entrega de um lembrete (a linha existe para o mesmo lembrete nunca sair duas vezes). */
+export const REMINDER_DELIVERY_STATUSES = ["enviado", "falhou", "sem_smtp"] as const;
+export type ReminderDeliveryStatus = (typeof REMINDER_DELIVERY_STATUSES)[number];
 
 /** "Só este", "este e os seguintes", "todos": a quem se aplica a mudança numa série que se repete. */
 export const AGENDA_SERIES_SCOPES = ["este", "seguintes", "todos"] as const;

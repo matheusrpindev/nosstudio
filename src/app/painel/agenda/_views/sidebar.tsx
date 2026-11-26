@@ -221,32 +221,37 @@ export function Sidebar({ state: current, today, calendars, layers, categories, 
       </details>
 
       <div className="space-y-3">
-        <div>
-          <label htmlFor={`${uid}-cliente`} className="text-texto-suave mb-1 block text-xs font-bold tracking-wide uppercase">
-            Cliente
-          </label>
-          <select id={`${uid}-cliente`} className="input" data-controlled="" value={state.clientId ?? ""} onChange={(event) => go({ clientId: Number(event.target.value) || null })}>
-            <option value="">Todos os clientes</option>
-            {clients.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor={`${uid}-pessoa`} className="text-texto-suave mb-1 block text-xs font-bold tracking-wide uppercase">
-            Responsável
-          </label>
-          <select id={`${uid}-pessoa`} className="input" data-controlled="" value={state.personId ?? ""} onChange={(event) => go({ personId: Number(event.target.value) || null })}>
-            <option value="">Toda a equipe</option>
-            {people.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* listas vazias = a pessoa não escolhe por cliente/pessoa (quem só vê os próprios compromissos) */}
+        {clients.length > 0 ? (
+          <div>
+            <label htmlFor={`${uid}-cliente`} className="text-texto-suave mb-1 block text-xs font-bold tracking-wide uppercase">
+              Cliente
+            </label>
+            <select id={`${uid}-cliente`} className="input" data-controlled="" value={state.clientId ?? ""} onChange={(event) => go({ clientId: Number(event.target.value) || null })}>
+              <option value="">Todos os clientes</option>
+              {clients.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+        {people.length > 0 ? (
+          <div>
+            <label htmlFor={`${uid}-pessoa`} className="text-texto-suave mb-1 block text-xs font-bold tracking-wide uppercase">
+              Responsável
+            </label>
+            <select id={`${uid}-pessoa`} className="input" data-controlled="" value={state.personId ?? ""} onChange={(event) => go({ personId: Number(event.target.value) || null })}>
+              <option value="">Toda a equipe</option>
+              {people.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         {filtered || state.projectId ? (
           <Button variant="ghost" size="sm" className="-ml-3" onClick={() => go({ calendars: null, categories: null, layers: null, clientId: null, projectId: null, personId: null })}>
             Limpar filtros

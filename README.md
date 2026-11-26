@@ -9,7 +9,10 @@ O projeto tem dois ambientes no mesmo aplicativo:
 - **Painel privado** (`/painel`) — leads, clientes, orçamentos em PDF, agenda, projetos, financeiro, contratos,
   calendário de conteúdo, biblioteca da marca e o editor do próprio site.
 
-Os requisitos originais estão em [`docs/briefing/`](docs/briefing).
+Os requisitos estão em [`docs/briefing/`](docs/briefing): o briefing dos sócios e o técnico (primeira entrega) e o
+**briefing v2** (`briefing-v2.pdf` / `briefing-v2.txt`), que pede a evolução para uma plataforma em quatro
+ambientes — site, Painel Administrativo, Área da Equipe e Área do Cliente. O v2 está sendo implementado por etapas:
+o que já vale está em "O que está pronto"; o que falta, em "Próximas etapas do briefing v2".
 
 Para os sócios: [`docs/manual-do-painel.md`](docs/manual-do-painel.md) (manual de uso, também disponível no painel em **Ajuda**) e
 [`docs/contas-e-servicos.md`](docs/contas-e-servicos.md) (domínio, hospedagem, e-mail, backups, contas e suporte pós-entrega).
@@ -36,22 +39,41 @@ Seções sem conteúdo publicado (portfólio, depoimentos, FAQ sem resposta) nã
 
 | Módulo | Caminho | O que faz |
 | --- | --- | --- |
-| Visão geral | `/painel` | Leads novos, orçamentos aguardando, entregas, pagamentos, compromissos da semana |
+| Visão geral | `/painel` | Leads novos, orçamentos aguardando, entregas, pagamentos, compromissos da semana — cada cartão só para quem pode ver o módulo |
 | Leads | `/painel/leads` | Pedidos vindos do site (origem, data, consentimento); converter em cliente |
 | Clientes | `/painel/clientes` | Cadastro, funil em quadro (o cliente avança sozinho ao enviar/aceitar proposta e criar projeto), histórico, vínculos, CSV, dados do titular (LGPD) |
 | Orçamentos | `/painel/orcamentos` | Itens, cálculo interno de custos e margem, sinal e parcelas, modelos, versões, **PDF**, parcelas → financeiro |
-| Agenda e tarefas | `/painel/agenda`, `/painel/tarefas` | Calendário de gravações, eventos e prazos; lista de tarefas |
+| Agenda | `/painel/agenda` | Visões dia, semana, mês, ano e lista; categorias e agendas (geral, pessoais, produções…); repetição; compromisso particular ("Ocupado" para os outros); aviso de conflito de horário; planejamento de gravação; camadas de prazos, editorial e financeiro |
+| Tarefas | `/painel/tarefas` | Lista de tarefas com prazo, prioridade e responsável |
 | Projetos | `/painel/projetos` | Etapas, checklist, links de arquivos e entregas, situação do backup |
 | Financeiro | `/painel/financeiro` | Previsto × realizado, contas a receber/pagar, reserva de caixa, CSV |
 | Contratos | `/painel/contratos` | Modelos com campos automáticos (`{{cliente}}`, `{{valor_total}}`…), documentos, arquivo assinado (privado) |
 | Conteúdo | `/painel/conteudo` | Calendário editorial: ideia → roteiro → gravação → edição → aprovação → publicado |
 | Marca | `/painel/marca` | Logos, paleta, fontes e links dos materiais |
 | Editar site | `/painel/site` | Textos, fotos, avisos, serviços, pacotes, FAQ, portfólio, depoimentos, visibilidade, SEO |
-| Configurações | `/painel/config` | Usuários, notificações, padrões de proposta, exportação de dados, auditoria |
+| Configurações | `/painel/config` | Usuários (perfis, convites e permissões por pessoa), notificações, padrões de proposta, exportação de dados, auditoria |
 
 > **Regra de segurança do PDF:** custos internos, margem, notas internas e descontos não aprovados nunca saem do
 > painel. O PDF é montado só a partir de uma "visão pública" da proposta (`src/lib/proposals/public.ts`), coberta por
 > testes que falham se qualquer valor interno escapar. Os campos automáticos dos contratos usam a mesma visão.
+
+**Do briefing v2, já valendo**
+
+- **Perfis e permissões** — seis perfis (administrador, sócio, gestor, funcionário, freelancer, cliente) mais o
+  acesso técnico; matriz de permissões por módulo e ação, ajustes por pessoa, escopo por projeto e por cliente, tudo
+  conferido no servidor. Gestor e funcionário já usam o painel restrito (menu, visão geral e páginas só com o que
+  podem ver). Referência: [`docs/permissoes.md`](docs/permissoes.md).
+- **Convites** — não existe cadastro público: gestor, funcionário, freelancer e cliente nascem por convite (link de
+  uso único, 7 dias), com os vínculos de projeto e de cliente já definidos.
+- **Tema escuro** — painel e telas de acesso em preto, grafite, roxo e lima.
+- **Agenda nova** — a da tabela acima. Fora da tela da Agenda (visão geral, ficha do cliente, projeto, exportações,
+  anexos) vale a mesma regra de privacidade: compromisso particular de outra pessoa é só "Ocupado", ou não aparece.
+  **Os lembretes ainda só ficam registrados no compromisso; o envio (aviso no painel e e-mail) é a próxima etapa.**
+
+**Próximas etapas do briefing v2** — Área da Equipe (`/equipe`) e Área do Cliente (`/cliente`), que hoje não
+existem (freelancer e cliente têm conta, mas o login avisa que o acesso ainda não foi liberado); envio dos lembretes
+da agenda; agenda, conteúdo, marca e arquivos "só nos projetos da pessoa" para o funcionário. Detalhes e pendências
+em `docs/permissoes.md`, seção 10.
 
 ## Tecnologia
 
@@ -151,7 +173,7 @@ para todo mundo; com o número maior, o visitante consegue forjar o próprio IP.
 | `npm run db:generate` | Gera uma migration depois de alterar `src/db/schema.ts` |
 | `npm run user:create` | Cria contas, gera senha (`--reset`), desativa (`--deactivate`) e destrava o login (`--unlock`) |
 | `npm run backup` / `npm run restore` | Backup e restauração (banco + uploads) |
-| `npm run typecheck` · `npm run lint` · `npm run test` | Verificações |
+| `npm run typecheck` · `npm run lint` · `npm run test` | Verificações. Cada execução dos testes cria o próprio banco numa pasta temporária (apagada no fim): dá para rodar duas ao mesmo tempo, e nada fica em `data/` |
 
 ## Publicação
 
@@ -256,7 +278,12 @@ saírem da retenção (14 por padrão). Leve isso em conta ao responder a um ped
 - Limite de tentativas de login por IP, por e-mail + IP e por e-mail (`src/lib/auth/login-limits.ts`). A barreira por
   e-mail não tranca o dono: liga um "modo restrito" de 1 hora (3 tentativas por IP) e isenta navegadores que já
   entraram na conta. IPv6 é agrupado por /64 e um `X-Forwarded-For` inválido cai num balde único.
-- Toda página e ação do painel confere a sessão no servidor; o painel e as telas de login não são indexados.
+- Toda página e ação do painel confere a sessão **e a permissão** no servidor (perfil, ajustes da pessoa e, para o
+  funcionário, o projeto); o painel e as telas de login não são indexados. Matriz, guardas e testes de isolamento:
+  [`docs/permissoes.md`](docs/permissoes.md).
+- Agenda: compromisso **particular** só é lido por quem participa dele — nem administrador vê mais do que "Ocupado".
+  Vale também na visão geral, na ficha do cliente, no projeto, nos anexos e nas exportações (na completa, sai
+  mascarado; em "Dados deste titular", fica de fora com aviso). A cópia integral é o backup do servidor.
 - Perfil **técnico** (temporário): usa o painel, mas não gerencia contas, não vê Notificações nem Auditoria e não
   exporta dados (as rotas de exportação respondem 403).
 - Formulário público com validação, campo-isca e limite por IP; envio rápido demais não é descartado, é gravado e
@@ -308,7 +335,8 @@ src/app/painel/        um diretório por módulo   src/components/brand/  logo v
 src/server/            regras e consultas        src/lib/               domínio, formatação, auth, propostas
 src/db/schema.ts       banco de dados            drizzle/               migrations
 scripts/               migrate, seed, usuários, backup, restore, start
-docs/briefing/         briefing dos sócios e briefing técnico
+docs/briefing/         briefing dos sócios, briefing técnico e briefing v2 (briefing-v2.pdf / .txt)
+docs/                  manual do painel, contas e serviços, permissões (perfis, matriz, guardas, privacidade da agenda)
 ```
 
 Convenções para quem for desenvolver (inclusive assistentes de código): [`CLAUDE.md`](CLAUDE.md).

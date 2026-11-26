@@ -12,12 +12,13 @@ import { expandEvent, isOccurrence, nextOccurrence, ruleOf } from "@/lib/agenda/
 import { compareItems, type AgendaItem } from "@/lib/agenda/view";
 import { addDays, diffDays, type ISODate } from "@/lib/dates";
 import { AGENDA_DERIVED_CALENDAR_KINDS, AGENDA_FALLBACK_CATEGORY_SLUG, USER_ROLES, type AgendaLayer, type UserRole } from "@/lib/domain";
-import { hasEnvironment, type PermissionSubject } from "@/lib/permissions";
+import { hasEnvironment } from "@/lib/permissions";
+import { agendaAccess, canMutateEvent, inViewScope, type AgendaAccess, type AgendaViewer } from "./access";
 import { listLayerItems } from "./layers";
 import { toVisibleEvent, type EventRecord, type FullEvent, type MaskedEvent, type VisibleEvent } from "./privacy";
 import { loadEventRecord, loadEventRecords, windowCondition } from "./records";
 
-export type AgendaViewer = PermissionSubject & { id: number };
+export type { AgendaViewer } from "./access";
 
 export type AgendaFilters = {
   /** Agendas mostradas. `null`/ausente = todas. */
@@ -79,7 +80,8 @@ function matchesText(event: EventRecord, needle: string): boolean {
   return needle.split(/\s+/).every((word) => haystack.includes(word));
 }
 
-function fullItems(event: FullEvent, from: ISODate, to: ISODate): AgendaItem[] {
+function fullItems(event: FullEvent, from: ISODate, to: ISODate, editable: boolean): AgendaItem[] {
+  const seriesStart = ruleOf(event) ? event.date : null;
   return expandEvent(event, from, to).map((occurrence) => ({
     key: occurrence.recurring ? `e-${event.id}@${occurrence.date}` : `e-${event.id}`,
     source: "event",
@@ -103,6 +105,9 @@ function fullItems(event: FullEvent, from: ISODate, to: ISODate): AgendaItem[] {
     clientName: event.clientName,
     people: event.people.map((person) => person.name).filter(Boolean),
     ownerName: null,
+    editable,
+    seriesStart,
+    projectId: event.projectId,
   }));
 }
 
@@ -130,6 +135,9 @@ function maskedItems(event: MaskedEvent, from: ISODate, to: ISODate): AgendaItem
     clientName: null,
     people: [],
     ownerName: event.ownerName,
+    editable: false,
+    seriesStart: null,
+    projectId: null,
   }));
 }
 
@@ -144,8 +152,14 @@ export function eventHref(id: number, occurrence: ISODate | null): string {
  * cliente, projeto, categoria ou texto, o filtro revelaria o conteúdo. Por isso, com qualquer desses filtros
  * ligado, os mascarados ficam de fora; e, para o filtro de agendas, ele conta como sendo da agenda PESSOAL do
  * dono (onde quer que esteja gravado). No filtro por pessoa, só aparece quando a pessoa é o próprio dono.
+ *
+ * ALCANCE (`access.ts`): quem só vê a agenda "nos projetos em que está" recebe apenas os compromissos em que
+ * participa e os desses projetos — e nenhum mascarado. Sem alcance, a lista vem vazia. O alcance é calculado
+ * aqui, a partir de `viewer`: quem chama não tem como pular o filtro.
  */
 export async function listAgenda(viewer: AgendaViewer, from: ISODate, to: ISODate, filters: AgendaFilters = {}): Promise<AgendaItem[]> {
+  const access = await agendaAccess(viewer);
+  if (access.view === "nenhum") return [];
   const needle = filters.q ? normalize(filters.q.trim()) : "";
   const [records, calendars, categories, layerItems] = await Promise.all([
     loadEventRecords(windowCondition(from, to)),
@@ -163,9 +177,10 @@ export async function listAgenda(viewer: AgendaViewer, from: ISODate, to: ISODat
 
   const items: AgendaItem[] = [];
   for (const record of records) {
+    if (!inViewScope(access, record)) continue;
     const event = toVisibleEvent(record, viewer.id);
     if (event.masked) {
-      if (event.cancelled || contentFilter) continue;
+      if (event.cancelled || contentFilter || access.view !== "todos") continue;
       if (filters.personId && event.ownerId !== filters.personId) continue;
       if (calendarIds) {
         const calendarId = event.ownerId ? personalCalendar.get(event.ownerId) : undefined;
@@ -180,7 +195,7 @@ export async function listAgenda(viewer: AgendaViewer, from: ISODate, to: ISODat
     if (filters.projectId && event.projectId !== filters.projectId) continue;
     if (filters.personId && !event.people.some((person) => person.userId === filters.personId)) continue;
     if (needle && !matchesText(event, needle)) continue;
-    items.push(...fullItems(event, from, to));
+    items.push(...fullItems(event, from, to, canMutateEvent(access, record)));
   }
 
   const layers = needle ? layerItems.filter((item) => needle.split(/\s+/).every((word) => normalize(`${item.title} ${item.clientName ?? ""} ${item.label}`).includes(word))) : layerItems;
@@ -195,16 +210,28 @@ export type EventView = {
   occurrenceEnd: ISODate;
   /** É uma série (tem regra de repetição)? */
   recurring: boolean;
+  /** Quem está vendo pode alterar este compromisso? */
+  canEdit: boolean;
+  /** Quem está vendo tem a agenda no módulo inteiro (vê cliente, observações internas e anexos de qualquer compromisso). */
+  fullAccess: boolean;
 };
+
+/** O compromisso como esta pessoa o enxerga: `null` fora do alcance dela (ou mascarado, para quem é restrito). */
+function visibleRecord(access: AgendaAccess, record: EventRecord | null): VisibleEvent | null {
+  if (!record || !inViewScope(access, record)) return null;
+  const event = toVisibleEvent(record, access.userId);
+  return event.masked && access.view !== "todos" ? null : event;
+}
 
 /**
  * Um compromisso para a tela de detalhe. `occurrence` escolhe o dia de uma série; se o dia pedido não for um dia
  * da série, vale a próxima ocorrência a partir de `today`. Compromisso particular de outra pessoa volta mascarado.
+ * Fora do alcance de quem vê (`access.ts`), é como se não existisse: `null`.
  */
 export async function getEventView(viewer: AgendaViewer, id: number, occurrence: ISODate | null, today: ISODate): Promise<EventView | null> {
-  const record = await loadEventRecord(id);
-  if (!record) return null;
-  const event = toVisibleEvent(record, viewer.id);
+  const [access, record] = await Promise.all([agendaAccess(viewer), loadEventRecord(id)]);
+  const event = visibleRecord(access, record);
+  if (!event || !record) return null;
   const recurring = ruleOf(event) !== null;
   let day = event.date;
   if (recurring) {
@@ -212,13 +239,16 @@ export async function getEventView(viewer: AgendaViewer, id: number, occurrence:
     day = occurrence && isOccurrence(shape, occurrence) ? occurrence : (nextOccurrence(shape, today) ?? event.date);
   }
   const span = event.endDate && event.endDate > event.date ? diffDays(event.date, event.endDate) : 0;
-  return { event, occurrence: day, occurrenceEnd: addDays(day, span), recurring };
+  return { event, occurrence: day, occurrenceEnd: addDays(day, span), recurring, canEdit: canMutateEvent(access, record), fullAccess: access.view === "todos" };
 }
 
-/** O compromisso completo para EDITAR — `null` se não existe ou se a pessoa não participa de um particular. */
+/**
+ * O compromisso completo para EDITAR — `null` se não existe, se a pessoa não participa de um particular ou se
+ * não é dela para alterar (alcance restrito: só os próprios).
+ */
 export async function getEditableEvent(viewer: AgendaViewer, id: number): Promise<FullEvent | null> {
-  const record = await loadEventRecord(id);
-  if (!record) return null;
+  const [access, record] = await Promise.all([agendaAccess(viewer), loadEventRecord(id)]);
+  if (!record || !canMutateEvent(access, record)) return null;
   const event = toVisibleEvent(record, viewer.id);
   return event.masked ? null : event;
 }

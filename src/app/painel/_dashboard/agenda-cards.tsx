@@ -1,15 +1,12 @@
 import { CalendarDays, Clapperboard, MapPin } from "lucide-react";
 import Link from "next/link";
-import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { diffDays, formatDateShort, formatWeekday, type ISODate } from "@/lib/dates";
-import { AGENDA_KIND_LABELS, type AgendaKind } from "@/lib/domain";
 import { groupByDay } from "@/server/dashboard/logic";
 import type { DashboardEvent } from "@/server/dashboard/queries";
-
-const KIND_TONES: Record<AgendaKind, BadgeTone> = { gravacao: "roxo", evento: "lima", reuniao: "neutral", entrega: "alerta", outro: "neutral" };
+import { AgendaItemCategory, AgendaItemTitle, agendaDayHref } from "../_shared/agenda-item";
 
 function dayLabel(date: ISODate, today: ISODate) {
   const diff = diffDays(today, date);
@@ -24,14 +21,21 @@ function timeLabel(event: DashboardEvent) {
   return event.endTime ? `${event.startTime}–${event.endTime}` : event.startTime;
 }
 
+/** "até 28 nov" em compromisso de vários dias. */
+const untilLabel = (event: DashboardEvent) => (event.endDate > event.date ? `até ${formatDateShort(event.endDate)}` : null);
+
+const rowClass = "hover:bg-detalhe-suave/60 focus-visible:bg-detalhe-suave/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors";
+
 function EventLine({ event }: { event: DashboardEvent }) {
+  const until = untilLabel(event);
   return (
-    <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave/60 focus-visible:bg-detalhe-suave/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors">
+    <Link href={event.href} className={rowClass} data-ocupado={event.masked ? "" : undefined}>
       <span className="text-detalhe w-[4.25rem] shrink-0 pt-0.5 text-[0.8125rem] leading-tight font-bold tabular-nums">{timeLabel(event)}</span>
       <span className="min-w-0 flex-1">
-        <span className="text-texto block text-[0.9375rem] leading-snug font-semibold break-words">{event.title}</span>
+        <AgendaItemTitle item={event} className="text-texto text-[0.9375rem] leading-snug font-semibold" />
         <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
-          <Badge tone={KIND_TONES[event.kind]}>{AGENDA_KIND_LABELS[event.kind]}</Badge>
+          <AgendaItemCategory item={event} />
+          {until ? <span>{until}</span> : null}
           {event.clientName ? <span className="break-words">{event.clientName}</span> : null}
           {event.location ? (
             <span className="inline-flex min-w-0 items-center gap-1">
@@ -45,9 +49,9 @@ function EventLine({ event }: { event: DashboardEvent }) {
   );
 }
 
-/** Compromissos dos próximos 7 dias, agrupados por dia. */
-export function WeekAgenda({ events, today }: { events: DashboardEvent[]; today: ISODate }) {
-  const groups = groupByDay(events);
+/** Compromissos dos próximos 7 dias, agrupados por dia (o que começou antes e ainda continua entra em "Hoje"). */
+export function WeekAgenda({ events, today, canCreate }: { events: DashboardEvent[]; today: ISODate; canCreate: boolean }) {
+  const groups = groupByDay(events.map((event) => ({ event, date: event.date < today ? today : event.date })));
   return (
     <Card flush as="section" aria-labelledby="semana-titulo">
       <CardHeader
@@ -68,9 +72,11 @@ export function WeekAgenda({ events, today }: { events: DashboardEvent[]; today:
             title="Nenhum compromisso nos próximos 7 dias"
             description="Semana livre por enquanto. Quando marcar uma gravação, reunião ou entrega, ela aparece aqui."
             action={
-              <ButtonLink href="/painel/agenda/novo" variant="secondary" size="sm">
-                Novo evento na agenda
-              </ButtonLink>
+              canCreate ? (
+                <ButtonLink href="/painel/agenda/novo" variant="secondary" size="sm">
+                  Novo compromisso
+                </ButtonLink>
+              ) : undefined
             }
           />
         ) : (
@@ -78,11 +84,13 @@ export function WeekAgenda({ events, today }: { events: DashboardEvent[]; today:
             {groups.map((group) => (
               <div key={group.date}>
                 <h3 className="text-texto-suave mb-1 text-xs font-bold tracking-[0.1em] uppercase">
-                  {dayLabel(group.date, today)} <span className="font-semibold normal-case tracking-normal">· {formatDateShort(group.date)}</span>
+                  <Link href={agendaDayHref(group.date)} className="hover:text-detalhe -my-2 inline-flex min-h-11 items-center gap-1 sm:min-h-0 sm:py-1">
+                    {dayLabel(group.date, today)} <span className="font-semibold tracking-normal normal-case">· {formatDateShort(group.date)}</span>
+                  </Link>
                 </h3>
                 <ul className="divide-borda divide-y">
-                  {group.items.map((event) => (
-                    <li key={event.id}>
+                  {group.items.map(({ event }) => (
+                    <li key={event.key}>
                       <EventLine event={event} />
                     </li>
                   ))}
@@ -96,7 +104,7 @@ export function WeekAgenda({ events, today }: { events: DashboardEvent[]; today:
   );
 }
 
-/** Gravações e eventos dos próximos 30 dias. */
+/** Gravações, sessões, eventos e casamentos (categorias de produção) dos próximos 30 dias. */
 export function UpcomingShoots({ events, today }: { events: DashboardEvent[]; today: ISODate }) {
   return (
     <Card flush as="section" aria-labelledby="gravacoes-titulo">
@@ -111,27 +119,30 @@ export function UpcomingShoots({ events, today }: { events: DashboardEvent[]; to
           />
         ) : (
           <ul className="divide-borda divide-y">
-            {events.map((event) => (
-              <li key={event.id}>
-                <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave/60 focus-visible:bg-detalhe-suave/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors">
-                  <span className="bg-detalhe-suave text-detalhe w-14 shrink-0 rounded-campo px-1 py-1.5 text-center leading-none">
-                    <span className="block text-base font-extrabold tabular-nums">{event.date.slice(8, 10)}</span>
-                    <span className="mt-0.5 block text-[0.6875rem] font-bold uppercase">{formatDateShort(event.date).split(" ")[1]}</span>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="text-texto block text-[0.9375rem] leading-snug font-semibold break-words">{event.title}</span>
-                    <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
-                      <Badge tone={KIND_TONES[event.kind]}>{AGENDA_KIND_LABELS[event.kind]}</Badge>
-                      <span>
-                        {dayLabel(event.date, today)}
-                        {event.startTime ? `, ${event.startTime}` : ""}
-                      </span>
-                      {event.clientName ? <span className="break-words">· {event.clientName}</span> : null}
+            {events.map((event) => {
+              const day = event.date < today ? today : event.date;
+              return (
+                <li key={event.key}>
+                  <Link href={event.href} className={rowClass}>
+                    <span className="bg-detalhe-suave text-detalhe w-14 shrink-0 rounded-campo px-1 py-1.5 text-center leading-none">
+                      <span className="block text-base font-extrabold tabular-nums">{event.date.slice(8, 10)}</span>
+                      <span className="mt-0.5 block text-[0.6875rem] font-bold uppercase">{formatDateShort(event.date).split(" ")[1]}</span>
                     </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
+                    <span className="min-w-0 flex-1">
+                      <AgendaItemTitle item={event} className="text-texto text-[0.9375rem] leading-snug font-semibold" />
+                      <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+                        <AgendaItemCategory item={event} />
+                        <span>
+                          {event.date < today ? "Em andamento" : dayLabel(day, today)}
+                          {event.startTime ? `, ${event.startTime}` : ""}
+                        </span>
+                        {event.clientName ? <span className="break-words">· {event.clientName}</span> : null}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

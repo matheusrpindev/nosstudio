@@ -1,18 +1,24 @@
 "use client";
 
+import { DndContext, MouseSensor, TouchSensor, useDraggable, useSensor, useSensors, type DragEndEvent, type DragMoveEvent, type DragStartEvent, type Modifier } from "@dnd-kit/core";
 import { Lock, Repeat } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { layoutDay, minutesToTime, timeToMinutes } from "@/lib/agenda/conflicts";
+import { canDrag, canResize, DRAG_STEP_MIN, gridSegment, moveInGrid, moveToDay, resizeEnd, type DragPlacement, type GridSegment } from "@/lib/agenda/drag";
 import { isAllDay, itemsByDay, timeLabel, type AgendaItem } from "@/lib/agenda/view";
 import { cn } from "@/lib/cn";
-import { formatDateLong, formatWeekday, nowLocal, type ISODate } from "@/lib/dates";
+import { addDays, diffDays, formatDateLong, formatWeekday, nowLocal, type ISODate } from "@/lib/dates";
 import { itemDataProps, itemSummary, LAYER_MARK, TONE_CLASS } from "../ui";
+import { DND_ANNOUNCEMENTS, DND_INSTRUCTIONS, suppressNextClick } from "./dnd";
+import { useMover } from "./move";
 import { SlotButton, useQuickCreate } from "./quick-create";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 /** Altura mínima de um bloco, em minutos (alvo de toque e espaço para o título). */
 const MIN_BLOCK = 40;
+/** Abaixo disto (em minutos de altura) o bloco mostra título e hora numa linha só. */
+const COMPACT_BELOW = 50;
 const MAX_ALL_DAY = 3;
 
 type Props = {
@@ -25,14 +31,26 @@ type Props = {
   dayHrefs: Record<ISODate, string>;
 };
 
-function AllDayChip({ item, day }: { item: AgendaItem; day: ISODate }) {
+type DragData = { item: AgendaItem; day: ISODate; kind: "bloco" | "faixa" };
+/** O que está sendo arrastado/redimensionado agora, com o destino já calculado (para o rótulo de hora ao vivo). */
+type Live = { key: string; placement: DragPlacement } | null;
+
+function AllDayChip({ item, day, draggable }: { item: AgendaItem; day: ISODate; draggable: boolean }) {
   const continues = item.date < day;
+  const drag = useDraggable({ id: `faixa|${item.key}|${day}`, data: { item, day, kind: "faixa" } satisfies DragData, disabled: !draggable });
+  const style: CSSProperties | undefined = drag.transform ? { transform: `translate3d(${drag.transform.x}px, 0, 0)`, zIndex: 40 } : undefined;
   return (
     <Link
+      ref={drag.setNodeRef}
+      {...(draggable ? drag.listeners : {})}
       href={item.href}
+      draggable={false}
       title={itemSummary(item, timeLabel(item))}
       {...itemDataProps(item)}
-      className={cn("agenda-evento flex min-h-6 items-center gap-1 px-2 py-0.5 text-xs font-semibold", TONE_CLASS[item.color])}
+      data-arrastavel={draggable ? "" : undefined}
+      data-arrastando={drag.isDragging ? "" : undefined}
+      style={style}
+      className={cn("agenda-evento relative flex min-h-6 items-center gap-1 px-2 py-0.5 text-xs font-semibold", TONE_CLASS[item.color])}
     >
       {item.source !== "event" ? <span aria-hidden="true">{LAYER_MARK[item.source]}</span> : null}
       {item.masked ? <Lock aria-hidden="true" className="size-3 shrink-0" /> : null}
@@ -45,14 +63,114 @@ function AllDayChip({ item, day }: { item: AgendaItem; day: ISODate }) {
   );
 }
 
+type BlockProps = {
+  item: AgendaItem;
+  day: ISODate;
+  segment: GridSegment;
+  place: { top: number; height: number; column: number; columns: number };
+  live: Live;
+  enabled: boolean;
+  onResizeStart: (item: AgendaItem, event: ReactPointerEvent<HTMLSpanElement>) => void;
+};
+
+/** Um compromisso com hora na coluna do dia: arrastável (dia e horário) e com a borda de baixo para a duração. */
+function GridBlock({ item, day, segment, place, live, enabled, onResizeStart }: BlockProps) {
+  // o trecho "continuação" (depois da meia-noite) não arrasta: quem move é o início
+  const draggable = enabled && canDrag(item) && !segment.continued;
+  const resizable = enabled && canResize(item);
+  const drag = useDraggable({ id: `bloco|${item.key}|${day}`, data: { item, day, kind: "bloco" } satisfies DragData, disabled: !draggable });
+  const moving = live?.key === item.key ? live.placement : null;
+  const resizing = moving !== null && !drag.isDragging;
+  const height = resizing && moving.endTime ? Math.max(timeToMinutes(moving.endTime) - segment.startMinutes, DRAG_STEP_MIN) : place.height;
+  const compact = Math.max(height, resizing ? 0 : place.height) < COMPACT_BELOW;
+  const time = moving ? timeLabel(moving) : timeLabel(item);
+  const style: CSSProperties = {
+    top: `calc(var(--agenda-hora) * ${place.top / 60} + 1px)`,
+    height: `calc(var(--agenda-hora) * ${height / 60} - 2px)`,
+    left: `calc(${(place.column / place.columns) * 100}% + 1px)`,
+    width: `calc(${100 / place.columns}% - 3px)`,
+    ...(drag.transform ? { transform: `translate3d(${drag.transform.x}px, ${drag.transform.y}px, 0)`, zIndex: 40, width: "calc(100% - 3px)", left: "1px" } : null),
+    ...(resizing ? { zIndex: 40 } : null),
+  };
+  return (
+    <li className="contents">
+      <Link
+        ref={drag.setNodeRef}
+        {...(draggable ? drag.listeners : {})}
+        href={item.href}
+        draggable={false}
+        title={itemSummary(item, timeLabel(item))}
+        {...itemDataProps(item)}
+        data-arrastavel={draggable ? "" : undefined}
+        data-arrastando={drag.isDragging || resizing ? "" : undefined}
+        data-evento={item.key}
+        onContextMenu={(event) => {
+          // toque longo é "pegar para arrastar": sem o menu do navegador por cima
+          if (draggable && (event.nativeEvent as PointerEvent).pointerType === "touch") event.preventDefault();
+        }}
+        className={cn("agenda-evento absolute text-xs", compact ? "px-1.5 py-0.5" : "px-1.5 py-1", TONE_CLASS[item.color])}
+        style={style}
+      >
+        {compact ? (
+          <span className="flex items-baseline gap-1.5 leading-[1.15rem]">
+            <span className="min-w-0 truncate font-semibold">
+              {item.masked ? <Lock aria-hidden="true" className="mr-1 inline size-3 align-[-1px]" /> : null}
+              {segment.continued ? "… " : ""}
+              {item.title}
+            </span>
+            <span className="text-texto-suave shrink-0 text-[0.6875rem] tabular-nums">{moving ? time : item.startTime}</span>
+          </span>
+        ) : (
+          <>
+            <span className={cn("block font-semibold", height >= 55 ? "line-clamp-2 break-words" : "truncate")}>
+              {item.masked ? <Lock aria-hidden="true" className="mr-1 inline size-3 align-[-1px]" /> : null}
+              {segment.continued ? "… " : ""}
+              {item.title}
+            </span>
+            <span className="text-texto-suave flex items-center gap-1 text-[0.6875rem] tabular-nums">
+              <span className="truncate">
+                {time}
+                {item.masked && item.ownerName ? ` · ${item.ownerName.split(" ")[0]}` : ""}
+              </span>
+              {item.recurring ? <Repeat aria-hidden="true" className="size-3 shrink-0" /> : null}
+            </span>
+            {height >= 55 && item.location ? <span className="text-texto-suave block truncate text-[0.6875rem]">{item.location}</span> : null}
+          </>
+        )}
+        {resizable ? (
+          <span
+            aria-hidden="true"
+            data-redimensionar
+            className="agenda-borda"
+            onPointerDown={(event) => onResizeStart(item, event)}
+            onMouseDown={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+            onClick={(event) => event.preventDefault()}
+          />
+        ) : null}
+      </Link>
+    </li>
+  );
+}
+
 /**
  * Grade de horas (visões Dia e Semana): faixa de "dia inteiro" no topo, compromissos posicionados com
  * `layoutDay` (sobrepostos lado a lado), linha do "agora" e clique num horário vazio para criar.
+ *
+ * Arrastar um bloco muda dia e horário (passo de 15 min, mesma duração); puxar a borda de baixo muda a duração;
+ * na faixa de dia inteiro, arrastar muda o dia. No toque, o arrastar só começa com um toque longo — a rolagem
+ * continua normal. Mascarados ("Ocupado"), cancelados e itens de camada não arrastam. Sem arrastar: abrir o
+ * compromisso e usar "Reagendar".
  */
-export function TimeGrid({ days, items, today, selected, dayHrefs }: Props) {
+export function TimeGrid({ days, items: serverItems, today, selected, dayHrefs }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
   const openQuick = useQuickCreate();
+  const mover = useMover();
+  const items = useMemo(() => mover.apply(serverItems), [mover, serverItems]);
   const [now, setNow] = useState<{ date: ISODate; minutes: number } | null>(null);
+  const [live, setLive] = useState<Live>(null);
+  /** Medidas da grade no início do gesto: pixels por hora e largura de uma coluna. */
+  const metrics = useRef({ hour: 48, column: 100 });
 
   const byDay = useMemo(() => itemsByDay(items, days), [items, days]);
   const columns = useMemo(
@@ -60,8 +178,17 @@ export function TimeGrid({ days, items, today, selected, dayHrefs }: Props) {
       days.map((day) => {
         const list = byDay.get(day) ?? [];
         const allDay = list.filter((item) => isAllDay(item));
-        const timed = list.filter((item) => !isAllDay(item));
-        const placements = new Map(layoutDay(timed.map((item) => ({ key: item.key, startTime: item.startTime as string, endTime: item.endTime })), MIN_BLOCK).map((placement) => [placement.key, placement]));
+        const timed = list.flatMap((item) => {
+          if (isAllDay(item)) return [];
+          const segment = gridSegment(item, day);
+          return segment ? [{ item, segment }] : [];
+        });
+        const placements = new Map(
+          layoutDay(
+            timed.map(({ item, segment }) => ({ key: item.key, startTime: minutesToTime(segment.startMinutes), endTime: segment.endMinutes >= 24 * 60 ? "23:59" : minutesToTime(segment.endMinutes) })),
+            MIN_BLOCK,
+          ).map((placement) => [placement.key, placement]),
+        );
         return { day, allDay, timed, placements };
       }),
     [byDay, days],
@@ -86,7 +213,7 @@ export function TimeGrid({ days, items, today, selected, dayHrefs }: Props) {
     const hour = (box.querySelector<HTMLElement>("[data-coluna]")?.offsetHeight ?? 1152) / 24;
     const [date, time] = nowLocal().split("T");
     const showsToday = days.includes(date);
-    const firstStart = Math.min(...items.filter((item) => item.startTime && item.date === item.endDate).map((item) => timeToMinutes(item.startTime as string)), 24 * 60);
+    const firstStart = Math.min(...serverItems.filter((item) => item.startTime && item.date === item.endDate).map((item) => timeToMinutes(item.startTime as string)), 24 * 60);
     const anchor = showsToday ? timeToMinutes(time) - 90 : Math.min(firstStart - 60, 7 * 60);
     box.scrollTop = Math.max(0, (anchor / 60) * hour - 10); // 10px de folga: o rótulo da hora não fica sob o cabeçalho
     const column = box.querySelector<HTMLElement>(`[data-coluna="${selected}"]`);
@@ -103,115 +230,180 @@ export function TimeGrid({ days, items, today, selected, dayHrefs }: Props) {
     openQuick({ date: day, startTime: minutesToTime(minutes), endTime: minutesToTime(Math.min(minutes + 60, 23 * 60 + 59)) });
   };
 
-  return (
-    <div className="card overflow-hidden">
-      <div
-        ref={scroller}
-        tabIndex={0}
-        role="group"
-        aria-label={days.length === 1 ? `Compromissos de ${formatDateLong(days[0])}` : "Compromissos da semana, por dia e horário"}
-        className="relative h-[calc(100dvh-15.5rem)] min-h-[26rem] snap-x overflow-auto overscroll-contain scroll-pl-[var(--agenda-regua)] outline-offset-[-2px] sm:h-[calc(100dvh-14rem)]"
-      >
-        <div className="agenda-grade" data-dias={days.length} style={{ "--agenda-dias": days.length } as React.CSSProperties}>
-          {/* cabeçalho fixo: dias + faixa de dia inteiro */}
-          <div className="agenda-grade-topo border-borda sticky top-0 z-20 border-b bg-superficie">
-            <div data-regua className="border-borda sticky left-0 z-10 border-r bg-superficie" />
-            {columns.map(({ day }) => (
-              <div key={day} className="border-borda snap-start border-r px-1 pt-1.5 pb-1 text-center last:border-r-0">
-                <Link href={dayHrefs[day] ?? "#"} aria-label={formatDateLong(day)} aria-current={day === today ? "date" : undefined} className="group inline-flex min-h-11 flex-col items-center justify-center rounded-md px-2 sm:min-h-0">
-                  <span className={cn("text-[0.6875rem] font-bold tracking-wide uppercase", day === today ? "text-primaria" : "text-texto-suave")}>{formatWeekday(day, true)}</span>
-                  <span
-                    className={cn(
-                      "flex size-8 items-center justify-center rounded-full text-base font-bold tabular-nums",
-                      day === today ? "bg-primaria text-sobre-primaria" : "text-texto group-hover:bg-detalhe-suave",
-                    )}
-                  >
-                    {Number(day.slice(8))}
-                  </span>
-                </Link>
-              </div>
-            ))}
-            <div className="border-borda text-texto-suave sticky left-0 z-10 flex items-start justify-end border-t border-r bg-superficie px-1 pt-1.5 text-[0.625rem] leading-tight font-semibold">
-              <span className="text-right">dia inteiro</span>
-            </div>
-            {columns.map(({ day, allDay }) => (
-              <div key={day} className="border-borda relative min-h-8 space-y-0.5 border-t border-r p-0.5 last:border-r-0">
-                <SlotButton date={day} label={`Novo compromisso de dia inteiro em ${formatDateLong(day)}`} className="absolute inset-0 cursor-cell rounded-sm focus-visible:outline-offset-[-2px]" />
-                {allDay.slice(0, MAX_ALL_DAY).map((item) => (
-                  <div key={item.key} className="relative">
-                    <AllDayChip item={item} day={day} />
-                  </div>
-                ))}
-                {allDay.length > MAX_ALL_DAY ? (
-                  <Link href={dayHrefs[day] ?? "#"} className="text-detalhe hover:bg-detalhe-suave relative block rounded px-2 py-0.5 text-xs font-semibold">
-                    +{allDay.length - MAX_ALL_DAY} <span className="sr-only">compromissos de dia inteiro em {formatDateLong(day)}</span>
-                  </Link>
-                ) : null}
-              </div>
-            ))}
-          </div>
+  // ------------------------------------------------------------- arrastar
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // toque longo: até lá o dedo rola a grade normalmente
+    useSensor(TouchSensor, { activationConstraint: { delay: 380, tolerance: 8 } }),
+  );
 
-          {/* corpo: régua das horas + uma coluna por dia (mesma estrutura do topo, para a régua ficar presa à esquerda) */}
-          <div className="agenda-grade-topo">
-            <div className="border-borda sticky left-0 z-10 border-r bg-superficie" aria-hidden="true">
-              {HOURS.map((hour) => (
-                <div key={hour} className="text-texto-suave relative h-[var(--agenda-hora)] pr-1.5 text-right text-[0.6875rem] font-medium tabular-nums">
-                  {hour > 0 ? <span className="relative -top-2">{String(hour).padStart(2, "0")}:00</span> : null}
+  const measure = () => {
+    const column = scroller.current?.querySelector<HTMLElement>("[data-coluna]");
+    if (column) metrics.current = { hour: column.offsetHeight / 24, column: column.offsetWidth };
+  };
+
+  /** Dia de destino: quantas colunas o bloco andou para os lados. */
+  const targetDay = (day: ISODate, deltaX: number): ISODate => {
+    const shift = Math.round(deltaX / metrics.current.column);
+    const index = Math.min(days.length - 1, Math.max(0, days.indexOf(day) + shift));
+    return days[index] ?? day;
+  };
+
+  const placementOf = (data: DragData, delta: { x: number; y: number }): DragPlacement => {
+    const day = targetDay(data.day, delta.x);
+    if (data.kind === "faixa") return moveToDay(data.item, addDays(data.item.date, diffDays(data.day, day)));
+    return moveInGrid(data.item, day, (delta.y / metrics.current.hour) * 60);
+  };
+
+  // o bloco anda aos saltos: 15 minutos na vertical, uma coluna na horizontal
+  const snap: Modifier = ({ transform, active }) => {
+    const data = active?.data.current as DragData | undefined;
+    const stepY = metrics.current.hour / (60 / DRAG_STEP_MIN);
+    const index = data ? days.indexOf(data.day) : 0;
+    const shift = Math.min(days.length - 1 - index, Math.max(-index, Math.round(transform.x / metrics.current.column)));
+    return { ...transform, x: shift * metrics.current.column, y: data?.kind === "faixa" ? 0 : Math.round(transform.y / stepY) * stepY };
+  };
+
+  const onDragStart = (_event: DragStartEvent) => {
+    measure();
+    suppressNextClick.arm();
+  };
+  const onDragMove = (event: DragMoveEvent) => {
+    const data = event.active.data.current as DragData | undefined;
+    if (data?.kind === "bloco") setLive({ key: data.item.key, placement: placementOf(data, event.delta) });
+  };
+  const onDragEnd = (event: DragEndEvent) => {
+    suppressNextClick.release();
+    setLive(null);
+    const data = event.active.data.current as DragData | undefined;
+    if (data) mover.request(data.item, placementOf(data, event.delta));
+  };
+  const onDragCancel = () => {
+    suppressNextClick.release();
+    setLive(null);
+  };
+
+  // --------------------------------------------------------- redimensionar
+  const onResizeStart = (item: AgendaItem, event: ReactPointerEvent<HTMLSpanElement>) => {
+    // no toque a borda é pequena demais para acertar: a duração muda em "Reagendar"
+    if (event.pointerType === "touch" || event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    measure();
+    const startY = event.clientY;
+    const startScroll = scroller.current?.scrollTop ?? 0;
+    let placement = resizeEnd(item, 0);
+    let moved = false;
+    const move = (ev: PointerEvent) => {
+      const delta = ev.clientY - startY + ((scroller.current?.scrollTop ?? 0) - startScroll);
+      if (Math.abs(delta) > 3) moved = true;
+      placement = resizeEnd(item, (delta / metrics.current.hour) * 60);
+      setLive({ key: item.key, placement });
+    };
+    const finish = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+      suppressNextClick.release();
+      setLive(null);
+      if (ev.type === "pointerup" && moved) mover.request(item, placement);
+    };
+    suppressNextClick.arm();
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+  };
+
+  return (
+    <DndContext
+      id="agenda-grade"
+      sensors={sensors}
+      modifiers={[snap]}
+      onDragStart={onDragStart}
+      onDragMove={onDragMove}
+      onDragEnd={onDragEnd}
+      onDragCancel={onDragCancel}
+      accessibility={{ announcements: DND_ANNOUNCEMENTS, screenReaderInstructions: DND_INSTRUCTIONS }}
+    >
+      <div className="card agenda-impressao overflow-hidden">
+        <div
+          ref={scroller}
+          tabIndex={0}
+          role="group"
+          aria-label={days.length === 1 ? `Compromissos de ${formatDateLong(days[0])}` : "Compromissos da semana, por dia e horário"}
+          className="agenda-rolagem relative h-[calc(100dvh-15.5rem)] min-h-[26rem] snap-x overflow-auto overscroll-contain scroll-pl-[var(--agenda-regua)] outline-offset-[-2px] sm:h-[calc(100dvh-14rem)]"
+        >
+          <div className="agenda-grade" data-dias={days.length} style={{ "--agenda-dias": days.length } as CSSProperties}>
+            {/* cabeçalho fixo: dias + faixa de dia inteiro */}
+            <div className="agenda-grade-topo border-borda sticky top-0 z-20 border-b bg-superficie">
+              <div data-regua className="border-borda sticky left-0 z-10 border-r bg-superficie" />
+              {columns.map(({ day }) => (
+                <div key={day} className="border-borda snap-start border-r px-1 pt-1.5 pb-1 text-center last:border-r-0">
+                  <Link href={dayHrefs[day] ?? "#"} aria-label={formatDateLong(day)} aria-current={day === today ? "date" : undefined} className="group inline-flex min-h-11 flex-col items-center justify-center rounded-md px-2 sm:min-h-0">
+                    <span className={cn("text-[0.6875rem] font-bold tracking-wide uppercase", day === today ? "text-primaria" : "text-texto-suave")}>{formatWeekday(day, true)}</span>
+                    <span
+                      className={cn(
+                        "flex size-8 items-center justify-center rounded-full text-base font-bold tabular-nums",
+                        day === today ? "bg-primaria text-sobre-primaria" : "text-texto group-hover:bg-detalhe-suave",
+                      )}
+                    >
+                      {Number(day.slice(8))}
+                    </span>
+                  </Link>
+                </div>
+              ))}
+              <div className="border-borda text-texto-suave sticky left-0 z-10 flex items-start justify-end border-t border-r bg-superficie px-1 pt-1.5 text-[0.625rem] leading-tight font-semibold">
+                <span className="text-right">dia inteiro</span>
+              </div>
+              {columns.map(({ day, allDay }) => (
+                <div key={day} className="border-borda relative min-h-8 space-y-0.5 border-t border-r p-0.5 last:border-r-0">
+                  <SlotButton date={day} label={`Novo compromisso de dia inteiro em ${formatDateLong(day)}`} className="absolute inset-0 cursor-cell rounded-sm focus-visible:outline-offset-[-2px]" />
+                  {allDay.slice(0, MAX_ALL_DAY).map((item) => (
+                    <div key={item.key} className="relative">
+                      <AllDayChip item={item} day={day} draggable={mover.enabled && canDrag(item) && days.length > 1} />
+                    </div>
+                  ))}
+                  {allDay.length > MAX_ALL_DAY ? (
+                    <Link href={dayHrefs[day] ?? "#"} className="text-detalhe hover:bg-detalhe-suave relative block rounded px-2 py-0.5 text-xs font-semibold">
+                      +{allDay.length - MAX_ALL_DAY} <span className="sr-only">compromissos de dia inteiro em {formatDateLong(day)}</span>
+                    </Link>
+                  ) : null}
                 </div>
               ))}
             </div>
 
-            {/* colunas dos dias */}
-            {columns.map(({ day, timed, placements }) => (
-              <div
-                key={day}
-                data-coluna={day}
-                onClick={(event) => createAt(day, event)}
-                className={cn("agenda-coluna border-borda relative border-r last:border-r-0", openQuick && "cursor-cell", day === today && "bg-detalhe-suave/25")}
-              >
-                {now && now.date === day ? <div className="agenda-agora" style={{ top: `calc(var(--agenda-hora) * ${now.minutes / 60})` }} aria-hidden="true" /> : null}
-                <ul aria-label={formatDateLong(day)} className="contents">
-                  {timed.map((item) => {
-                    const place = placements.get(item.key);
-                    if (!place) return null;
-                    const tall = place.height >= 55;
-                    const time = timeLabel(item);
-                    return (
-                      <li key={item.key} className="contents">
-                        <Link
-                          href={item.href}
-                          title={itemSummary(item, time)}
-                          {...itemDataProps(item)}
-                          className={cn("agenda-evento absolute px-1.5 py-1 text-xs", TONE_CLASS[item.color])}
-                          style={{
-                            top: `calc(var(--agenda-hora) * ${place.top / 60} + 1px)`,
-                            height: `calc(var(--agenda-hora) * ${place.height / 60} - 2px)`,
-                            left: `calc(${(place.column / place.columns) * 100}% + 1px)`,
-                            width: `calc(${100 / place.columns}% - 3px)`,
-                          }}
-                        >
-                          <span className={cn("block font-semibold", tall ? "line-clamp-2 break-words" : "truncate")}>
-                            {item.masked ? <Lock aria-hidden="true" className="mr-1 inline size-3 align-[-1px]" /> : null}
-                            {item.title}
-                          </span>
-                          <span className="text-texto-suave flex items-center gap-1 text-[0.6875rem] tabular-nums">
-                            <span className="truncate">
-                              {time}
-                              {item.masked && item.ownerName ? ` · ${item.ownerName.split(" ")[0]}` : ""}
-                            </span>
-                            {item.recurring ? <Repeat aria-hidden="true" className="size-3 shrink-0" /> : null}
-                          </span>
-                          {tall && item.location ? <span className="text-texto-suave block truncate text-[0.6875rem]">{item.location}</span> : null}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+            {/* corpo: régua das horas + uma coluna por dia (mesma estrutura do topo, para a régua ficar presa à esquerda) */}
+            <div className="agenda-grade-topo">
+              <div className="border-borda sticky left-0 z-10 border-r bg-superficie" aria-hidden="true">
+                {HOURS.map((hour) => (
+                  <div key={hour} className="text-texto-suave relative h-[var(--agenda-hora)] pr-1.5 text-right text-[0.6875rem] font-medium tabular-nums">
+                    {hour > 0 ? <span className="relative -top-2">{String(hour).padStart(2, "0")}:00</span> : null}
+                  </div>
+                ))}
               </div>
-            ))}
+
+              {/* colunas dos dias */}
+              {columns.map(({ day, timed, placements }) => (
+                <div
+                  key={day}
+                  data-coluna={day}
+                  onClick={(event) => createAt(day, event)}
+                  className={cn("agenda-coluna border-borda relative border-r last:border-r-0", openQuick && "cursor-cell", day === today && "bg-detalhe-suave/25")}
+                >
+                  {now && now.date === day ? <div className="agenda-agora" style={{ top: `calc(var(--agenda-hora) * ${now.minutes / 60})` }} aria-hidden="true" /> : null}
+                  <ul aria-label={formatDateLong(day)} className="contents">
+                    {timed.map(({ item, segment }) => {
+                      const place = placements.get(item.key);
+                      if (!place) return null;
+                      return <GridBlock key={item.key} item={item} day={day} segment={segment} place={place} live={live} enabled={mover.enabled} onResizeStart={onResizeStart} />;
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DndContext>
   );
 }

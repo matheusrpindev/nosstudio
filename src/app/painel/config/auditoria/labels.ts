@@ -33,8 +33,8 @@ export const ACTION_LABELS: Record<string, string> = {
 };
 
 export const ENTITY_LABELS: Record<string, string> = {
-  agenda: "Agenda",
-  agenda_event: "Agenda",
+  agenda: "Agenda: categorias, agendas e modelos",
+  agenda_event: "Agenda: compromisso",
   announcement: "Aviso do site",
   brand: "Marca",
   brand_asset: "Marca",

@@ -58,7 +58,7 @@ export async function getAvailableLayers(viewer: PermissionSubject): Promise<Lay
   });
 }
 
-const base = { endTime: null, icon: null, masked: false, status: null, priority: null, recurring: false, categoryId: null, calendarId: null, people: [] as string[], ownerName: null };
+const base = { endTime: null, icon: null, masked: false, status: null, priority: null, recurring: false, categoryId: null, calendarId: null, people: [] as string[], ownerName: null, editable: false, seriesStart: null, projectId: null as number | null };
 
 async function deadlineItems(from: ISODate, to: ISODate, filters: LayerFilters, color: AgendaColor): Promise<AgendaItem[]> {
   const rows = await db
@@ -100,6 +100,7 @@ async function deadlineItems(from: ISODate, to: ISODate, filters: LayerFilters, 
     location: entry.location,
     clientName: entry.clientName,
     people: entry.ownerName ? [entry.ownerName] : [],
+    projectId: entry.id,
   }));
 }
 

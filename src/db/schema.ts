@@ -18,6 +18,7 @@ import {
   AGENDA_KINDS,
   AGENDA_PERSON_ROLES,
   AGENDA_PRIORITIES,
+  AGENDA_REMINDER_CHANNELS,
   AGENDA_STATUSES,
   AGENDA_VISIBILITIES,
   APPROVAL_STATUSES,
@@ -38,6 +39,7 @@ import {
   INTERACTION_KINDS,
   LEAD_STATUSES,
   MEDIA_VISIBILITIES,
+  NOTIFICATION_TYPES,
   PACKAGE_KINDS,
   PAYMENT_METHODS,
   PORTFOLIO_CATEGORIES,
@@ -47,6 +49,7 @@ import {
   PROPOSAL_ITEM_KINDS,
   PROPOSAL_MODALITIES,
   PROPOSAL_STATUSES,
+  REMINDER_DELIVERY_STATUSES,
   SERVICE_INTERESTS,
   TASK_PRIORITIES,
   TESTIMONIAL_KINDS,
@@ -75,7 +78,7 @@ export type LabeledDate = { label: string; date: string };
 export type LabeledLink = { label: string; url: string };
 export type ChecklistItem = { id: string; text: string; done: boolean };
 export type Deliverable = { label: string; quantity: string };
-/** Lembrete de um compromisso: antecedência em minutos + canal. (O envio é da Parte 2 da agenda.) */
+/** Lembrete de um compromisso: antecedência em minutos + canal. Quem envia: `src/server/notifications/reminders.ts`. */
 export type AgendaReminder = { minutes: number; channel: AgendaReminderChannel };
 /** Planejamento de gravação (só em categorias de produção). */
 export type AgendaProductionPlan = {
@@ -631,7 +634,7 @@ export const agendaEvents = sqliteTable(
     checklist: text("checklist", { mode: "json" }).$type<ChecklistItem[]>().notNull().default([]),
     /** Observações internas. */
     notes: text("notes").notNull().default(""),
-    /** Só a configuração; o envio dos lembretes é da Parte 2. */
+    /** A configuração dos lembretes; as entregas ficam em `agenda_reminder_deliveries`. */
     reminders: text("reminders", { mode: "json" }).$type<AgendaReminder[]>().notNull().default([]),
     /** Regra de repetição (`src/lib/agenda/recurrence.ts`). Nulo = não se repete. */
     recurrence: text("recurrence", { mode: "json" }).$type<Recurrence | null>(),
@@ -686,6 +689,56 @@ export const agendaChecklistTemplates = sqliteTable("agenda_checklist_templates"
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+// ============================================================== NOTIFICAÇÕES
+/**
+ * Central de notificações do painel (briefing v2, seção 30): um aviso por pessoa. Cada pessoa só lê as suas
+ * (`src/server/notifications`). O `href` é sempre um caminho interno (`/painel/…`).
+ */
+export const notifications = sqliteTable(
+  "notifications",
+  {
+    id: id(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type", { enum: NOTIFICATION_TYPES }).notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    href: text("href").notNull().default(""),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("notifications_user_read_idx").on(t.userId, t.readAt), index("notifications_user_created_idx").on(t.userId, t.createdAt)],
+);
+
+/**
+ * Controle de entrega dos lembretes da agenda: uma linha por compromisso + início da ocorrência + antecedência +
+ * canal + pessoa. O índice único é a garantia de que o mesmo lembrete nunca sai duas vezes (o despachante só
+ * envia depois de conseguir inserir a linha). `occurrenceStart` é o início local (`YYYY-MM-DDTHH:mm`): mudar o
+ * horário do compromisso rearma os lembretes.
+ */
+export const agendaReminderDeliveries = sqliteTable(
+  "agenda_reminder_deliveries",
+  {
+    id: id(),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => agendaEvents.id, { onDelete: "cascade" }),
+    occurrenceStart: text("occurrence_start").notNull(),
+    minutes: integer("minutes").notNull(),
+    channel: text("channel", { enum: AGENDA_REMINDER_CHANNELS }).notNull(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status", { enum: REMINDER_DELIVERY_STATUSES }).notNull().default("enviado"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("agenda_reminder_delivery_idx").on(t.eventId, t.occurrenceStart, t.minutes, t.channel, t.userId),
+    index("agenda_reminder_start_idx").on(t.occurrenceStart),
+  ],
+);
 
 // ================================================================= PROPOSTAS
 export const proposals = sqliteTable(
@@ -1062,6 +1115,8 @@ export type AgendaCategory = typeof agendaCategories.$inferSelect;
 export type AgendaCalendar = typeof agendaCalendars.$inferSelect;
 export type AgendaEventPerson = typeof agendaEventPeople.$inferSelect;
 export type AgendaChecklistTemplate = typeof agendaChecklistTemplates.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type AgendaReminderDelivery = typeof agendaReminderDeliveries.$inferSelect;
 export type Proposal = typeof proposals.$inferSelect;
 export type ProposalItem = typeof proposalItems.$inferSelect;
 export type ProposalCost = typeof proposalCosts.$inferSelect;

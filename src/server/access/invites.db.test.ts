@@ -307,7 +307,7 @@ describe("aceitar convite", () => {
 describe("convites e exportação de dados", () => {
   it("a exportação completa não leva os convites (nem hash de token)", async () => {
     const { token } = await invite({ role: "freelancer" });
-    const { json } = await exportAllJson(new Date());
+    const { json } = await exportAllJson(new Date(), admin);
     const payload = JSON.parse(json);
     expect(payload.tabelas.user_invites).toBeUndefined();
     expect(json).not.toContain(hashToken(token));

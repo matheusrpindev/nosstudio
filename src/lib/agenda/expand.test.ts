@@ -160,6 +160,9 @@ describe("apoio às visões", () => {
     clientName: null,
     people: [],
     ownerName: null,
+    editable: true,
+    seriesStart: null,
+    projectId: null,
     ...over,
   });
 

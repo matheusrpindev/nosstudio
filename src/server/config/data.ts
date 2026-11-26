@@ -1,6 +1,14 @@
 /**
  * Exportação dos dados da NÓS: contagem por tabela, JSON completo e CSVs.
  * NUNCA inclui `password_hash`, sessões, tokens de redefinição de senha nem o limitador de tentativas.
+ *
+ * AGENDA — compromissos PARTICULARES: a exportação é de administrador, mas a regra da agenda vale também para
+ * administradores ("quem não participa só vê Ocupado"). Por isso o JSON sai PARA QUEM EXPORTA: os particulares de
+ * que a pessoa participa vão inteiros; os de outras pessoas vão como a agenda os mostra — `oculto: true`, data,
+ * horário, repetição e dono, sem título, local, notas, cliente, projeto, categoria, anexos nem pessoas (as linhas
+ * de `agenda_event_people` e os nomes dos arquivos anexados também saem em branco). O download registra na
+ * auditoria quantos saíram assim. A cópia INTEGRAL do banco é o backup do servidor (`npm run backup`), que é
+ * feito por quem tem acesso à máquina e não passa pelo painel; este JSON nem é o caminho de restauração.
  */
 import "server-only";
 import { count, eq, getTableColumns, getTableName, is } from "drizzle-orm";
@@ -9,6 +17,7 @@ import { db, schema } from "@/db";
 import { clients, financeEntries, leads, projects } from "@/db/schema";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import {
+  AGENDA_BUSY_LABEL,
   CLIENT_KIND_LABELS,
   CLIENT_STATUS_LABELS,
   CONTACT_SOURCE_LABELS,
@@ -18,6 +27,8 @@ import {
   PAYMENT_METHOD_LABELS,
   SERVICE_INTEREST_LABELS,
 } from "@/lib/domain";
+import { listPrivateEventRecords, type AgendaViewer } from "@/server/agenda-related";
+import type { MaskedEvent } from "@/server/agenda/privacy";
 import { centsToCsv, EXPORT_EXCLUDED_COLUMNS, EXPORT_EXCLUDED_TABLES, stripSecretColumns, toCsv } from "./logic";
 
 type ExportTable = { name: string; table: SQLiteTable };
@@ -47,15 +58,66 @@ export async function countRecords(): Promise<{ name: string; total: number }[]>
   );
 }
 
-/** Exportação completa: um objeto com as linhas de cada tabela. */
-export async function exportAllJson(exportedAt: Date): Promise<{ json: string; counts: Record<string, number> }> {
-  const tables: Record<string, unknown[]> = {};
+type Row = Record<string, unknown>;
+
+/** Como um compromisso particular de OUTRA pessoa sai no JSON: só o que a agenda mostraria a quem exporta. */
+function maskedEventRow(event: MaskedEvent): Row {
+  return {
+    id: event.id,
+    oculto: true,
+    visibility: "particular",
+    title: event.title,
+    date: event.date,
+    endDate: event.endDate,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    recurrence: event.recurrence,
+    recurrenceExceptions: event.recurrenceExceptions,
+    cancelado: event.cancelled,
+    createdBy: event.ownerId,
+  };
+}
+
+/**
+ * Aplica a privacidade da agenda às tabelas já lidas (regra no topo do arquivo). Mexe em três tabelas:
+ * `agenda_events` (linha mascarada), `agenda_event_people` (quem participa fica em branco) e `media` (nome e
+ * descrição dos anexos desses compromissos ficam em branco). Devolve quantos compromissos saíram mascarados.
+ */
+async function maskPrivateEvents(tables: Record<string, Row[]>, viewer: AgendaViewer): Promise<number> {
+  // todos os particulares, cada um pela porta de privacidade da agenda (`toVisibleEvent`)
+  const checked = new Map((await listPrivateEventRecords(viewer)).map((event) => [event.id, event]));
+  const hiddenEvents = new Set<number>();
+  const hiddenAttachments = new Set<number>();
+
+  tables.agenda_events = (tables.agenda_events ?? []).map((row) => {
+    if (row.visibility !== "particular") return row;
+    const event = checked.get(row.id as number);
+    if (event && !event.masked) return row; // quem exporta participa: vê por inteiro na agenda também
+    hiddenEvents.add(row.id as number);
+    if (Array.isArray(row.attachments)) for (const id of row.attachments) if (typeof id === "number") hiddenAttachments.add(id);
+    // falha fechada: um particular criado entre as duas leituras não passou pela porta — sai sem nada
+    return event ? maskedEventRow(event) : { id: row.id, oculto: true, visibility: "particular", title: AGENDA_BUSY_LABEL };
+  });
+  tables.agenda_event_people = (tables.agenda_event_people ?? []).map((row) => (hiddenEvents.has(row.eventId as number) ? { id: row.id, eventId: row.eventId, oculto: true } : row));
+  tables.media = (tables.media ?? []).map((row) =>
+    hiddenAttachments.has(row.id as number) && row.uploadedBy !== viewer.id ? { ...row, originalName: "", alt: "", oculto: true } : row,
+  );
+  return hiddenEvents.size;
+}
+
+/**
+ * Exportação completa: um objeto com as linhas de cada tabela, para quem exporta (`viewer`): os compromissos
+ * particulares de outras pessoas saem mascarados (`maskedPrivateEvents` diz quantos — vai para a auditoria).
+ */
+export async function exportAllJson(exportedAt: Date, viewer: AgendaViewer): Promise<{ json: string; counts: Record<string, number>; maskedPrivateEvents: number }> {
+  const tables: Record<string, Row[]> = {};
   const counts: Record<string, number> = {};
   for (const { name, table } of exportTables()) {
     const rows = await db.select(safeColumns(table)).from(table);
-    tables[name] = rows.map((row) => stripSecretColumns(row as Record<string, unknown>));
+    tables[name] = rows.map((row) => stripSecretColumns(row as Row));
     counts[name] = rows.length;
   }
+  const maskedPrivateEvents = await maskPrivateEvents(tables, viewer);
   const payload = {
     sistema: "NÓS Studio — painel de gestão",
     exportadoEm: exportedAt.toISOString(),
@@ -63,11 +125,14 @@ export async function exportAllJson(exportedAt: Date): Promise<{ json: string; c
       "Valores em dinheiro estão em centavos. Datas de calendário são AAAA-MM-DD; instantes seguem ISO 8601 (UTC).",
       "Contém dados pessoais de clientes e leads (LGPD): guarde em local seguro.",
       "Não inclui senhas, sessões nem tokens. Os arquivos enviados (mídia) não estão aqui: use `npm run backup` para copiá-los.",
+      "Agenda: compromissos particulares de outras pessoas saem só como \"Ocupado\" (`oculto: true` — data, horário e dono, sem conteúdo, pessoas nem nome de anexo)" +
+        (maskedPrivateEvents > 0 ? `; nesta exportação, ${maskedPrivateEvents}.` : "; nesta exportação, nenhum.") +
+        " A cópia integral do banco é o backup do servidor (`npm run backup`).",
     ],
     contagem: counts,
     tabelas: tables,
   };
-  return { json: JSON.stringify(payload, null, 2), counts };
+  return { json: JSON.stringify(payload, null, 2), counts, maskedPrivateEvents };
 }
 
 // ------------------------------------------------------------------------ CSVs

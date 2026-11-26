@@ -240,7 +240,7 @@ export function EventForm({ action, id, values, categories, calendars, clients, 
         </Section>
       )}
 
-      <Section id="sec-lembretes" title="Lembretes" description="Ficam salvos no compromisso. O envio automático (aviso no painel e e-mail) entra na próxima etapa da agenda.">
+      <Section id="sec-lembretes" title="Lembretes" description="Na hora marcada, os responsáveis e participantes recebem o aviso no sino do painel — e também por e-mail, quando o canal for e-mail.">
         <RemindersField defaultValue={values.reminders} />
       </Section>
 

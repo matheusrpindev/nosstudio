@@ -123,6 +123,7 @@ export function isNavItemActive(item: Pick<NavItem, "href" | "exact">, pathname:
 /** Título da seção atual (barra superior do celular). Rotas fora do menu têm nomes próprios. */
 export function sectionTitle(pathname: string): string {
   if (pathname.startsWith("/painel/conta")) return "Minha conta";
+  if (pathname.startsWith("/painel/notificacoes")) return "Notificações";
   if (pathname.startsWith("/painel/kit")) return "Kit de interface";
   const match = ALL_NAV_ITEMS.find((item) => !item.exact && isNavItemActive(item, pathname));
   return match?.label ?? (pathname === "/painel" ? "Visão geral" : "Painel");

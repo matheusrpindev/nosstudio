@@ -6,7 +6,7 @@ const SHORTCUTS = [
   { key: "lead", href: "/painel/leads/novo", label: "Novo lead", short: "Novo lead", icon: <UserRoundPlus /> },
   { key: "client", href: "/painel/clientes/novo", label: "Novo cliente", short: "Novo cliente", icon: <UserPlus /> },
   { key: "proposal", href: "/painel/orcamentos/novo", label: "Novo orçamento", short: "Novo orçamento", icon: <FilePlus2 /> },
-  { key: "event", href: "/painel/agenda/novo", label: "Novo evento na agenda", short: "Novo evento", icon: <CalendarPlus /> },
+  { key: "event", href: "/painel/agenda/novo", label: "Novo compromisso na agenda", short: "Novo compromisso", icon: <CalendarPlus /> },
 ] as const;
 
 export type ShortcutKey = (typeof SHORTCUTS)[number]["key"];

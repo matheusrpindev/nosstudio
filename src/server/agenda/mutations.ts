@@ -14,8 +14,9 @@ import { sameRule, shiftDates, splitSeries } from "@/lib/agenda/series";
 import { addDays, diffDays, type ISODate } from "@/lib/dates";
 import { AGENDA_DEFAULT_CATEGORIES, AGENDA_DERIVED_CALENDAR_KINDS, type AgendaKind, type AgendaSeriesScope, type AgendaStatus } from "@/lib/domain";
 import { releaseMedia } from "@/server/media";
+import { canMutateEvent, type AgendaAccess } from "./access";
 import type { EventInput } from "./input";
-import { canSeeEvent, type EventRecord } from "./privacy";
+import type { EventRecord } from "./privacy";
 import { AGENDA_PANEL_ROLES } from "./queries";
 import { loadEventRecord } from "./records";
 
@@ -36,6 +37,10 @@ export async function checkEventRefs(
   const [calendar] = await db.select().from(agendaCalendars).where(eq(agendaCalendars.id, input.calendarId));
   if (!calendar || AGENDA_DERIVED_CALENDAR_KINDS.includes(calendar.kind) || (!calendar.active && current?.calendarId !== calendar.id)) {
     return { error: "A agenda selecionada não está disponível." };
+  }
+  // agenda pessoal é de quem ela é: ninguém grava na de outra pessoa (o compromisso que já está lá pode continuar)
+  if (calendar.kind === "pessoal" && calendar.userId !== userId && current?.calendarId !== calendar.id) {
+    return { error: "A agenda pessoal de outra pessoa não pode receber compromissos seus. Escolha outra agenda." };
   }
   if (input.clientId) {
     const [row] = await db.select({ id: clients.id }).from(clients).where(eq(clients.id, input.clientId));
@@ -60,6 +65,34 @@ export async function checkEventRefs(
     if (valid.length !== newAttachments.length) return { error: "Um dos anexos não pôde ser usado. Envie o arquivo de novo." };
   }
   return { error: null, category: { isProduction: category.isProduction, blocksDay: category.blocksDay, slug: category.slug } };
+}
+
+/**
+ * ALCANCE RESTRITO (funcionário): ajusta o que veio do formulário ao que a pessoa pode gravar.
+ * - ela é sempre responsável pelo compromisso que cria ou edita (é o que o faz "dela");
+ * - o projeto precisa ser um em que ela pode editar — ou o que o compromisso já tinha;
+ * - o cliente não é escolhido por ela: vem do projeto (ou fica o que já estava, se o projeto não mudou).
+ * Quem tem o módulo inteiro passa sem mudanças.
+ */
+export async function restrictEventInput(
+  access: AgendaAccess,
+  input: EventInput,
+  current?: Pick<EventRecord, "projectId" | "clientId"> | null,
+): Promise<{ error: string } | { error: null; input: EventInput }> {
+  if (access.edit === "todos") return { error: null, input };
+  if (access.edit !== "restrito") return { error: "Você não tem permissão para alterar a agenda." };
+  const sameProject = current !== undefined && current !== null && input.projectId === current.projectId;
+  if (input.projectId && !sameProject && !access.editProjectIds.includes(input.projectId)) {
+    return { error: "Você só pode ligar o compromisso a um projeto em que participa com permissão de edição." };
+  }
+  let clientId: number | null = null;
+  if (sameProject) clientId = current.clientId;
+  else if (input.projectId) {
+    const [project] = await db.select({ clientId: projects.clientId }).from(projects).where(eq(projects.id, input.projectId));
+    clientId = project?.clientId ?? null;
+  }
+  const responsibleIds = input.responsibleIds.includes(access.userId) ? input.responsibleIds : [access.userId, ...input.responsibleIds];
+  return { error: null, input: { ...input, clientId, responsibleIds, participantIds: input.participantIds.filter((id) => id !== access.userId) } };
 }
 
 type EventValues = Omit<typeof agendaEvents.$inferInsert, "id" | "createdAt" | "updatedAt">;
@@ -322,12 +355,13 @@ export async function duplicateEvent(record: EventRecord, occurrence: ISODate | 
 }
 
 /**
- * O compromisso para ALTERAR: `null` se não existe ou se é um particular de que a pessoa não participa
- * (para ela, ele é só "Ocupado": não edita, não cancela, não exclui, não duplica).
+ * O compromisso para ALTERAR: `null` se não existe, se é um particular de que a pessoa não participa (para ela,
+ * ele é só "Ocupado": não edita, não cancela, não exclui, não duplica) ou se está fora do que ela pode alterar
+ * (`canMutateEvent`: quem é restrito só mexe nos próprios).
  */
-export async function getMutableEvent(viewerId: number, id: number): Promise<EventRecord | null> {
+export async function getMutableEvent(access: AgendaAccess, id: number): Promise<EventRecord | null> {
   const record = await loadEventRecord(id);
-  return record && canSeeEvent(record, viewerId) ? record : null;
+  return record && canMutateEvent(access, record) ? record : null;
 }
 
 /** Marca/desmarca um item do checklist do compromisso (`checklist`) ou da preparação da gravação (`prep`). */

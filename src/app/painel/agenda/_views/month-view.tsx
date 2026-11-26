@@ -1,21 +1,43 @@
+"use client";
+
+import { DndContext, MouseSensor, pointerWithin, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { Lock, Plus } from "lucide-react";
 import Link from "next/link";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { canDrag, moveToDay } from "@/lib/agenda/drag";
 import { itemsByDay, timeLabel, type AgendaItem } from "@/lib/agenda/view";
 import { cn } from "@/lib/cn";
-import { formatDateLong, formatWeekday, monthGrid, startOfMonth, WEEKDAYS_SHORT, type ISODate } from "@/lib/dates";
+import { addDays, diffDays, formatDateLong, formatWeekday, monthGrid, startOfMonth, WEEKDAYS_SHORT, type ISODate } from "@/lib/dates";
 import { itemDataProps, itemSummary, LAYER_MARK, TONE_CLASS } from "../ui";
+import { DND_ANNOUNCEMENTS, DND_INSTRUCTIONS, suppressNextClick } from "./dnd";
 import { ItemRow } from "./item-row";
+import { useMover } from "./move";
 import { SlotButton } from "./quick-create";
 
 const MAX_PER_DAY = 3;
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-function MonthChip({ item, day }: { item: AgendaItem; day: ISODate }) {
+type DragData = { item: AgendaItem; day: ISODate };
+
+function MonthChip({ item, day, draggable }: { item: AgendaItem; day: ISODate; draggable: boolean }) {
   const filled = item.startTime === null || item.endDate > item.date || item.masked;
   const time = timeLabel(item);
+  const drag = useDraggable({ id: `${item.key}|${day}`, data: { item, day } satisfies DragData, disabled: !draggable });
+  const style: CSSProperties | undefined = drag.transform ? { transform: `translate3d(${drag.transform.x}px, ${drag.transform.y}px, 0)`, zIndex: 40 } : undefined;
+  const common = {
+    ref: drag.setNodeRef,
+    ...(draggable ? drag.listeners : {}),
+    href: item.href,
+    draggable: false,
+    title: itemSummary(item, time),
+    "data-arrastavel": draggable ? "" : undefined,
+    "data-arrastando": drag.isDragging ? "" : undefined,
+    "data-evento": item.key,
+    style,
+  };
   if (filled) {
     return (
-      <Link href={item.href} title={itemSummary(item, time)} {...itemDataProps(item)} className={cn("agenda-evento relative flex h-[1.375rem] items-center gap-1 px-1.5 text-xs font-semibold", TONE_CLASS[item.color])}>
+      <Link {...common} {...itemDataProps(item)} className={cn("agenda-evento relative flex h-[1.375rem] items-center gap-1 px-1.5 text-xs font-semibold", TONE_CLASS[item.color])}>
         {item.source !== "event" ? <span aria-hidden="true">{LAYER_MARK[item.source]}</span> : null}
         {item.masked ? <Lock aria-hidden="true" className="size-3 shrink-0" /> : null}
         <span className="truncate">
@@ -28,10 +50,9 @@ function MonthChip({ item, day }: { item: AgendaItem; day: ISODate }) {
   }
   return (
     <Link
-      href={item.href}
-      title={itemSummary(item, time)}
+      {...common}
       className={cn(
-        "hover:bg-superficie-alta text-texto relative flex h-[1.375rem] items-center gap-1.5 rounded-md px-1 text-xs",
+        "agenda-chip hover:bg-superficie-alta text-texto relative flex h-[1.375rem] items-center gap-1.5 rounded-md px-1 text-xs",
         item.status === "cancelado" && "text-texto-suave line-through",
       )}
     >
@@ -39,6 +60,16 @@ function MonthChip({ item, day }: { item: AgendaItem; day: ISODate }) {
       <span className="text-texto-suave shrink-0 tabular-nums">{item.startTime}</span>
       <span className="truncate font-semibold">{item.title}</span>
     </Link>
+  );
+}
+
+/** Célula de um dia: recebe compromissos arrastados (o destino fica destacado). */
+function DayCell({ day, className, children }: { day: ISODate; className: string; children: ReactNode }) {
+  const drop = useDroppable({ id: day });
+  return (
+    <div ref={drop.setNodeRef} data-dia={day} className={cn(className, drop.isOver && "agenda-destino")}>
+      {children}
+    </div>
   );
 }
 
@@ -56,17 +87,38 @@ type Props = {
 
 /**
  * Visão de mês. No computador: até três compromissos por dia e "+N" que abre o dia; clicar no espaço vazio do
- * dia cria. No celular: a grade mostra pontos coloridos e, embaixo, a lista do dia tocado.
+ * dia cria; arrastar um compromisso para outro dia muda a data (o horário continua). No celular: a grade mostra
+ * pontos coloridos e, embaixo, a lista do dia tocado — lá, mudar de dia é em "Reagendar".
  */
-export function MonthView({ month, today, selected, items, dayHrefs, selectHrefs, newHref }: Props) {
-  const weeks = monthGrid(month);
-  const byDay = itemsByDay(items, weeks.flat());
+export function MonthView({ month, today, selected, items: serverItems, dayHrefs, selectHrefs, newHref }: Props) {
+  const mover = useMover();
+  const items = useMemo(() => mover.apply(serverItems), [mover, serverItems]);
+  const weeks = useMemo(() => monthGrid(month), [month]);
+  const byDay = useMemo(() => itemsByDay(items, weeks.flat()), [items, weeks]);
   const monthKey = startOfMonth(month).slice(0, 7);
   const selectedItems = byDay.get(selected) ?? [];
+  const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 380, tolerance: 8 } }));
+
+  const onDragEnd = (event: DragEndEvent) => {
+    suppressNextClick.release();
+    const data = event.active.data.current as DragData | undefined;
+    const target = event.over?.id;
+    if (!data || typeof target !== "string" || target === data.day) return;
+    // soltou a N dias de onde pegou: o compromisso inteiro anda N dias
+    mover.request(data.item, moveToDay(data.item, addDays(data.item.date, diffDays(data.day, target))));
+  };
 
   return (
-    <div>
-      <div className="card overflow-hidden">
+    <DndContext
+      id="agenda-mes"
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragStart={() => suppressNextClick.arm()}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => suppressNextClick.release()}
+      accessibility={{ announcements: DND_ANNOUNCEMENTS, screenReaderInstructions: DND_INSTRUCTIONS }}
+    >
+      <div className="card agenda-impressao overflow-hidden">
         <div aria-hidden="true" className="border-borda text-texto-suave grid grid-cols-7 border-b text-center text-[0.6875rem] font-bold tracking-wide uppercase">
           {WEEKDAYS_SHORT.map((name) => (
             <span key={name} className="py-2">
@@ -82,8 +134,9 @@ export function MonthView({ month, today, selected, items, dayHrefs, selectHrefs
               const extra = list.length - MAX_PER_DAY;
               const label = formatDateLong(day);
               return (
-                <div
+                <DayCell
                   key={day}
+                  day={day}
                   className={cn(
                     "group/dia border-borda relative min-h-14 min-w-0 border-r p-1 last:border-r-0 sm:min-h-[7.25rem]",
                     outside && "bg-fundo/40",
@@ -114,7 +167,7 @@ export function MonthView({ month, today, selected, items, dayHrefs, selectHrefs
                   <ul className="mt-0.5 space-y-0.5 max-sm:hidden">
                     {list.slice(0, extra === 1 ? MAX_PER_DAY + 1 : MAX_PER_DAY).map((item) => (
                       <li key={item.key}>
-                        <MonthChip item={item} day={day} />
+                        <MonthChip item={item} day={day} draggable={mover.enabled && canDrag(item)} />
                       </li>
                     ))}
                     {extra > 1 ? (
@@ -134,7 +187,7 @@ export function MonthView({ month, today, selected, items, dayHrefs, selectHrefs
                       ))}
                     </div>
                   ) : null}
-                </div>
+                </DayCell>
               );
             })}
           </div>
@@ -168,6 +221,6 @@ export function MonthView({ month, today, selected, items, dayHrefs, selectHrefs
           </ul>
         )}
       </section>
-    </div>
+    </DndContext>
   );
 }

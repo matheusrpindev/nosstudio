@@ -1,5 +1,9 @@
 /** Nome em português de cada tabela, para a contagem de registros (tabelas novas aparecem com o nome técnico). */
 export const TABLE_LABELS: Record<string, string> = {
+  agenda_calendars: "Agenda: agendas (calendários)",
+  agenda_categories: "Agenda: categorias",
+  agenda_checklist_templates: "Agenda: modelos de checklist",
+  agenda_event_people: "Agenda: responsáveis e participantes",
   agenda_events: "Agenda: compromissos",
   announcements: "Site: avisos",
   audit_log: "Auditoria: eventos",
@@ -26,5 +30,7 @@ export const TABLE_LABELS: Record<string, string> = {
   site_content: "Site: textos",
   tasks: "Tarefas",
   testimonials: "Site: depoimentos",
+  // não entra na exportação nem na contagem (EXPORT_EXCLUDED_TABLES); o rótulo fica para o dia em que entrar
+  user_invites: "Usuários: convites",
   users: "Usuários (sem senhas)",
 };

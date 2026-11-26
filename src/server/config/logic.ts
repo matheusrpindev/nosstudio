@@ -88,8 +88,22 @@ export function nextDayStartMs(iso: string, timeZone: string): number {
 }
 
 // ------------------------------------------------------------- tabelas exportadas
-/** Tabelas que NUNCA saem na exportação: credenciais, sessões e controle de abuso. */
-export const EXPORT_EXCLUDED_TABLES: ReadonlySet<string> = new Set(["sessions", "password_reset_tokens", "rate_limits", "user_invites"]);
+/**
+ * Tabelas que NUNCA saem na exportação: credenciais, sessões e controle de abuso — e a caixa de avisos de cada
+ * pessoa (`notifications`) com o controle de entrega dos lembretes (`agenda_reminder_deliveries`): são estado
+ * pessoal e derivado, e trariam por tabela o título, o local e os participantes de compromissos PARTICULARES da
+ * agenda (o lembrete de um particular vai só para quem participa dele; a exportação não pode entregá-lo a outra
+ * pessoa). Tabela nova com conteúdo pessoal: decida aqui antes de ela entrar sozinha na exportação
+ * (`src/app/painel/config/dados/labels.test.ts` cobra a decisão).
+ */
+export const EXPORT_EXCLUDED_TABLES: ReadonlySet<string> = new Set([
+  "sessions",
+  "password_reset_tokens",
+  "rate_limits",
+  "user_invites",
+  "notifications",
+  "agenda_reminder_deliveries",
+]);
 /** Colunas que nunca saem, em qualquer tabela (nome no banco e na propriedade do Drizzle). */
 export const EXPORT_EXCLUDED_COLUMNS: ReadonlySet<string> = new Set(["password_hash", "passwordHash", "token_hash", "tokenHash"]);
 

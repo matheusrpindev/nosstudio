@@ -89,7 +89,8 @@ describe("contas do painel", () => {
 describe("exportação", () => {
   it("o JSON nunca contém hash de senha, sessões, tokens nem rate limits", async () => {
     await makeUser("export");
-    const { json, counts } = await exportAllJson(new Date("2026-11-18T12:00:00Z"));
+    const { user: exporter } = await makeUser("exportador");
+    const { json, counts } = await exportAllJson(new Date("2026-11-18T12:00:00Z"), exporter);
     const payload = JSON.parse(json);
     expect(Object.keys(payload.tabelas)).toContain("users");
     expect(Object.keys(payload.tabelas)).toContain("clients");
@@ -100,9 +101,10 @@ describe("exportação", () => {
   });
 
   it("a contagem não inclui as tabelas proibidas e bate com o JSON", async () => {
+    const { user: exporter } = await makeUser("exportador-contagem");
     const counts = await countRecords();
     expect(counts.map((c) => c.name)).not.toContain("sessions");
-    const { counts: exported } = await exportAllJson(new Date());
+    const { counts: exported } = await exportAllJson(new Date(), exporter);
     for (const row of counts) expect(exported[row.name]).toBe(row.total);
   });
 

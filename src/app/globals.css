@@ -619,11 +619,164 @@
     background: color-mix(in oklab, var(--color-detalhe) 75%, transparent);
     color: var(--color-fundo);
   }
+
+  /* --- arrastar e soltar (dia, semana, mês) --- */
+  .agenda-evento[data-arrastavel],
+  .agenda-chip[data-arrastavel] {
+    cursor: grab;
+    touch-action: manipulation; /* o toque longo "pega"; até lá o dedo rola a grade */
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  .agenda-evento[data-arrastando],
+  .agenda-chip[data-arrastando] {
+    @apply shadow-flutuante;
+    cursor: grabbing;
+    opacity: 0.92;
+    transition: none;
+    outline: 2px solid var(--color-foco);
+    outline-offset: 0;
+  }
+  .agenda-chip[data-arrastando] {
+    background: var(--color-superficie-alta);
+  }
+  /* borda de baixo do bloco: puxar muda a duração */
+  .agenda-borda {
+    @apply absolute inset-x-0 bottom-0 h-2;
+    cursor: ns-resize;
+  }
+  .agenda-borda::after {
+    content: "";
+    @apply absolute bottom-0.5 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full opacity-0 transition-opacity;
+    background: var(--tom);
+  }
+  .agenda-evento:hover > .agenda-borda::after,
+  .agenda-evento[data-arrastando] > .agenda-borda::after {
+    opacity: 1;
+  }
+  /* dia do mês que vai receber o compromisso solto */
+  .agenda-destino {
+    background: color-mix(in oklab, var(--color-detalhe) 18%, transparent);
+    box-shadow: inset 0 0 0 2px var(--color-detalhe);
+  }
+
+  /* --- disponibilidade da equipe --- */
+  .agenda-coluna-curta {
+    height: calc(var(--agenda-hora) * var(--agenda-horas, 24));
+  }
+  /* janela livre em comum: contorno tracejado na cor da ação principal */
+  .agenda-livre {
+    @apply text-texto block overflow-hidden rounded-md leading-tight transition-colors;
+    background: color-mix(in oklab, var(--color-primaria) 12%, var(--color-superficie));
+    outline: 1px dashed color-mix(in oklab, var(--color-primaria) 75%, transparent);
+    outline-offset: -1px;
+  }
+  a.agenda-livre:hover {
+    background: color-mix(in oklab, var(--color-primaria) 24%, var(--color-superficie));
+  }
+  a.agenda-livre:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 1px;
+  }
+  /* barra do expediente (visão semanal): cada trecho ocupado é um bloco */
+  .agenda-barra {
+    @apply relative h-6 overflow-hidden rounded;
+    background: color-mix(in oklab, var(--color-primaria) 9%, var(--color-superficie-alta));
+  }
+  .agenda-barra > .agenda-evento {
+    box-shadow: none;
+    background: color-mix(in oklab, var(--tom) 70%, var(--color-superficie));
+  }
+  .agenda-barra > .agenda-evento[data-ocupado] {
+    background-color: var(--color-superficie-alta);
+  }
+
+  /* --- linha do tempo de projetos --- */
+  .agenda-marco {
+    @apply inline-block size-3 shrink-0 rotate-45 rounded-[2px];
+    background: var(--tom);
+    box-shadow: 0 0 0 2px var(--color-superficie);
+  }
+  .agenda-marco[data-atrasado] {
+    box-shadow:
+      0 0 0 2px var(--color-superficie),
+      0 0 0 4px var(--tom);
+  }
 }
 /* semana no celular: três dias por tela, o resto rolando de lado dentro da própria grade */
 @media (max-width: 639px) {
   .agenda-grade[data-dias="7"] {
     grid-template-columns: var(--agenda-regua) repeat(7, calc((100% - var(--agenda-regua)) / 3));
+  }
+}
+/* A agenda usa a largura toda da área de conteúdo (as outras páginas continuam com a largura de leitura do
+   <main>): a página marca a raiz com `.agenda-larga`. Fora de @layer para vencer o `max-w-6xl` do shell. */
+#conteudo:has(.agenda-larga) {
+  max-width: none;
+}
+
+/* Impressão da agenda: preto sobre branco, sem menu nem controles; a grade sai inteira (sem rolagem interna). */
+@media print {
+  :root:has(.agenda-larga) {
+    --agenda-hora: 0.92cm;
+    --agenda-regua: 1.3cm;
+  }
+  @page {
+    margin: 12mm;
+  }
+  .agenda-larga {
+    color: #000;
+  }
+  .agenda-larga .agenda-impressao {
+    overflow: visible !important;
+    border: 1px solid #999 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+  .agenda-larga .agenda-rolagem {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  .agenda-larga .agenda-rolagem .sticky {
+    position: static !important;
+  }
+  /* a semana no papel: os sete dias lado a lado, mesmo em folha estreita */
+  .agenda-larga .agenda-grade[data-dias="7"] {
+    grid-template-columns: var(--agenda-regua) repeat(7, minmax(0, 1fr));
+  }
+  .agenda-larga .agenda-evento,
+  .agenda-larga .agenda-livre {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    border: 1px solid #555;
+    border-left: 3px solid var(--tom, #555);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .agenda-larga .agenda-evento[data-status="a_confirmar"],
+  .agenda-larga .agenda-livre {
+    border-style: dashed;
+  }
+  .agenda-larga .agenda-evento *,
+  .agenda-larga .text-texto-suave {
+    color: #222 !important;
+  }
+  .agenda-larga .agenda-agora,
+  .agenda-larga .agenda-borda {
+    display: none !important;
+  }
+  .agenda-larga .agenda-coluna {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .agenda-larga .agenda-ponto,
+  .agenda-larga .agenda-marco {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
 /* fim do bloco agenda */

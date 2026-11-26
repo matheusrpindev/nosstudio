@@ -19,7 +19,6 @@ import { canEverywhere, requirePermission } from "@/lib/auth";
 import { seesInternalNotes } from "@/lib/permissions";
 import { nowLocal, todayISO } from "@/lib/dates";
 import {
-  AGENDA_KIND_LABELS,
   CLIENT_KIND_LABELS,
   CLIENT_STATUS_LABELS,
   CONTACT_SOURCE_LABELS,
@@ -35,6 +34,7 @@ import {
 import { formatPhone, mailtoHref, whatsAppLink } from "@/lib/format";
 import { formatDocument, getClient, getClientRelated, listInteractions, type ClientRelated } from "@/server/clients/admin";
 import { describeRemaining, getClientFootprint } from "@/server/clients/subject-data";
+import { AgendaItemCategory, AgendaItemTitle, agendaListHref } from "../../_shared/agenda-item";
 import { addInteractionAction, deleteClientAction, updateClientStatusAction } from "../actions";
 import { ClientAccess } from "../client-access";
 import { StatusFields } from "../status-fields";
@@ -79,7 +79,7 @@ export default async function ClientPage({ params }: Props) {
   };
 
   const today = todayISO();
-  const [interactions, related, footprint] = await Promise.all([listInteractions(id), getClientRelated(id, today, sees), getClientFootprint(id)]);
+  const [interactions, related, footprint] = await Promise.all([listInteractions(id), getClientRelated(user, id, today, sees), getClientFootprint(id, user)]);
   if (!footprint) notFound();
   // o que continua existindo depois de excluir o cliente (o diálogo de exclusão diz a verdade sobre isso)
   const remaining = describeRemaining(footprint);
@@ -554,22 +554,31 @@ function AgendaSection({
           {events.length === 0 ? (
             <EmptyState variant="plain" icon={<CalendarPlus />} title="Nada agendado" description={canSchedule ? "Agende uma reunião, gravação ou entrega com este cliente." : undefined} action={canSchedule ? <ButtonLink href={`/painel/agenda/novo?cliente=${clientId}`} icon={<CalendarPlus />}>Agendar</ButtonLink> : undefined} />
           ) : (
-            <ul className="divide-borda divide-y">
-              {events.map((event) => (
-                <li key={event.id}>
-                  <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave -mx-2 flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2">
-                    <span className="min-w-0">
-                      <span className="text-texto block text-[0.9375rem] font-semibold break-words">{event.title}</span>
-                      <span className="text-texto-suave block text-[0.8125rem]">{AGENDA_KIND_LABELS[event.kind]}</span>
-                    </span>
-                    <span className="text-texto-suave shrink-0 text-right text-sm">
-                      <DateText value={event.date} format="short" />
-                      {event.startTime ? <span className="block">{event.startTime}</span> : null}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="divide-borda divide-y">
+                {events.map((event) => (
+                  <li key={event.key}>
+                    <Link href={event.href} className="hover:bg-detalhe-suave -mx-2 flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2">
+                      <span className="min-w-0">
+                        <AgendaItemTitle item={event} className="text-texto text-[0.9375rem] font-semibold" />
+                        <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+                          <AgendaItemCategory item={event} />
+                        </span>
+                      </span>
+                      <span className="text-texto-suave shrink-0 text-right text-sm">
+                        <DateText value={event.date} format="short" />
+                        {event.startTime ? <span className="block">{event.startTime}</span> : null}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3">
+                <ButtonLink href={agendaListHref({ clientId })} size="sm" variant="ghost">
+                  Ver na agenda
+                </ButtonLink>
+              </p>
+            </>
           )}
         </Card>
       ) : null}

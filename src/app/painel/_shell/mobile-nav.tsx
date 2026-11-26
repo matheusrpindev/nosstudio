@@ -8,6 +8,7 @@ import { Drawer } from "@/components/ui/drawer";
 import { cn } from "@/lib/cn";
 import { isNavItemActive, mobileShortcuts, sectionTitle, type NavBadges } from "../nav";
 import { NavList } from "./nav-list";
+import { NotificationBell } from "./notifications";
 
 type MobileNavProps = {
   /** `<Logo />` renderizado no servidor (é Server Component). */
@@ -29,12 +30,13 @@ export function MobileNav({ logo, allowed, badges, account }: MobileNavProps) {
 
   return (
     <>
-      <header className="bg-menu border-menu-borda sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b pr-1.5 pl-4 text-white lg:hidden">
+      <header className="bg-menu border-menu-borda sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b pr-1.5 pl-4 text-white lg:hidden print:hidden">
         <Link href="/painel" aria-label="NÓS Studio — painel, visão geral" className="flex h-11 shrink-0 items-center focus-visible:outline-white">
           {logo}
         </Link>
         <span aria-hidden="true" className="h-5 w-px bg-white/25" />
         <p className="min-w-0 flex-1 truncate text-[0.9375rem] font-bold">{sectionTitle(pathname)}</p>
+        <NotificationBell align="end" className="-mr-2" />
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -48,7 +50,7 @@ export function MobileNav({ logo, allowed, badges, account }: MobileNavProps) {
 
       <nav
         aria-label="Atalhos"
-        className="border-borda fixed inset-x-0 bottom-0 z-30 border-t bg-superficie/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="border-borda fixed inset-x-0 bottom-0 z-30 border-t bg-superficie/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden print:hidden"
       >
         <ul className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${shortcuts.length + 1}, minmax(0, 1fr))` }}>
           {shortcuts.map((item) => {

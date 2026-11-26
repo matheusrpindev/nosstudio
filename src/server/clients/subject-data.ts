@@ -2,11 +2,21 @@
  * LGPD — o que o sistema guarda sobre UM titular (cliente): contagem para o diálogo de exclusão e a exportação
  * "Dados deste titular" (pedido de acesso/portabilidade). Só fala com o banco; quem autoriza (só administrador)
  * e audita é a rota `src/app/painel/clientes/[id]/dados/route.ts`.
+ *
+ * AGENDA: os compromissos ligados ao cliente saem pela privacidade da agenda (`@/server/agenda-related`), para
+ * quem está exportando ou olhando (`viewer`). Compromisso PARTICULAR de outra pessoa não entra — nem na contagem
+ * do diálogo de exclusão, nem com conteúdo na exportação. Na exportação, quem responde ao pedido do titular
+ * precisa saber que falta algo: o arquivo diz QUANTOS ficaram de fora e DE QUEM são (sem data, horário nem
+ * conteúdo), para pedir a essa pessoa que complete a resposta. É a única informação que sai, é só para quem tem
+ * "baixar" em Exportação de dados, e o download fica na auditoria com esse número.
  */
 import "server-only";
 import { and, asc, count, eq, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { agendaEvents, clientInteractions, clients, contentItems, contracts, financeEntries, leads, projects, proposals, tasks } from "@/db/schema";
+import { clientInteractions, clients, contentItems, contracts, financeEntries, leads, projects, proposals, tasks } from "@/db/schema";
+import { ruleOf } from "@/lib/agenda/expand";
+import { describeRecurrence } from "@/lib/agenda/recurrence";
+import { listClientEventRecords, type AgendaViewer } from "@/server/agenda-related";
 
 type ContactKeys = { id: number; whatsapp: string; email: string };
 
@@ -35,12 +45,17 @@ export type ClientFootprint = {
   projects: number;
   contracts: number;
   financeEntries: number;
+  /** Só os compromissos que QUEM ESTÁ OLHANDO vê por inteiro (particulares de terceiros não contam). */
   events: number;
   tasks: number;
 };
 
-/** Quantos registros de cada módulo citam este cliente. `null` se o cliente não existe. */
-export async function getClientFootprint(clientId: number): Promise<ClientFootprint | null> {
+/**
+ * Quantos registros de cada módulo citam este cliente. `null` se o cliente não existe.
+ * `viewer` é quem vai ver a contagem: um compromisso particular de outra pessoa não entra nela (a contagem não
+ * pode revelar que ele existe). Ao excluir o cliente, esse compromisso também só perde o vínculo.
+ */
+export async function getClientFootprint(clientId: number, viewer: AgendaViewer): Promise<ClientFootprint | null> {
   const [client] = await db.select({ id: clients.id, whatsapp: clients.whatsapp, email: clients.email }).from(clients).where(eq(clients.id, clientId));
   if (!client) return null;
   const total = async (query: Promise<{ total: number }[]>) => (await query)[0]?.total ?? 0;
@@ -52,7 +67,7 @@ export async function getClientFootprint(clientId: number): Promise<ClientFootpr
     total(db.select({ total: count() }).from(projects).where(eq(projects.clientId, clientId))),
     total(db.select({ total: count() }).from(contracts).where(and(eq(contracts.clientId, clientId), eq(contracts.isTemplate, false)))),
     total(db.select({ total: count() }).from(financeEntries).where(eq(financeEntries.clientId, clientId))),
-    total(db.select({ total: count() }).from(agendaEvents).where(eq(agendaEvents.clientId, clientId))),
+    listClientEventRecords(viewer, clientId).then((events) => events.visible.length),
     total(db.select({ total: count() }).from(tasks).where(eq(tasks.clientId, clientId))),
   ]);
   return {
@@ -92,11 +107,15 @@ export function describeRemaining(footprint: ClientFootprint): string {
  * NÓS ligadas ao cliente — isso não é dado do titular. Arquivos enviados (contrato assinado, comprovantes) não
  * vão no JSON: o arquivo indica onde eles existem.
  */
-export async function exportClientSubjectData(clientId: number, exportedAt: Date): Promise<{ json: string; total: number } | null> {
+export async function exportClientSubjectData(
+  clientId: number,
+  exportedAt: Date,
+  viewer: AgendaViewer,
+): Promise<{ json: string; total: number; withheldEvents: number } | null> {
   const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
   if (!client) return null;
 
-  const [interactionRows, leadRows, proposalRows, projectRows, contractRows, incomeRows, expenseCount, eventRows, taskRows, contentRows] = await Promise.all([
+  const [interactionRows, leadRows, proposalRows, projectRows, contractRows, incomeRows, expenseCount, events, taskRows, contentRows] = await Promise.all([
     db
       .select({ tipo: clientInteractions.kind, texto: clientInteractions.content, quando: clientInteractions.occurredAt })
       .from(clientInteractions)
@@ -176,11 +195,7 @@ export async function exportClientSubjectData(clientId: number, exportedAt: Date
       .select({ total: count() })
       .from(financeEntries)
       .where(and(eq(financeEntries.clientId, clientId), eq(financeEntries.type, "despesa"))),
-    db
-      .select({ id: agendaEvents.id, titulo: agendaEvents.title, tipo: agendaEvents.kind, data: agendaEvents.date, inicio: agendaEvents.startTime, fim: agendaEvents.endTime, local: agendaEvents.location, observacoes: agendaEvents.notes })
-      .from(agendaEvents)
-      .where(eq(agendaEvents.clientId, clientId))
-      .orderBy(asc(agendaEvents.date)),
+    listClientEventRecords(viewer, clientId),
     db
       .select({ id: tasks.id, titulo: tasks.title, descricao: tasks.description, prazo: tasks.dueDate, concluida: tasks.done })
       .from(tasks)
@@ -194,6 +209,26 @@ export async function exportClientSubjectData(clientId: number, exportedAt: Date
   ]);
 
   const hasFile = (id: number | null) => (id ? "sim — arquivo guardado no painel" : "não");
+  // Só o que QUEM EXPORTA vê por inteiro; os particulares de outras pessoas ficam de fora (ver o topo do arquivo).
+  const eventRows = events.visible.map((event) => ({
+    id: event.id,
+    titulo: event.title,
+    categoria: event.categoryName,
+    situacao: event.status,
+    particular: event.visibility === "particular",
+    data: event.date,
+    ultimoDia: event.endDate,
+    inicio: event.startTime,
+    fim: event.endTime,
+    repeticao: ruleOf(event) ? describeRecurrence(event.date, ruleOf(event)) : null,
+    local: event.location,
+    descricao: event.description,
+    observacoes: event.notes,
+    anexos: event.attachments.length,
+  }));
+  // mascarados (particulares de outra pessoa) + os que a agenda não entrega a quem exporta (sem alcance)
+  const withheld = events.masked.length + events.unreachable;
+  const withheldOwners = [...new Set(events.masked.map((event) => event.ownerName).filter((name): name is string => Boolean(name)))];
   const sections = {
     cadastro: {
       id: client.id,
@@ -255,10 +290,18 @@ export async function exportClientSubjectData(clientId: number, exportedAt: Date
       "Não inclui o cálculo interno dos orçamentos nem despesas da NÓS ligadas ao cliente" + (expenseCount[0]?.total ? ` (${expenseCount[0].total} lançamento(s) de despesa).` : "."),
       "Arquivos enviados (contrato assinado, comprovantes) não estão neste arquivo; onde existem, está indicado.",
       "Registros de auditoria e cópias de segurança (backups) não entram aqui.",
+      ...(withheld > 0
+        ? [
+            `ATENÇÃO — resposta incompleta: ${withheld} compromisso(s) da agenda ligado(s) a este titular não foi(ram) incluído(s), porque quem exportou não tem acesso a ele(s)` +
+              (events.masked.length ? ` (compromisso particular${withheldOwners.length ? ` de ${withheldOwners.join(", ")}` : " de outra pessoa"})` : "") +
+              ". Só quem participa de um compromisso particular vê o conteúdo: peça a essa pessoa que gere esta exportação ou informe o que consta sobre o titular.",
+          ]
+        : []),
     ],
     contagem: counts,
+    ...(withheld > 0 ? { agendaNaoIncluida: { compromissos: withheld, particularesDe: withheldOwners } } : {}),
     ...sections,
   };
   const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-  return { json: JSON.stringify(payload, null, 2), total };
+  return { json: JSON.stringify(payload, null, 2), total, withheldEvents: withheld };
 }

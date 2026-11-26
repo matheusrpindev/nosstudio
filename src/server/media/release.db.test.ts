@@ -1,18 +1,12 @@
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
-// Uploads destes testes vão para uma pasta temporária (nunca para data/uploads). Precisa valer ANTES dos imports.
-const uploadDir = vi.hoisted(() => {
-  const fs = process.getBuiltinModule("node:fs");
-  const os = process.getBuiltinModule("node:os");
-  const path = process.getBuiltinModule("node:path");
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nos-media-test-"));
-  process.env.UPLOAD_DIR = dir;
-  return dir;
-});
+// Uploads destes testes vão para a pasta temporária DESTA execução (UPLOAD_DIR de vitest.config.mts — nunca
+// data/uploads); quem a apaga no fim é src/test/global-setup.ts.
+const uploadDir = process.env.UPLOAD_DIR as string;
 
-import { existsSync, rmSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { db } from "@/db";
 import { media, siteContent } from "@/db/schema";
@@ -26,7 +20,6 @@ import { collectMediaIds, createMedia, droppedMediaIds, getMediaById, releaseMed
 
 afterAll(async () => {
   await db.delete(siteContent).where(eq(siteContent.key, "seo"));
-  rmSync(uploadDir, { recursive: true, force: true });
 });
 
 let counter = 0;

@@ -34,6 +34,7 @@ import { db } from "@/db";
 import { agendaCalendars, agendaCategories, agendaEventPeople, agendaEvents, clients, projects } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 import { makeAccount, outcome, removeAccounts, type TestAccount } from "@/test/accounts";
+import { fullAccess } from "./access";
 import { findEventConflicts } from "./conflicts";
 import type { EventInput } from "./input";
 import { createEvent, deleteEventScoped, getMutableEvent, recordToInput, updateEventScoped } from "./mutations";
@@ -309,7 +310,7 @@ describe("privacidade: compromisso particular", () => {
     expect(view?.event).toMatchObject({ masked: true, title: "Ocupado" });
     expect(leaks(view)).toEqual([]);
     expect(await getEditableEvent(viewer(B), secretId)).toBeNull();
-    expect(await getMutableEvent(B.id, secretId)).toBeNull();
+    expect(await getMutableEvent(fullAccess(B.id), secretId)).toBeNull();
   });
 
   it("os filtros não servem de oráculo: com cliente, projeto, categoria ou texto, o “Ocupado” some", async () => {
@@ -331,12 +332,12 @@ describe("privacidade: compromisso particular", () => {
 
   it("aviso de conflito: o particular de terceiros aparece como “Ocupado”, sem título", async () => {
     const candidate = { date: "2031-09-10", endDate: null, startTime: "14:30", endTime: "15:30", recurrence: null, status: "confirmado" as const, people: [A.id, C.id], blocksDay: false };
-    const forB = await findEventConflicts(B.id, candidate);
+    const forB = await findEventConflicts(fullAccess(B.id), candidate);
     expect(forB.total).toBe(1);
     expect(forB.conflicts[0]).toMatchObject({ title: "Ocupado", date: "2031-09-10", startTime: "14:00", endTime: "15:00" });
     expect(JSON.stringify(forB)).not.toContain(S);
     // a dona, ao marcar outra coisa no mesmo horário, vê o próprio título
-    expect((await findEventConflicts(A.id, candidate)).conflicts[0].title).toBe(`${S}-titulo`);
+    expect((await findEventConflicts(fullAccess(A.id), candidate)).conflicts[0].title).toBe(`${S}-titulo`);
   });
 
   it("as actions não deixam quem não participa editar, reagendar, cancelar, duplicar, marcar checklist nem excluir", async () => {
@@ -416,7 +417,7 @@ describe("conflitos de horário", () => {
     browser.token = null;
     const cancelled = await createEvent(input({ title: "[Teste] cancelado", date: "2031-11-06", startTime: "10:00", endTime: "11:00", responsibleIds: [C.id], status: "cancelado" }), A.id);
     expect(cancelled.id).toBeGreaterThan(0);
-    const report = await findEventConflicts(A.id, { date: "2031-11-06", endDate: null, startTime: "10:00", endTime: "11:00", recurrence: null, status: "confirmado", people: [C.id], blocksDay: false });
+    const report = await findEventConflicts(fullAccess(A.id), { date: "2031-11-06", endDate: null, startTime: "10:00", endTime: "11:00", recurrence: null, status: "confirmado", people: [C.id], blocksDay: false });
     expect(report.total).toBe(0);
   });
 
@@ -425,7 +426,7 @@ describe("conflitos de horário", () => {
     await createEvent(input({ title: "[Teste] aula semanal", date: "2031-11-12", startTime: "19:00", endTime: "20:00", recurrence: { freq: "semanal", interval: 1 }, responsibleIds: [C.id] }), A.id);
     await createEvent(input({ title: "[Teste] férias da C", categoryId: vacationCategoryId, date: "2031-12-08", endDate: "2031-12-12", startTime: null, endTime: null, responsibleIds: [C.id] }), A.id);
     // candidato: toda quarta às 19:30, 5 vezes a partir de 19/11 → choca com a aula em cada quarta e com as férias em 10/12
-    const report = await findEventConflicts(A.id, {
+    const report = await findEventConflicts(fullAccess(A.id), {
       date: "2031-11-19",
       endDate: null,
       startTime: "19:30",
@@ -446,7 +447,7 @@ describe("conflitos de horário", () => {
     expect(report.total).toBe(6);
     // dia inteiro comum (categoria que não bloqueia) não gera conflito
     await createEvent(input({ title: "[Teste] lembrete do dia", date: "2031-12-22", startTime: null, endTime: null, responsibleIds: [C.id] }), A.id);
-    const calm = await findEventConflicts(A.id, { date: "2031-12-22", endDate: null, startTime: "09:00", endTime: "10:00", recurrence: null, status: "confirmado", people: [C.id], blocksDay: false });
+    const calm = await findEventConflicts(fullAccess(A.id), { date: "2031-12-22", endDate: null, startTime: "09:00", endTime: "10:00", recurrence: null, status: "confirmado", people: [C.id], blocksDay: false });
     expect(calm.total).toBe(0);
   });
 

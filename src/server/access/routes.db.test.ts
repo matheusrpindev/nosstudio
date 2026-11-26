@@ -6,15 +6,8 @@
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Uploads destes testes vão para uma pasta temporária (nunca para data/uploads). Precisa valer ANTES dos imports.
-const uploadDir = vi.hoisted(() => {
-  const fs = process.getBuiltinModule("node:fs");
-  const os = process.getBuiltinModule("node:os");
-  const path = process.getBuiltinModule("node:path");
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nos-access-test-"));
-  process.env.UPLOAD_DIR = dir;
-  return dir;
-});
+// Uploads destes testes vão para a pasta temporária DESTA execução (UPLOAD_DIR de vitest.config.mts — nunca
+// data/uploads); quem a apaga no fim é src/test/global-setup.ts.
 
 const browser = vi.hoisted(() => ({ token: null as string | null }));
 const site = vi.hoisted(() => ({ published: [] as number[] }));
@@ -40,7 +33,6 @@ vi.mock("@/server/site/queries", () => ({ getPublishedMediaIds: async () => site
 vi.mock("@/server/proposals/source", () => ({ loadPublicProposal: pdf.load }));
 vi.mock("@/server/proposals/pdf/render", () => ({ renderProposalPdf: pdf.render }));
 
-import { rmSync } from "node:fs";
 import sharp from "sharp";
 import { GET as mediaGET } from "@/app/media/[...key]/route";
 import { DELETE as mediaDELETE, PATCH as mediaPATCH } from "@/app/painel/api/media/[id]/route";
@@ -111,7 +103,6 @@ afterAll(async () => {
   await db.delete(clients).where(eq(clients.id, clientId));
   await db.delete(media).where(inArray(media.id, mediaIds));
   await removeAccounts();
-  rmSync(uploadDir, { recursive: true, force: true });
 });
 
 /** Status da resposta para cada perfil (e para quem não tem sessão). */
