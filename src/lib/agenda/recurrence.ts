@@ -15,7 +15,7 @@ export type Recurrence = {
   /** A cada N dias/semanas/meses/anos (1 = todo). */
   interval: number;
   /** Só para semanal: dias da semana (0 = domingo … 6 = sábado). Vazio = o dia da semana da data inicial. */
-  weekdays?: number[];
+  weekdays?: readonly number[];
   /** Termina nesta data (inclusive). */
   until?: ISODate | null;
   /** Ou termina depois de N ocorrências (contando a primeira). `until` e `count` juntos: vale o que vier antes. */
