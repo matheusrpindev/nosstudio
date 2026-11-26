@@ -8,13 +8,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export const viewport: Viewport = { themeColor: "#3b1f8e" };
+// preto oficial (token `preto`): mesmo tema escuro do painel
+export const viewport: Viewport = { themeColor: "#101014" };
 
-/** Telas de acesso: a marca de um lado (em cima, no celular) e o formulário do outro. Sem cadastro público. */
+/**
+ * Telas de acesso: a marca de um lado (em cima, no celular) e o formulário do outro. Sem cadastro público.
+ * `tema-painel` liga o tema escuro para o documento inteiro (ver "TEMA ESCURO" em globals.css).
+ */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="flex min-h-dvh flex-1 flex-col lg:flex-row">
-      <aside className="bg-roxo relative flex shrink-0 flex-col justify-between overflow-hidden px-6 py-7 text-white lg:w-[44%] lg:max-w-2xl lg:px-16 lg:py-16">
+    <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:flex-row">
+      <aside className="bg-menu border-menu-borda relative flex shrink-0 flex-col justify-between overflow-hidden border-b px-6 py-7 text-white lg:w-[44%] lg:max-w-2xl lg:border-r lg:border-b-0 lg:px-16 lg:py-16">
         {/* motivo do visor (os cantos do logo) emoldurando o bloco — só no desktop */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-5 hidden lg:block">
           <span className="border-lavanda/30 absolute top-0 left-0 size-12 rounded-tl-2xl border-t-[3px] border-l-[3px]" />

@@ -112,11 +112,11 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pa
             aria-current={tab.active ? "page" : undefined}
             className={cn(
               "hover:text-detalhe relative inline-flex min-h-11 shrink-0 items-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full",
-              tab.active ? "text-detalhe after:bg-roxo" : "text-texto-suave after:bg-transparent",
+              tab.active ? "text-texto after:bg-primaria" : "text-texto-suave after:bg-transparent",
             )}
           >
             {tab.label}
-            <span className={cn("rounded-full px-1.5 text-xs leading-5 font-bold tabular-nums", tab.active ? "bg-roxo text-white" : "bg-detalhe-suave text-detalhe")}>{tab.count}</span>
+            <span className={cn("rounded-full px-1.5 text-xs leading-5 font-bold tabular-nums", tab.active ? "bg-primaria text-sobre-primaria" : "bg-detalhe-suave text-detalhe")}>{tab.count}</span>
           </Link>
         ))}
       </nav>

@@ -19,7 +19,7 @@ export function EmptyState({ icon, title, description, action, variant = "card",
     <div
       className={cn(
         "flex flex-col items-center px-6 py-10 text-center",
-        variant === "card" && "border-borda-forte rounded-cartao border border-dashed bg-white/60",
+        variant === "card" && "border-borda-forte rounded-cartao border border-dashed bg-superficie/60",
         className,
       )}
     >

@@ -161,7 +161,7 @@ function ProgressBar({ upload }: { upload: NonNullable<UploadState> }) {
         aria-valuenow={percent}
         className="bg-detalhe-suave h-2 overflow-hidden rounded-full"
       >
-        <div className="bg-roxo h-full rounded-full transition-[width]" style={{ width: `${Math.max(percent, 4)}%` }} />
+        <div className="bg-primaria h-full rounded-full transition-[width]" style={{ width: `${Math.max(percent, 4)}%` }} />
       </div>
     </div>
   );

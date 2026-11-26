@@ -13,7 +13,8 @@ import { MobileNav } from "./mobile-nav";
 import { NavList } from "./nav-list";
 
 /**
- * Moldura do painel (tema escuro: a classe `tema-painel` na raiz liga os tokens escuros — ver globals.css): barra lateral (desktop) ou barras superior/inferior (celular) + área de conteúdo.
+ * Moldura do painel: barra lateral (desktop) ou barras superior/inferior (celular) + área de conteúdo.
+ * A classe `tema-painel` na raiz liga o tema escuro para o documento inteiro (ver "TEMA ESCURO" em globals.css).
  * Roda dentro do <Suspense> do layout. `allowPasswordChange` evita laço de redirecionamento: a tela de troca
  * obrigatória de senha também vive dentro deste layout — cada PÁGINA continua chamando `requireUser()` sozinha.
  */

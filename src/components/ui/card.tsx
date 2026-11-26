@@ -97,7 +97,7 @@ export function StatCard({ label, value, caption, href, icon, size = "lg", tone 
   );
   const classes = cn(
     "card group @container block min-w-0 p-4 sm:p-5",
-    highlight && "bg-roxo border-detalhe",
+    highlight && "bg-roxo border-detalhe-medio",
     href && (highlight ? "hover:bg-roxo-escuro transition-colors" : "hover:border-detalhe/40 transition-colors"),
     className,
   );

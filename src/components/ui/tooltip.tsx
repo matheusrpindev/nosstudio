@@ -22,10 +22,10 @@ export function Tooltip({ content, children, side = "top" }: TooltipProps) {
             side={side}
             sideOffset={6}
             collisionPadding={8}
-            className="flutuante-entrada bg-grafite shadow-flutuante z-[70] max-w-64 rounded-md px-2.5 py-1.5 text-xs leading-snug font-medium text-white"
+            className="flutuante-entrada bg-inverso shadow-flutuante z-[70] max-w-64 rounded-md px-2.5 py-1.5 text-xs leading-snug font-medium text-sobre-inverso"
           >
             {content}
-            <RadixTooltip.Arrow className="fill-texto" />
+            <RadixTooltip.Arrow className="fill-inverso" />
           </RadixTooltip.Content>
         </RadixTooltip.Portal>
       </RadixTooltip.Root>

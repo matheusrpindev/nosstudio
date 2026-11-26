@@ -71,7 +71,7 @@ export function ViewSwitch({ items, current }: { items: readonly { value: string
             key={item.value}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={cn(SWITCH_BASE, active ? "bg-roxo text-offwhite shadow-sm" : "text-texto/80 hover:bg-white/70 hover:text-detalhe")}
+            className={cn(SWITCH_BASE, active ? "bg-roxo ring-detalhe-medio text-white ring-1" : "text-texto/80 hover:bg-superficie-alta hover:text-detalhe")}
           >
             {item.label}
           </Link>

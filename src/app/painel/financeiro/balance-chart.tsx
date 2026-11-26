@@ -43,11 +43,11 @@ export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; 
     <figure className="m-0">
       <ul className="text-texto mb-3 flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium" aria-label="Legenda">
         <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="bg-roxo inline-block size-3.5 rounded-[3px]" />
+          <span aria-hidden="true" className="bg-detalhe inline-block size-3.5 rounded-[3px]" />
           Receitas recebidas
         </li>
         <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="bg-lavanda border-detalhe inline-block size-3.5 rounded-[3px] border-[1.5px]" />
+          <span aria-hidden="true" className="bg-detalhe-suave border-detalhe inline-block size-3.5 rounded-[3px] border-[1.5px]" />
           Despesas pagas
         </li>
       </ul>
@@ -71,7 +71,7 @@ export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; 
           const expense = (point.despesasCents / niceMax) * plotH;
           return (
             <g key={point.month}>
-              {selected ? <rect x={x0 + 2} y={TOP} width={group - 4} height={plotH} rx={4} className="fill-detalhe-suave" /> : null}
+              {selected ? <rect x={x0 + 2} y={TOP} width={group - 4} height={plotH} rx={4} className="fill-superficie-alta" /> : null}
               {/* base reta + canto de cima arredondado; 2px de respiro entre as duas barras */}
               {income > 0 ? (
                 <path d={barPath(center - barW - 1, y(point.receitasCents), barW, income)} className="fill-detalhe">
@@ -79,7 +79,7 @@ export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; 
                 </path>
               ) : null}
               {expense > 0 ? (
-                <path d={barPath(center + 1, y(point.despesasCents), barW, expense)} className="fill-lavanda stroke-detalhe" strokeWidth={1.5}>
+                <path d={barPath(center + 1, y(point.despesasCents), barW, expense)} className="fill-detalhe-suave stroke-detalhe" strokeWidth={1.5}>
                   <title>{`Despesas pagas em ${monthName(point.month)}: ${formatBRL(point.despesasCents)}`}</title>
                 </path>
               ) : null}

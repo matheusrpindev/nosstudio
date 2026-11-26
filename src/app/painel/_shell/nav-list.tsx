@@ -13,7 +13,7 @@ type NavListProps = {
   touch?: boolean;
 };
 
-/** Grupos e itens do menu sobre fundo roxo. O item ativo (por prefixo de rota) fica em lima. */
+/** Grupos e itens do menu sobre o fundo do menu (`bg-menu`, preto arroxeado). O item ativo (por prefixo de rota) fica em lima. */
 export function NavList({ badges, onNavigate, touch }: NavListProps) {
   const pathname = usePathname();
   return (
@@ -35,13 +35,13 @@ export function NavList({ badges, onNavigate, touch }: NavListProps) {
                     className={cn(
                       "flex items-center gap-3 rounded-campo px-3 text-sm transition-colors focus-visible:outline-white",
                       touch ? "min-h-11" : "min-h-9",
-                      active ? "bg-lima text-texto font-bold" : "font-medium text-white/85 hover:bg-white/10 hover:text-white",
+                      active ? "bg-lima text-grafite font-bold" : "font-medium text-white/85 hover:bg-white/10 hover:text-white",
                     )}
                   >
                     <Icon aria-hidden="true" className="size-[1.125rem] shrink-0" strokeWidth={active ? 2.4 : 2} />
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
                     {count > 0 ? (
-                      <span className={cn("rounded-full px-2 text-xs leading-5 font-bold tabular-nums", active ? "bg-grafite text-lima" : "bg-lima text-texto")}>
+                      <span className={cn("rounded-full px-2 text-xs leading-5 font-bold tabular-nums", active ? "bg-grafite text-lima" : "bg-lima text-grafite")}>
                         {count > 99 ? "99+" : count}
                         <span className="sr-only"> {count === 1 ? "novo" : "novos"}</span>
                       </span>

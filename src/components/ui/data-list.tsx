@@ -106,7 +106,7 @@ export function DataList<T>({ columns, rows, rowKey, href, highlight, highlightL
                       {column.primary ? (
                         <span className="flex items-center gap-2.5">
                           {marked ? (
-                            <span className="bg-roxo size-2 shrink-0 rounded-full">
+                            <span className="bg-primaria size-2 shrink-0 rounded-full">
                               <span className="sr-only">{highlightLabel}: </span>
                             </span>
                           ) : null}

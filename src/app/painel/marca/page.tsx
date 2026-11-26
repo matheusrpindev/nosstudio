@@ -116,11 +116,11 @@ export default async function BrandPage() {
               {logos.map((logo, index) => (
                 <li key={logo.id} className="border-borda rounded-campo flex min-w-0 flex-col border">
                   <div className="grid grid-cols-2">
-                    <div className="bg-superficie-alta rounded-tl-campo flex h-28 items-center justify-center p-4">
+                    <div className="bg-offwhite rounded-tl-campo flex h-28 items-center justify-center p-4">
                       {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático do próprio site */}
                       <img src={logo.url} alt={`${logo.title} sobre fundo claro`} className="max-h-full max-w-full object-contain" />
                     </div>
-                    <div className="bg-grafite rounded-tr-campo flex h-28 items-center justify-center p-4">
+                    <div className="bg-preto rounded-tr-campo flex h-28 items-center justify-center p-4">
                       {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático do próprio site */}
                       <img src={logo.url} alt={`${logo.title} sobre fundo escuro`} className="max-h-full max-w-full object-contain" />
                     </div>

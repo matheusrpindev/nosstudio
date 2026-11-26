@@ -28,7 +28,7 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
 
   return (
     <>
-      <header className="bg-roxo sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 pr-1.5 pl-4 text-white lg:hidden">
+      <header className="bg-menu border-menu-borda sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b pr-1.5 pl-4 text-white lg:hidden">
         <Link href="/painel" aria-label="NÓS Studio — painel, visão geral" className="flex h-11 shrink-0 items-center focus-visible:outline-white">
           {logo}
         </Link>
@@ -47,7 +47,7 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
 
       <nav
         aria-label="Atalhos"
-        className="border-borda fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgb(27_27_34/0.06)] backdrop-blur lg:hidden"
+        className="border-borda fixed inset-x-0 bottom-0 z-30 border-t bg-superficie/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-5">
           {shortcuts.map((item) => {
@@ -57,16 +57,16 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
             return (
               <li key={item.href}>
                 <Link href={item.href} aria-current={active ? "page" : undefined} className="group flex min-h-[3.75rem] flex-col items-center justify-center gap-0.5 px-1 pt-1.5 pb-1 outline-offset-[-3px]">
-                  <span className={cn("relative flex h-7 w-12 items-center justify-center rounded-full transition-colors", active ? "bg-lima text-texto" : "text-texto-suave group-hover:text-detalhe")}>
+                  <span className={cn("relative flex h-7 w-12 items-center justify-center rounded-full transition-colors", active ? "bg-lima text-grafite" : "text-texto-suave group-hover:text-detalhe")}>
                     <Icon aria-hidden="true" className="size-5" strokeWidth={active ? 2.4 : 2} />
                     {count > 0 ? (
-                      <span className="bg-roxo absolute -top-1 right-0 min-w-[1.125rem] rounded-full px-1 text-center text-[0.625rem] leading-[1.125rem] font-bold text-white tabular-nums ring-2 ring-white">
+                      <span className={cn("ring-superficie absolute -top-1 right-0 min-w-[1.125rem] rounded-full px-1 text-center text-[0.625rem] leading-[1.125rem] font-bold tabular-nums ring-2", active ? "bg-grafite text-lima" : "bg-lima text-grafite")}>
                         {count > 9 ? "9+" : count}
                         <span className="sr-only"> {count === 1 ? "novo" : "novos"}</span>
                       </span>
                     ) : null}
                   </span>
-                  <span className={cn("text-[0.6875rem] leading-4", active ? "text-detalhe font-bold" : "text-texto-suave font-semibold")}>{item.shortLabel ?? item.label}</span>
+                  <span className={cn("text-[0.6875rem] leading-4", active ? "text-primaria font-bold" : "text-texto-suave font-semibold")}>{item.shortLabel ?? item.label}</span>
                 </Link>
               </li>
             );
@@ -78,16 +78,16 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
               aria-haspopup="dialog"
               className="group flex min-h-[3.75rem] w-full cursor-pointer flex-col items-center justify-center gap-0.5 px-1 pt-1.5 pb-1 outline-offset-[-3px]"
             >
-              <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !inShortcut ? "bg-detalhe-suave text-detalhe" : "text-texto-suave group-hover:text-detalhe")}>
+              <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !inShortcut ? "bg-lima text-grafite" : "text-texto-suave group-hover:text-detalhe")}>
                 <MoreHorizontal aria-hidden="true" className="size-5" />
               </span>
-              <span className={cn("text-[0.6875rem] leading-4", !inShortcut ? "text-detalhe font-bold" : "text-texto-suave font-semibold")}>Mais</span>
+              <span className={cn("text-[0.6875rem] leading-4", !inShortcut ? "text-primaria font-bold" : "text-texto-suave font-semibold")}>Mais</span>
             </button>
           </li>
         </ul>
       </nav>
 
-      <Drawer open={open} onOpenChange={setOpen} side="bottom" title="Menu do painel" hideHeader className="bg-roxo text-white">
+      <Drawer open={open} onOpenChange={setOpen} side="bottom" title="Menu do painel" hideHeader className="bg-menu border-menu-borda border-t text-white">
         <div className="flex min-h-0 flex-1 flex-col">
           <div aria-hidden="true" className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-white/30" />
           <nav aria-label="Menu completo" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-4 pb-4">

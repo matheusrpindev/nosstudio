@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 const listClasses = "border-borda -mx-4 flex gap-1 overflow-x-auto border-b px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden";
 const tabClasses =
   "text-texto-suave hover:text-detalhe relative inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full after:bg-transparent";
-const tabActive = "text-detalhe after:bg-roxo";
+const tabActive = "text-texto after:bg-primaria";
 
 function Count({ value }: { value: number }) {
   return <span className="bg-detalhe-suave text-detalhe rounded-full px-1.5 text-xs leading-5 font-bold tabular-nums">{value}</span>;
@@ -35,7 +35,7 @@ export function Tabs({ items, defaultValue, value, onValueChange, children, clas
     <RadixTabs.Root defaultValue={value === undefined ? (defaultValue ?? items[0]?.value) : undefined} value={value} onValueChange={onValueChange} className={className}>
       <RadixTabs.List aria-label={rest["aria-label"]} className={listClasses}>
         {items.map((item) => (
-          <RadixTabs.Trigger key={item.value} value={item.value} className={cn(tabClasses, "data-[state=active]:text-detalhe data-[state=active]:after:bg-roxo")}>
+          <RadixTabs.Trigger key={item.value} value={item.value} className={cn(tabClasses, "data-[state=active]:text-texto data-[state=active]:after:bg-primaria")}>
             {item.label}
             {item.count !== undefined ? <Count value={item.count} /> : null}
           </RadixTabs.Trigger>

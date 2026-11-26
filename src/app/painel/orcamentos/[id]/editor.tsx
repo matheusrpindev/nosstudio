@@ -156,7 +156,7 @@ export function ProposalEditor({ id, isTemplate, number, version, serverKey, ini
       {/* Barra de salvar: sempre visível; no celular fica acima do menu de atalhos. */}
       <div
         className={cn(
-          "border-borda shadow-flutuante sticky z-20 mt-6 rounded-cartao border bg-white/95 px-3 py-2.5 backdrop-blur sm:px-4",
+          "border-borda shadow-flutuante sticky z-20 mt-6 rounded-cartao border bg-superficie-alta/95 px-3 py-2.5 backdrop-blur sm:px-4",
           "bottom-[calc(3.75rem+env(safe-area-inset-bottom)+0.5rem)] lg:bottom-4",
         )}
       >

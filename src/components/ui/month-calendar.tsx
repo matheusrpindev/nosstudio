@@ -67,15 +67,15 @@ export function parseMonthParam(value: string | string[] | undefined, today: ISO
 const TONE_CHIP: Record<CalendarTone, string> = {
   neutral: "bg-borda/70 text-texto",
   roxo: "bg-detalhe-suave text-detalhe",
-  lima: "bg-lima text-texto",
+  lima: "bg-lima text-grafite",
   sucesso: "bg-sucesso-claro text-sucesso",
   alerta: "bg-alerta-claro text-alerta",
   perigo: "bg-perigo-claro text-perigo",
 };
 const TONE_DOT: Record<CalendarTone, string> = {
   neutral: "bg-texto-suave",
-  roxo: "bg-roxo",
-  lima: "bg-lima-escuro",
+  roxo: "bg-detalhe",
+  lima: "bg-lima",
   sucesso: "bg-sucesso",
   alerta: "bg-alerta",
   perigo: "bg-perigo",
@@ -222,7 +222,7 @@ export function MonthCalendar({
                           dateTime={date}
                           className={cn(
                             "inline-flex size-7 items-center justify-center rounded-full text-sm tabular-nums",
-                            isToday ? "bg-roxo font-bold text-white" : outside ? "text-texto-suave/80 font-medium" : "text-texto font-semibold",
+                            isToday ? "bg-primaria text-sobre-primaria font-bold" : outside ? "text-texto-suave/80 font-medium" : "text-texto font-semibold",
                           )}
                         >
                           <span className="sr-only">{`${formatWeekday(date)}, ${formatDateLong(date)}${isToday ? " (hoje)" : ""}: `}</span>
@@ -286,7 +286,7 @@ export function MonthCalendar({
                         dateTime={date}
                         className={cn(
                           "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-base font-bold tabular-nums",
-                          isToday ? "bg-roxo text-white" : "text-texto border-borda border bg-superficie",
+                          isToday ? "bg-primaria text-sobre-primaria" : "text-texto border-borda border bg-superficie",
                         )}
                       >
                         {Number(date.slice(8))}

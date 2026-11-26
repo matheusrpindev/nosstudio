@@ -21,7 +21,7 @@ export function AnnouncementPreview({
 }) {
   const style: CSSProperties = { backgroundColor: bg, color: fg };
   return (
-    <div className={`flex min-h-11 items-center gap-3 rounded-campo border border-grafite/10 px-4 py-2.5 text-sm leading-snug ${className ?? ""}`} style={style}>
+    <div className={`flex min-h-11 items-center gap-3 rounded-campo border border-borda-forte/60 px-4 py-2.5 text-sm leading-snug ${className ?? ""}`} style={style}>
       <p className="min-w-0 flex-1 text-center break-words">
         {message || <span className="opacity-70">Escreva a mensagem para ver a prévia.</span>}
         {message && linkLabel ? <span className="ml-2 font-bold underline underline-offset-2">{linkLabel}</span> : null}

@@ -219,7 +219,8 @@ function SeoPageControl({ field, ctx }: { field: Extract<FieldSpec, { type: "seo
         <Field name={`${field.path}.description`} label="Descrição" hint={<>Uma ou duas frases que convidem a clicar. Vazia, vale a descrição da página inicial. · <Counter length={description.length} max={descriptionMax} /></>}>
           <Textarea rows={2} defaultValue={asText(initial.description)} onChange={(event) => setDescription(event.target.value)} />
         </Field>
-        <div className="rounded-campo bg-superficie-alta border-borda border p-3" aria-label={`Prévia no Google: ${field.label}`} role="group">
+        {/* ilha clara: a prévia imita o resultado do Google, que é claro */}
+        <div className="tema-claro rounded-campo border-borda border bg-white p-3" aria-label={`Prévia no Google: ${field.label}`} role="group">
           <p className="text-texto-suave mb-1 text-[0.6875rem] font-bold tracking-wider uppercase">Prévia no Google</p>
           <p className="text-texto-suave truncate text-xs">
             {ctx.siteHost}
@@ -341,7 +342,7 @@ export function SectionForm({
         </Card>
       ))}
 
-      <div className="rounded-cartao border-borda shadow-flutuante sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom)+0.5rem)] z-20 flex items-center gap-3 border bg-white/95 p-3 backdrop-blur lg:bottom-4">
+      <div className="rounded-cartao border-borda shadow-flutuante sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom)+0.5rem)] z-20 flex items-center gap-3 border bg-superficie-alta/95 p-3 backdrop-blur lg:bottom-4">
         <SubmitButton icon={<Save />} pendingLabel="Salvando…">
           Salvar alterações
         </SubmitButton>

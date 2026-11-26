@@ -274,7 +274,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
           {progress !== null ? (
             <div className="mt-4">
               <div role="progressbar" aria-label="Progresso da reserva de caixa" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="bg-detalhe-suave h-3 overflow-hidden rounded-full">
-                <div className="bg-roxo h-full rounded-full" style={{ width: `${progress}%` }} />
+                <div className="bg-primaria h-full rounded-full" style={{ width: `${progress}%` }} />
               </div>
               <p className="text-texto mt-2 text-sm">
                 <strong>{progress}%</strong> da meta de {formatBRL(reserve.cashReserveGoalCents)}

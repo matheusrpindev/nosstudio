@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 import { initials } from "@/lib/format";
 
 const SIZES = { sm: "size-7 text-[0.6875rem]", md: "size-9 text-xs", lg: "size-12 text-base" } as const;
-const TONES = { lavanda: "bg-lavanda text-roxo-noite", roxo: "bg-roxo text-white", lima: "bg-lima text-texto" } as const;
+const TONES = { lavanda: "bg-lavanda text-roxo-noite", roxo: "bg-roxo ring-detalhe-medio text-white ring-1", lima: "bg-lima text-grafite" } as const;
 
 type AvatarProps = {
   /** Nome completo: as iniciais saem dele (`Pedro Henrique` → PH). */

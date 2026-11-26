@@ -277,7 +277,7 @@ export default async function ClientPage({ params }: Props) {
                 <ol className="border-borda relative ml-2 space-y-5 border-l-2 pl-5">
                   {interactions.map((item) => (
                     <li key={item.id} className="relative">
-                      <span aria-hidden="true" className="bg-roxo ring-offwhite absolute top-1.5 -left-[1.8rem] size-2.5 rounded-full ring-4" />
+                      <span aria-hidden="true" className="bg-detalhe ring-superficie absolute top-1.5 -left-[1.8rem] size-2.5 rounded-full ring-4" />
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <Badge tone={INTERACTION_TONES[item.kind]}>{INTERACTION_KIND_LABELS[item.kind]}</Badge>
                         <span className="text-texto-suave text-[0.8125rem]">

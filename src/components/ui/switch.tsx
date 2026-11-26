@@ -37,9 +37,9 @@ export function Switch({ name, label, hint, defaultChecked, checked, onCheckedCh
         aria-describedby={hint ? `${id}-ajuda` : undefined}
         {...(checked !== undefined ? { checked } : { defaultChecked: initial })}
         onCheckedChange={onCheckedChange}
-        className="bg-borda-forte data-[state=checked]:bg-roxo relative mt-0.5 inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-55"
+        className="bg-borda-forte data-[state=checked]:bg-primaria relative mt-0.5 inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-55"
       >
-        <RadixSwitch.Thumb className="block size-5.5 translate-x-[3px] rounded-full bg-superficie shadow-sm transition-transform data-[state=checked]:translate-x-[23px]" />
+        <RadixSwitch.Thumb className="block size-5.5 translate-x-[3px] rounded-full bg-white shadow-sm transition-[transform,background-color] data-[state=checked]:bg-sobre-primaria data-[state=checked]:translate-x-[23px]" />
       </RadixSwitch.Root>
       <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer py-1 text-sm leading-snug">
         <span className="text-texto font-medium">{label}</span>

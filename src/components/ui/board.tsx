@@ -65,7 +65,7 @@ export type BoardProps<C extends BoardCard> = {
 
 const TONE_DOT: Record<BoardTone, string> = {
   neutral: "bg-borda-forte",
-  roxo: "bg-roxo",
+  roxo: "bg-detalhe",
   lima: "bg-lima",
   sucesso: "bg-sucesso",
   alerta: "bg-alerta",
@@ -273,7 +273,7 @@ export function Board<C extends BoardCard>({
             aria-current={visibleColumn === column.id ? "true" : undefined}
             className={cn(
               "inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-[0.8125rem] font-semibold",
-              visibleColumn === column.id ? "border-detalhe bg-roxo text-white" : "border-borda-forte text-texto bg-superficie",
+              visibleColumn === column.id ? "border-detalhe-medio bg-roxo text-white" : "border-borda-forte text-texto bg-superficie",
             )}
             onClick={() =>
               scrollerRef.current
@@ -387,7 +387,7 @@ function BoardColumnView({
       data-column={column.id}
       aria-labelledby={headingId}
       className={cn(
-        "rounded-cartao flex w-[84vw] max-w-80 shrink-0 snap-center flex-col border bg-white/60 transition-colors sm:max-h-[72vh] sm:w-72",
+        "rounded-cartao flex w-[84vw] max-w-80 shrink-0 snap-center flex-col border bg-superficie/60 transition-colors sm:max-h-[72vh] sm:w-72",
         highlighted ? "border-detalhe bg-detalhe-suave/70" : "border-borda",
       )}
     >

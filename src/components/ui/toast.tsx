@@ -64,9 +64,9 @@ function consumeFlash() {
 }
 
 const TONES: Record<ToastTone, { box: string; icon: typeof Info }> = {
-  sucesso: { box: "bg-grafite text-white", icon: CircleCheck },
-  info: { box: "bg-grafite text-white", icon: Info },
-  erro: { box: "bg-perigo text-white", icon: CircleAlert },
+  sucesso: { box: "bg-superficie-alta border-borda-forte border text-white", icon: CircleCheck },
+  info: { box: "bg-superficie-alta border-borda-forte border text-white", icon: Info },
+  erro: { box: "bg-perigo-solido border border-transparent text-white", icon: CircleAlert },
 };
 
 /** Região dos avisos. Monte uma vez por layout (o painel e as telas de acesso já montam). */
