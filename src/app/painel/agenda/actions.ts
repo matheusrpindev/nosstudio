@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { AGENDA_KINDS } from "@/lib/domain";
 import { f, formToObject, parseForm } from "@/server/action";
 import {
@@ -65,7 +65,7 @@ export async function createEventAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("agenda", "editar");
   const parsed = parseForm(eventSchema, formData);
   if (!parsed.ok) return parsed.state;
   const input = toInput(parsed.data);
@@ -92,7 +92,7 @@ export async function updateEventAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("agenda", "editar");
   const idParsed = parseForm(updateSchema, formData);
   if (!idParsed.ok) return idParsed.state;
   const parsed = parseForm(eventSchema, formData);
@@ -120,7 +120,7 @@ export async function deleteEventAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("agenda", "excluir");
   const parsed = parseForm(updateSchema, formData);
   if (!parsed.ok) return parsed.state;
   const deleted = await deleteEvent(parsed.data.id);

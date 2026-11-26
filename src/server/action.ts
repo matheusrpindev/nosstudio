@@ -5,7 +5,7 @@
  *
  *   "use server";
  *   export async function saveThingAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
- *     const user = await requireUser();                       // 1. autorização SEMPRE primeiro
+ *     const user = await requirePermission("modulo", "editar"); // 1. autorização SEMPRE primeiro (docs/permissoes.md)
  *     const parsed = parseForm(thingSchema, formData);        // 2. validação (zod)
  *     if (!parsed.ok) return parsed.state;
  *     await db.insert(things).values(parsed.data);            // 3. mutação

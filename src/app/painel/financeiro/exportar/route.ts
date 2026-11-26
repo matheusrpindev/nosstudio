@@ -1,5 +1,5 @@
 import { logAudit } from "@/lib/audit";
-import { getCurrentUser } from "@/lib/auth";
+import { authorizePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { buildFinanceCsv } from "@/server/finance/csv";
 import { listFinanceEntries } from "@/server/finance/admin";
@@ -7,13 +7,14 @@ import { parseFinanceFilters, resolveScope } from "@/server/finance/filters";
 
 /**
  * CSV dos lançamentos (mesmos filtros da tela: `mes`, `tipo`, `categoria`, `situacao`, `cliente`, `projeto`, `de`, `ate`, `q`).
- * Só leitura (GET), só para administradores (a conta de acesso técnico não exporta dados — mesma regra de
- * /painel/config/dados/exportar). Fica registrado na auditoria.
+ * Só leitura (GET). Exige "baixar" em Exportação de dados (admin e sócio — a conta de acesso técnico não exporta
+ * dados; mesma regra de /painel/config/dados/exportar) e "ver" em Financeiro. Fica registrado na auditoria.
  */
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user || user.mustChangePassword) return new Response("Não autorizado", { status: 401, headers: { "Cache-Control": "no-store" } });
-  if (user.role !== "admin") return new Response("Só administradores podem exportar os dados.", { status: 403, headers: { "Cache-Control": "no-store" } });
+  const user = await authorizePermission("dados", "baixar");
+  if (user instanceof Response) return user;
+  const canSeeFinance = await authorizePermission("financeiro", "ver");
+  if (canSeeFinance instanceof Response) return canSeeFinance;
 
   const today = todayISO();
   const raw: Record<string, string> = {};

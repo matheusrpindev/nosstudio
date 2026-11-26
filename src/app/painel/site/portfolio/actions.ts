@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PORTFOLIO_CATEGORIES } from "@/lib/domain";
 import { f, parseForm, parseInput } from "@/server/action";
 import { fieldError, idListField, parseSiteForm, slugField, textListField, videoField } from "@/server/site/admin/form";
@@ -34,7 +34,7 @@ const schema = z.object({
 });
 
 export async function savePortfolioAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseSiteForm(schema, formData, ["servicesDone", "gallery"]);
   if (!parsed.ok) return parsed.state;
   const { id, cover, ...data } = parsed.data;
@@ -55,7 +55,7 @@ export async function savePortfolioAction(_prev: ActionState, formData: FormData
 }
 
 export async function togglePortfolioAction(id: number, published: boolean): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), published: z.boolean() }), { id, published });
   if (!parsed.ok) return parsed.state;
   const row = await setPortfolioPublished(parsed.data.id, parsed.data.published);
@@ -67,7 +67,7 @@ export async function togglePortfolioAction(id: number, published: boolean): Pro
 }
 
 export async function deletePortfolioAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "excluir");
   const parsed = parseForm(z.object({ id: f.id("Projeto inválido.") }), formData);
   if (!parsed.ok) return parsed.state;
   const row = await deletePortfolioProject(parsed.data.id);

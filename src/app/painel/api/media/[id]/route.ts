@@ -35,7 +35,7 @@ export async function PATCH(request: Request, context: Context) {
 
 /** Apaga o arquivo, desde que não esteja em uso. */
 export async function DELETE(request: Request, context: Context) {
-  const user = await authorize(request);
+  const user = await authorize(request, "excluir");
   if (user instanceof Response) return user;
   const id = await parseId(context);
   const row = id ? await getMediaById(id) : null;

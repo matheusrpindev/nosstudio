@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { BRAND_COLORS } from "@/lib/domain";
 import { safeHref } from "@/lib/format";
 import { f, parseForm, parseInput } from "@/server/action";
@@ -49,7 +49,7 @@ const schema = z
   });
 
 export async function saveAnnouncementAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseForm(schema, formData);
   if (!parsed.ok) return parsed.state;
   const { id, ...data } = parsed.data;
@@ -71,7 +71,7 @@ export async function saveAnnouncementAction(_prev: ActionState, formData: FormD
 }
 
 export async function toggleAnnouncementAction(id: number, enabled: boolean): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), enabled: z.boolean() }), { id, enabled });
   if (!parsed.ok) return parsed.state;
   const row = await setAnnouncementEnabled(parsed.data.id, parsed.data.enabled);
@@ -83,7 +83,7 @@ export async function toggleAnnouncementAction(id: number, enabled: boolean): Pr
 }
 
 export async function moveAnnouncementAction(id: number, direction: "up" | "down"): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), direction: z.enum(["up", "down"]) }), { id, direction });
   if (!parsed.ok) return parsed.state;
   const moved = await moveAnnouncement(parsed.data.id, parsed.data.direction);
@@ -96,7 +96,7 @@ export async function moveAnnouncementAction(id: number, direction: "up" | "down
 }
 
 export async function deleteAnnouncementAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "excluir");
   const parsed = parseForm(z.object({ id: f.id("Aviso inválido.") }), formData);
   if (!parsed.ok) return parsed.state;
   if (await deleteAnnouncement(parsed.data.id)) {

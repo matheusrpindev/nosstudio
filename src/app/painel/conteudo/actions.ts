@@ -7,7 +7,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { APPROVAL_STATUSES, CONTENT_FORMATS, CONTENT_NETWORKS, CONTENT_STATUS_LABELS, CONTENT_STATUSES } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
@@ -66,7 +66,7 @@ const idSchema = z.object({ id: f.id("Conteúdo inválido.") });
 
 // ---------------------------------------------------------------------- criar
 export async function createContentAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("conteudo", "editar");
   const parsed = parseForm(contentSchema, formData);
   if (!parsed.ok) return parsed.state;
   const refsErrors = await checkContentRefs(parsed.data);
@@ -80,7 +80,7 @@ export async function createContentAction(_prev: ActionState, formData: FormData
 
 // --------------------------------------------------------------------- editar
 export async function updateContentAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("conteudo", "editar");
   const idParsed = parseForm(idSchema, formData);
   if (!idParsed.ok) return idParsed.state;
   const parsed = parseForm(contentSchema, formData);
@@ -98,7 +98,7 @@ export async function updateContentAction(_prev: ActionState, formData: FormData
 // ------------------------------------------------------------- mover (quadro)
 /** Chamada pelo `<Board>`: recebe o id do cartão e a coluna de destino (= status). */
 export async function moveContentAction(cardId: number, toColumnId: string): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("conteudo", "editar");
   const parsed = parseInput(z.object({ id: f.id("Conteúdo inválido."), status: z.enum(CONTENT_STATUSES, { error: "Etapa inválida." }) }), { id: cardId, status: toColumnId });
   if (!parsed.ok) return parsed.state;
 
@@ -111,7 +111,7 @@ export async function moveContentAction(cardId: number, toColumnId: string): Pro
 
 // ------------------------------------------------------------------- duplicar
 export async function duplicateContentAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("conteudo", "editar");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const copy = await duplicateContentItem(parsed.data.id);
@@ -123,7 +123,7 @@ export async function duplicateContentAction(_prev: ActionState, formData: FormD
 
 // -------------------------------------------------------------------- excluir
 export async function deleteContentAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("conteudo", "excluir");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const deleted = await deleteContentItem(parsed.data.id);

@@ -90,7 +90,7 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
       />
 
       <div className="space-y-10">
-        <Section id="kit-acoes" title="Ações" description="Button, ButtonLink e IconButton. Primary (lima) é a ação principal da tela; roxo entra como detalhe (ghost, links, seleção).">
+        <Section id="kit-acoes" title="Ações" description="Button, ButtonLink e IconButton. Primary (lima) é a ação principal da tela; accent (roxo preenchido) é a segunda ação de peso; ghost e links usam o roxo claro de detalhe.">
           <Demo label="Variantes">
             <div className="flex flex-wrap items-center gap-2">
               <Button>Primary</Button>

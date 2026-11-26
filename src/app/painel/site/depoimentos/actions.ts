@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { TESTIMONIAL_KINDS } from "@/lib/domain";
 import { f, parseForm, parseInput } from "@/server/action";
 import { parseSiteForm, videoField } from "@/server/site/admin/form";
@@ -41,7 +41,7 @@ const schema = z
   });
 
 export async function saveTestimonialAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseSiteForm(schema, formData);
   if (!parsed.ok) return parsed.state;
   const { id, media, ...data } = parsed.data;
@@ -65,7 +65,7 @@ export async function saveTestimonialAction(_prev: ActionState, formData: FormDa
 }
 
 export async function toggleTestimonialAction(id: number, published: boolean): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), published: z.boolean() }), { id, published });
   if (!parsed.ok) return parsed.state;
   const result = await setTestimonialPublished(parsed.data.id, parsed.data.published);
@@ -77,7 +77,7 @@ export async function toggleTestimonialAction(id: number, published: boolean): P
 }
 
 export async function moveTestimonialAction(id: number, direction: "up" | "down"): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), direction: z.enum(["up", "down"]) }), { id, direction });
   if (!parsed.ok) return parsed.state;
   if (await moveTestimonial(parsed.data.id, parsed.data.direction)) {
@@ -89,7 +89,7 @@ export async function moveTestimonialAction(id: number, direction: "up" | "down"
 }
 
 export async function deleteTestimonialAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "excluir");
   const parsed = parseForm(z.object({ id: f.id("Depoimento inválido.") }), formData);
   if (!parsed.ok) return parsed.state;
   if (await deleteTestimonial(parsed.data.id)) {

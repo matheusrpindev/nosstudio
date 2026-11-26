@@ -95,8 +95,30 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
 
 ## Interface
 
-- Paleta oficial (tokens Tailwind): `roxo #3B1F8E`, `lima #C6F432`, `lavanda #CFC6FF`, `offwhite #F6F4EF`,
-  `grafite #1B1B22`. Fonte única: Montserrat. Lima nunca como texto sobre fundo claro (contraste).
+- Paleta oficial (tokens Tailwind, valor fixo em qualquer tema): `roxo #3B1F8E`, `lima #C6F432`, `lavanda #CFC6FF`,
+  `offwhite #F6F4EF`, `grafite #1B1B22`, `preto #101014`. Fonte única: Montserrat.
+- **Dois temas, um arquivo de tokens** (`src/app/globals.css`):
+  - **Site público = claro.** Lima nunca como texto sobre fundo claro (contraste). Não mexa na aparência do site ao
+    mexer no painel: `.btn`, `.input`, `.prosa` etc. são compartilhadas — os tokens semânticos têm no `@theme` os
+    valores claros de sempre.
+  - **Painel e telas de acesso = escuro** ("fundo preto, detalhes em roxo, destaques em lima"). Escopo: a classe
+    `tema-painel` na raiz de `painel/_shell/shell.tsx` (e no `ShellFallback`) e de `(auth)/layout.tsx`; o seletor
+    `:root:has(.tema-painel)` troca os tokens semânticos no documento inteiro (fundo do `<body>`, `color-scheme`,
+    portais do Radix). Só em `@media screen` — a impressão de contrato sai clara. Novo layout fora desses dois que
+    deva ser escuro precisa da classe na raiz.
+  - Tokens semânticos (claro → escuro): `fundo` (offwhite → preto), `superficie` (branco → grafite),
+    `superficie-alta` (→ `#26262F`), `campo` (→ `#131318`), `borda`/`borda-forte` (→ `#30303C`/`#727084`),
+    `texto`/`texto-suave` (→ `#F6F4EF`/`#A7A4B3`), `detalhe` (roxo → `#B9A8FF`: o roxo oficial não tem contraste
+    sobre preto), `detalhe-suave`/`detalhe-medio` (→ `#2B2056`/`#4A3A9C`), `primaria` + `sobre-primaria`
+    (roxo + branco → **lima + grafite**), `foco` (→ lima), `menu` (→ `#17112C`, borda roxo), `inverso`, `veu`,
+    `sucesso`/`perigo`/`alerta` + `*-claro` + `perigo-solido`.
+  - No painel, **cor só por token semântico** (`text-texto`, `bg-superficie`, `border-borda`, `text-detalhe`,
+    `bg-primaria text-sobre-primaria`…). A paleta fixa entra só como preenchimento com o texto certo por cima
+    (`bg-lima text-grafite`, `bg-roxo text-white`, texto branco/lavanda sobre `bg-menu`). Nada de hex em componente,
+    `text-roxo`, `text-grafite` solto, `bg-white`, `text-cinza`, `border-areia`. Tabela completa e o que não usar:
+    `src/components/ui/README.md` ("Cores e tema").
+  - Prévias do site e amostras da marca dentro do painel mostram as cores reais: paleta fixa ou um bloco
+    `className="tema-claro"` (devolve os tokens claros naquele trecho), sempre com borda.
 - Mobile-first de verdade: o painel precisa ser operável no celular (alvos ≥ 44px, inputs com fonte ≥ 16px,
   tabelas viram listas). Acessibilidade: rótulos, foco visível, navegação por teclado, `prefers-reduced-motion`.
 - `<Logo />` é Server Component (traçados pesados): em Client Components, receba o logo via `children`/prop.

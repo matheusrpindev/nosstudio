@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { CONTRACT_STATUS_LABELS, CONTRACT_STATUSES } from "@/lib/domain";
 import { f, parseForm } from "@/server/action";
@@ -50,7 +50,7 @@ function unfilledNotice(body: string): string {
  * (o que não tiver dado fica no texto e a tela do contrato avisa).
  */
 export async function createContractAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("contratos", "editar");
   const parsed = parseForm(contractSchema, formData);
   if (!parsed.ok) return parsed.state;
   const invalid = await checkReferences(parsed.data, formData);
@@ -65,7 +65,7 @@ export async function createContractAction(_prev: ActionState, formData: FormDat
 }
 
 export async function updateContractAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("contratos", "editar");
   const id = parseForm(idSchema, formData);
   if (!id.ok) return id.state;
   const parsed = parseForm(contractSchema, formData);
@@ -86,7 +86,7 @@ export async function updateContractAction(_prev: ActionState, formData: FormDat
 const statusSchema = z.object({ id: f.id("Contrato inválido."), status: z.enum(CONTRACT_STATUSES, { error: "Selecione um status." }) });
 
 export async function updateContractStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("contratos", "editar");
   const parsed = parseForm(statusSchema, formData);
   if (!parsed.ok) return parsed.state;
   const contract = await setContractStatus(parsed.data.id, parsed.data.status);
@@ -97,7 +97,7 @@ export async function updateContractStatusAction(_prev: ActionState, formData: F
 }
 
 export async function deleteContractAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("contratos", "excluir");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const deleted = await deleteContract(parsed.data.id);
@@ -108,7 +108,7 @@ export async function deleteContractAction(_prev: ActionState, formData: FormDat
 
 // --------------------------------------------------------------------- modelos
 export async function createTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("contratos", "editar");
   const parsed = parseForm(templateSchema, formData);
   if (!parsed.ok) return parsed.state;
   const template = await createTemplate(parsed.data);
@@ -118,7 +118,7 @@ export async function createTemplateAction(_prev: ActionState, formData: FormDat
 }
 
 export async function updateTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("contratos", "editar");
   const id = parseForm(idSchema, formData);
   if (!id.ok) return id.state;
   const parsed = parseForm(templateSchema, formData);
@@ -131,7 +131,7 @@ export async function updateTemplateAction(_prev: ActionState, formData: FormDat
 }
 
 export async function deleteTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("contratos", "excluir");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const deleted = await deleteTemplate(parsed.data.id);

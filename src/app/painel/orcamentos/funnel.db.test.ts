@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock("@/lib/auth", () => ({ requireUser: async () => mocks.user }));
+vi.mock("@/lib/auth", () => ({ requireUser: async () => mocks.user, requirePermission: async () => mocks.user }));
 vi.mock("next/cache", () => ({ refresh: () => {} }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/components/ui/flash", () => ({ flashToast: mocks.flashToast }));

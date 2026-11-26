@@ -1,5 +1,5 @@
 import { logAudit } from "@/lib/audit";
-import { getCurrentUser } from "@/lib/auth";
+import { authorizePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { CSV_KINDS, exportAllJson, exportCsv, type CsvKind } from "@/server/config/data";
 
@@ -8,13 +8,11 @@ const noStore = { "Cache-Control": "no-store" };
 /**
  * GET /painel/config/dados/exportar            → JSON completo (todas as tabelas de negócio)
  * GET /painel/config/dados/exportar?csv=clientes|leads|financeiro → CSV (";" + BOM UTF-8)
- * Só administradores. Nunca inclui senhas, sessões nem tokens.
+ * Exige a permissão "baixar" em Exportação de dados (admin e sócio). Nunca inclui senhas, sessões nem tokens.
  */
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) return Response.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401, headers: noStore });
-  if (user.mustChangePassword) return Response.json({ error: "Troque a senha antes de continuar." }, { status: 403, headers: noStore });
-  if (user.role !== "admin") return Response.json({ error: "Só administradores podem exportar os dados." }, { status: 403, headers: noStore });
+  const user = await authorizePermission("dados", "baixar");
+  if (user instanceof Response) return user;
 
   const today = todayISO();
   const csvParam = new URL(request.url).searchParams.get("csv");

@@ -1,13 +1,13 @@
 "use server";
 
-/** Server Actions do módulo de Projetos (padrão do módulo de Leads: requireUser → zod → mutação → logAudit → refresh/redirect). */
+/** Server Actions do módulo de Projetos (padrão do módulo de Leads: requirePermission → zod → mutação → logAudit → refresh/redirect). */
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { BACKUP_STATUSES, CLIENT_STATUS_LABELS, PROJECT_STAGE_LABELS, PROJECT_STAGES, SERVICE_INTERESTS } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
@@ -89,7 +89,7 @@ function parseProjectForm(formData: FormData) {
 }
 
 export async function createProjectAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "editar");
   const { parsed, values } = parseProjectForm(formData);
   if (!parsed.ok) return parsed.state;
 
@@ -121,7 +121,7 @@ export async function createProjectAction(_prev: ActionState, formData: FormData
 const idField = z.object({ id: f.id("Projeto inválido.") });
 
 export async function updateProjectAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "editar");
   const idParsed = parseForm(idField, formData);
   if (!idParsed.ok) return idParsed.state;
   const { parsed, values } = parseProjectForm(formData);
@@ -145,7 +145,7 @@ const stageSchema = z.object({ id: f.id("Projeto inválido."), stage: z.enum(PRO
 
 /** Mudança de etapa pelo formulário do detalhe. */
 export async function updateProjectStageAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "editar");
   const parsed = parseForm(stageSchema, formData);
   if (!parsed.ok) return parsed.state;
   const project = await setProjectStage(parsed.data.id, parsed.data.stage, todayISO());
@@ -157,7 +157,7 @@ export async function updateProjectStageAction(_prev: ActionState, formData: For
 
 /** Mudança de etapa pelo quadro (arrastar / "Mover para…"). Recebe os valores direto, não um formulário. */
 export async function moveProjectAction(cardId: number, toColumnId: string): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "editar");
   const parsed = parseInput(stageSchema, { id: cardId, stage: toColumnId });
   if (!parsed.ok) return parsed.state;
   const project = await setProjectStage(parsed.data.id, parsed.data.stage, todayISO());
@@ -171,7 +171,7 @@ export async function moveProjectAction(cardId: number, toColumnId: string): Pro
 const checklistAddSchema = z.object({ id: f.id("Projeto inválido."), text: f.text(200, "Escreva o item do checklist.") });
 
 export async function addChecklistItemAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "editar");
   const parsed = parseForm(checklistAddSchema, formData);
   if (!parsed.ok) return parsed.state;
   const project = await getProject(parsed.data.id);
@@ -187,7 +187,7 @@ const checklistItemSchema = z.object({ projectId: f.id("Projeto inválido."), it
 
 /** Marcar/desmarcar um item: grava na hora (chamada direta do cliente, com atualização otimista). */
 export async function toggleChecklistItemAction(projectId: number, itemId: string, done: boolean): Promise<ActionState> {
-  await requireUser();
+  await requirePermission("projetos", "editar");
   const parsed = parseInput(checklistItemSchema, { projectId, itemId, done });
   if (!parsed.ok) return actionError("Não foi possível atualizar o item.");
   if (!(await toggleChecklistItem(parsed.data.projectId, parsed.data.itemId, parsed.data.done))) return actionError("Este projeto não existe mais.");
@@ -196,7 +196,7 @@ export async function toggleChecklistItemAction(projectId: number, itemId: strin
 }
 
 export async function removeChecklistItemAction(projectId: number, itemId: string): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "editar");
   const parsed = parseInput(checklistItemSchema.omit({ done: true }), { projectId, itemId });
   if (!parsed.ok) return actionError("Não foi possível remover o item.");
   if (!(await removeChecklistItem(parsed.data.projectId, parsed.data.itemId))) return actionError("Este projeto não existe mais.");
@@ -209,7 +209,8 @@ export async function removeChecklistItemAction(projectId: number, itemId: strin
 const quickTaskSchema = z.object({ id: f.id("Projeto inválido."), title: f.text(160, "Escreva a tarefa."), dueDate: f.optionalDate() });
 
 export async function addProjectTaskAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "ver");
+  await requirePermission("tarefas", "editar");
   const parsed = parseForm(quickTaskSchema, formData);
   if (!parsed.ok) return parsed.state;
   const project = await getProject(parsed.data.id);
@@ -222,7 +223,7 @@ export async function addProjectTaskAction(_prev: ActionState, formData: FormDat
 
 // --------------------------------------------------------------------- excluir
 export async function deleteProjectAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "excluir");
   const parsed = parseForm(idField, formData);
   if (!parsed.ok) return parsed.state;
   const deleted = await deleteProject(parsed.data.id);

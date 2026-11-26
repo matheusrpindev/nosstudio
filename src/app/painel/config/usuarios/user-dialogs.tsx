@@ -8,10 +8,11 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { ActionForm, Field, FormActions, SubmitButton } from "@/components/ui/form";
 import { Input, RadioCards } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
-import { USER_ROLE_LABELS, USER_ROLES, type UserRole } from "@/lib/domain";
+import { USER_ROLE_DESCRIPTIONS, USER_ROLE_LABELS, USER_ROLES, type UserRole } from "@/lib/domain";
 import { createUserAction, resetUserPasswordAction, setUserActiveAction, updateUserAction, type TemporaryCredentials } from "./actions";
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  ...USER_ROLE_DESCRIPTIONS,
   admin: "Acesso completo, inclusive gerenciar contas, exportar dados e ver a auditoria. É o perfil dos sócios.",
   tecnico: "Conta do desenvolvedor para dar suporte. Acessa o painel, mas não gerencia contas nem exporta dados. É temporária: revogue quando o suporte acabar.",
 };

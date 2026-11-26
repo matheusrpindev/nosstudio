@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { BRAND_ASSET_CATEGORIES } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
 import { f, parseForm } from "@/server/action";
@@ -40,7 +40,7 @@ async function checkMedia(mediaId: number | null, formData: FormData): Promise<A
 }
 
 export async function createBrandAssetAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("marca", "editar");
   const parsed = parseForm(assetSchema, formData);
   if (!parsed.ok) return parsed.state;
   const invalid = await checkMedia(parsed.data.mediaId, formData);
@@ -52,7 +52,7 @@ export async function createBrandAssetAction(_prev: ActionState, formData: FormD
 }
 
 export async function updateBrandAssetAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("marca", "editar");
   const id = parseForm(idSchema, formData);
   if (!id.ok) return id.state;
   const parsed = parseForm(assetSchema, formData);
@@ -67,7 +67,7 @@ export async function updateBrandAssetAction(_prev: ActionState, formData: FormD
 }
 
 export async function deleteBrandAssetAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("marca", "excluir");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const deleted = await deleteBrandAsset(parsed.data.id);
@@ -79,7 +79,7 @@ export async function deleteBrandAssetAction(_prev: ActionState, formData: FormD
 const moveSchema = z.object({ id: f.id("Item inválido."), direction: z.enum(["up", "down"]) });
 
 export async function moveBrandAssetAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("marca", "editar");
   const parsed = parseForm(moveSchema, formData);
   if (!parsed.ok) return parsed.state;
   if (await moveBrandAsset(parsed.data.id, parsed.data.direction)) {

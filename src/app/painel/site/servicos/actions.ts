@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { SERVICE_INTERESTS } from "@/lib/domain";
 import { f, parseForm, parseInput } from "@/server/action";
 import { fieldError, idListField, parseSiteForm, slugField, textListField, videoField } from "@/server/site/admin/form";
@@ -38,7 +38,7 @@ const schema = z.object({
 });
 
 export async function saveServiceAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseSiteForm(schema, formData, ["items", "gallery"]);
   if (!parsed.ok) return parsed.state;
   const { id, cover, ...data } = parsed.data;
@@ -59,7 +59,7 @@ export async function saveServiceAction(_prev: ActionState, formData: FormData):
 }
 
 export async function toggleServiceAction(id: number, visible: boolean): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), visible: z.boolean() }), { id, visible });
   if (!parsed.ok) return parsed.state;
   const row = await setServiceVisible(parsed.data.id, parsed.data.visible);
@@ -71,7 +71,7 @@ export async function toggleServiceAction(id: number, visible: boolean): Promise
 }
 
 export async function moveServiceAction(id: number, direction: "up" | "down"): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), direction: z.enum(["up", "down"]) }), { id, direction });
   if (!parsed.ok) return parsed.state;
   if (await moveService(parsed.data.id, parsed.data.direction)) {
@@ -83,7 +83,7 @@ export async function moveServiceAction(id: number, direction: "up" | "down"): P
 }
 
 export async function deleteServiceAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "excluir");
   const parsed = parseForm(z.object({ id: f.id("Serviço inválido.") }), formData);
   if (!parsed.ok) return parsed.state;
   const row = await deleteService(parsed.data.id);

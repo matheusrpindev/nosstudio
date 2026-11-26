@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * Server Actions do Financeiro. Toda action: `requireUser()` → zod → mutação (`src/server/finance/admin.ts`) →
+ * Server Actions do Financeiro. Toda action: `requirePermission(módulo, ação)` → zod → mutação (`src/server/finance/admin.ts`) →
  * `logAudit()` → `refresh()`/`redirect()`.
  */
 import { eq } from "drizzle-orm";
@@ -11,7 +11,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/db";
 import { clients, projects, proposals } from "@/db/schema";
 import { formatDate, todayISO } from "@/lib/dates";
@@ -87,7 +87,7 @@ async function checkLinks(data: { clientId: number | null; projectId: number | n
 
 // ------------------------------------------------------------- criar / editar
 export async function saveEntryAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "editar");
   const parsed = parseForm(entrySchema, formData);
   if (!parsed.ok) return parsed.state;
   const data = parsed.data;
@@ -135,7 +135,7 @@ export async function saveEntryAction(_prev: ActionState, formData: FormData): P
 const paySchema = z.object({ id: f.id("Lançamento inválido."), paidAt: f.date("Informe a data do pagamento."), method: optionalMethod });
 
 export async function markPaidAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "editar");
   const parsed = parseForm(paySchema, formData);
   if (!parsed.ok) return parsed.state;
   const { id, paidAt, method } = parsed.data;
@@ -156,7 +156,7 @@ export async function markPaidAction(_prev: ActionState, formData: FormData): Pr
 }
 
 export async function undoPaidAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "editar");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const entry = await setEntryPaid(parsed.data.id, null);
@@ -170,7 +170,7 @@ export async function undoPaidAction(_prev: ActionState, formData: FormData): Pr
 const duplicateSchema = z.object({ id: f.id("Lançamento inválido."), dueDate: f.date("Informe o novo vencimento.") });
 
 export async function duplicateEntryAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "editar");
   const parsed = parseForm(duplicateSchema, formData);
   if (!parsed.ok) return parsed.state;
   const copy = await duplicateFinanceEntry(parsed.data.id, parsed.data.dueDate, user.id);
@@ -184,7 +184,7 @@ export async function duplicateEntryAction(_prev: ActionState, formData: FormDat
 const deleteSchema = z.object({ id: f.id("Lançamento inválido."), stay: f.checkbox() });
 
 export async function deleteEntryAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "excluir");
   const parsed = parseForm(deleteSchema, formData);
   if (!parsed.ok) return parsed.state;
   const deleted = await deleteFinanceEntry(parsed.data.id);
@@ -207,7 +207,7 @@ const reserveSchema = z.object({
 });
 
 export async function saveReserveAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "editar");
   const parsed = parseForm(reserveSchema, formData);
   if (!parsed.ok) return parsed.state;
   await saveSetting("finance", { cashReserveCents: parsed.data.cashReserve, cashReserveGoalCents: parsed.data.goal ?? 0, note: parsed.data.note }, user.id);
@@ -223,7 +223,7 @@ const installmentsSchema = z.object({
 });
 
 export async function generateInstallmentsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "editar");
   const parsed = parseForm(installmentsSchema, formData);
   if (!parsed.ok) return parsed.state;
 

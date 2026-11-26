@@ -24,7 +24,7 @@ export async function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:pl-64">
-      <a href="#conteudo" className="btn btn-accent fixed top-2 left-2 z-[80] -translate-y-20 focus-visible:translate-y-0">
+      <a href="#conteudo" className="btn btn-primary fixed top-2 left-2 z-[80] -translate-y-20 focus-visible:translate-y-0">
         Pular para o conteúdo
       </a>
 

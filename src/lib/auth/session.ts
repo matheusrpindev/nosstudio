@@ -6,6 +6,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { sessions, users, type User } from "@/db/schema";
 import { env } from "@/lib/env";
+import { parseOverrides, type PermissionOverrides } from "@/lib/permissions/matrix";
 import { pruneRateLimits } from "./rate-limit";
 import { deviceToken, generateToken, hasDeviceToken, hashToken, withDeviceToken } from "./tokens";
 
@@ -51,8 +52,11 @@ export async function rememberDevice(email: string): Promise<void> {
   });
 }
 
-/** Dados do usuário que podem circular pela aplicação (sem hash de senha). */
-export type CurrentUser = Pick<User, "id" | "name" | "email" | "role" | "mustChangePassword">;
+/**
+ * Dados do usuário que podem circular pela aplicação (sem hash de senha). `permissions` são os ajustes
+ * individuais sobre a matriz do perfil — é o que `can(user, módulo, ação)` precisa (src/lib/permissions).
+ */
+export type CurrentUser = Pick<User, "id" | "name" | "email" | "role" | "mustChangePassword"> & { permissions: PermissionOverrides };
 
 /** Cria a sessão no banco e grava o cookie. Só pode ser chamado em Server Action / Route Handler. */
 export async function createSession(userId: number, meta: { ip?: string; userAgent?: string } = {}) {
@@ -117,6 +121,7 @@ export const getSession = cache(async (): Promise<{ sessionId: string; user: Cur
       email: users.email,
       role: users.role,
       mustChangePassword: users.mustChangePassword,
+      permissions: users.permissions,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -133,7 +138,15 @@ export const getSession = cache(async (): Promise<{ sessionId: string; user: Cur
 
   return {
     sessionId,
-    user: { id: row.id, name: row.name, email: row.email, role: row.role, mustChangePassword: row.mustChangePassword },
+    user: {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      role: row.role,
+      mustChangePassword: row.mustChangePassword,
+      // leitura tolerante: um JSON estranho no banco vira "sem ajustes", nunca um erro de página
+      permissions: parseOverrides(row.permissions),
+    },
   };
 });
 

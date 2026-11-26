@@ -61,7 +61,7 @@ describe("contas do painel", () => {
   it("não deixa desativar nem rebaixar o último administrador ativo", async () => {
     // deixa só uma conta administradora ativa: desativa as demais temporariamente (banco de testes isolado)
     const all = await db.select({ id: users.id, role: users.role, active: users.active }).from(users);
-    const others = all.filter((u) => u.role === "admin" && u.active);
+    const others = all.filter((u) => (u.role === "admin" || u.role === "socio") && u.active);
     const { user } = await makeUser("ultimo");
     for (const other of others) await db.update(users).set({ active: false }).where(eq(users.id, other.id));
     try {

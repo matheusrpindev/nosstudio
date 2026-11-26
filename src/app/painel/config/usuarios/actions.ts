@@ -1,14 +1,17 @@
 "use server";
 
-/** Server Actions de Usuários — todas exigem administrador. Senhas temporárias nunca vão para log/auditoria. */
+/**
+ * Server Actions de Usuários — todas exigem a permissão "editar" em Usuários (só administradores e sócios: o
+ * módulo é reservado e não pode ser concedido por ajuste). Senhas temporárias nunca vão para log/auditoria.
+ */
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { USER_ROLE_LABELS, USER_ROLES } from "@/lib/domain";
-import { f, formToObject, parseForm } from "@/server/action";
-import { createUser, resetUserPassword, setUserActive, updateUser } from "@/server/config/users";
+import { f, formToObject, jsonField, parseForm } from "@/server/action";
+import { createUser, resetUserPassword, setUserActive, setUserPermissions, updateUser } from "@/server/config/users";
 import { getSetting } from "@/server/settings";
 
 /** O que a tela recebe depois de criar/redefinir: a senha temporária, mostrada uma única vez. */
@@ -33,7 +36,7 @@ const updateSchema = z.object({ id: f.id("Conta inválida."), ...accountFields }
 const idSchema = z.object({ id: f.id("Conta inválida.") });
 
 export async function createUserAction(_prev: ActionState<TemporaryCredentials>, formData: FormData): Promise<ActionState<TemporaryCredentials>> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("usuarios", "editar");
   const parsed = parseForm(createSchema, formData);
   if (!parsed.ok) return parsed.state;
 
@@ -45,7 +48,7 @@ export async function createUserAction(_prev: ActionState<TemporaryCredentials>,
 }
 
 export async function updateUserAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("usuarios", "editar");
   const parsed = parseForm(updateSchema, formData);
   if (!parsed.ok) return parsed.state;
   const { id, ...input } = parsed.data;
@@ -57,7 +60,7 @@ export async function updateUserAction(_prev: ActionState, formData: FormData): 
   if (!result.ok) {
     if (result.error === "not_found") return actionError("Esta conta não existe mais.");
     if (result.error === "email_taken") return actionError("Já existe uma conta com este e-mail.", { fieldErrors: { email: "Já existe uma conta com este e-mail." }, values: typed(formData) });
-    return actionError("Esta é a única conta de administrador ativa. Crie ou promova outra antes de mudar este perfil.", { fieldErrors: { role: "Precisa haver ao menos um administrador ativo." }, values: typed(formData) });
+    return actionError("Esta é a única conta ativa de administrador ou sócio. Crie ou promova outra antes de mudar este perfil.", { fieldErrors: { role: "Precisa haver ao menos um administrador ou sócio ativo." }, values: typed(formData) });
   }
   await logAudit({ user: admin, action: "update", entity: "user", entityId: id, summary: `Editou a conta de ${result.user.name} (${USER_ROLE_LABELS[result.user.role]})` });
   refresh();
@@ -65,7 +68,7 @@ export async function updateUserAction(_prev: ActionState, formData: FormData): 
 }
 
 export async function resetUserPasswordAction(_prev: ActionState<TemporaryCredentials>, formData: FormData): Promise<ActionState<TemporaryCredentials>> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("usuarios", "editar");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   if (parsed.data.id === admin.id) return actionError("Para trocar a sua própria senha, use Minha conta.");
@@ -80,7 +83,7 @@ export async function resetUserPasswordAction(_prev: ActionState<TemporaryCreden
 const activeSchema = z.object({ id: f.id("Conta inválida."), active: z.enum(["true", "false"]) });
 
 export async function setUserActiveAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("usuarios", "editar");
   const parsed = parseForm(activeSchema, formData);
   if (!parsed.ok) return parsed.state;
   const active = parsed.data.active === "true";
@@ -88,7 +91,7 @@ export async function setUserActiveAction(_prev: ActionState, formData: FormData
 
   const result = await setUserActive(parsed.data.id, active);
   if (!result.ok) {
-    return actionError(result.error === "not_found" ? "Esta conta não existe mais." : "Esta é a única conta de administrador ativa e não pode ser desativada.");
+    return actionError(result.error === "not_found" ? "Esta conta não existe mais." : "Esta é a única conta ativa de administrador ou sócio e não pode ser desativada.");
   }
   await logAudit({
     user: admin,
@@ -102,4 +105,30 @@ export async function setUserActiveAction(_prev: ActionState, formData: FormData
   // A lista de avisos de novo lead é separada das contas: desativar a conta não tira o e-mail de lá.
   const stillNotified = (await getSetting("notifications")).leadEmails.some((email) => email.toLowerCase() === result.user.email.toLowerCase());
   return actionOk(stillNotified ? "Conta desativada. O e-mail dela ainda recebe os avisos de novo lead: tire-o em Configurações › Notificações." : "Conta desativada.");
+}
+
+const permissionsSchema = z.object({ id: f.id("Conta inválida.") });
+
+/**
+ * Ajustes individuais de permissão (ainda sem tela). O formulário manda `grant` e `deny` como JSON em campos
+ * ocultos: listas de "modulo:acao". Quem valida as chaves e as regras é `setUserPermissions`.
+ */
+export async function setUserPermissionsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requirePermission("usuarios", "editar");
+  const parsed = parseForm(permissionsSchema, formData);
+  if (!parsed.ok) return parsed.state;
+  if (parsed.data.id === admin.id) return actionError("Você não pode mudar as suas próprias permissões. Peça a outro administrador.");
+
+  const result = await setUserPermissions(parsed.data.id, { grant: jsonField(formData, "grant") ?? [], deny: jsonField(formData, "deny") ?? [] });
+  if (!result.ok) return actionError(result.message);
+  const { grant, deny } = result.user.permissions;
+  await logAudit({
+    user: admin,
+    action: "permissoes",
+    entity: "user",
+    entityId: result.user.id,
+    summary: `Ajustou as permissões de ${result.user.name}: ${grant.length} concessão(ões), ${deny.length} negação(ões)`,
+  });
+  refresh();
+  return actionOk("Permissões atualizadas.");
 }

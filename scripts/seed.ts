@@ -2,13 +2,15 @@
  * Carga inicial do banco (idempotente: pode rodar várias vezes; só preenche tabelas vazias).
  *
  *   npm run db:seed              conteúdo inicial do site (serviços, pacotes, FAQ, avisos, modelos de proposta)
- *   npm run db:seed -- --dev     + duas contas de desenvolvimento (NUNCA em produção)
+ *   npm run db:seed -- --dev     + contas de desenvolvimento: os dois sócios (admin) e uma conta de cada perfil
+ *                                novo — gestor, funcionário, freelancer, cliente (NUNCA em produção)
  *   npm run db:seed -- --demo    + dados de exemplo no painel, marcados como [Exemplo] (para testar os fluxos)
+ *   (--dev --demo juntos também ligam as contas de exemplo ao projeto e ao cliente de exemplo)
  *
  * Os textos fixos das páginas (hero, Quem Somos, etc.) não são gravados aqui: enquanto ninguém editar,
  * o site usa os padrões de src/lib/site/content.ts.
  */
-import { count, eq } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
@@ -17,12 +19,14 @@ import {
   brandAssets,
   clientInteractions,
   clients,
+  clientUsers,
   contentItems,
   contracts,
   faqs,
   financeEntries,
   leads,
   packages,
+  projectMembers,
   projects,
   proposalCosts,
   proposalItems,
@@ -392,6 +396,61 @@ async function seedDevUsers() {
   return true;
 }
 
+/**
+ * Uma conta de exemplo por perfil novo (briefing v2), para testar ambientes, permissões e escopos. Idempotente
+ * por e-mail: entra também em bancos de desenvolvimento que já tinham os dois sócios. Enquanto /equipe, /cliente
+ * e o painel restrito não tiverem telas, o login destas contas responde "acesso ainda não liberado" — é o esperado.
+ */
+const DEV_ROLE_USERS = [
+  { name: "[Exemplo] Gabi Gestora", email: "gestor@nos.local", role: "gestor" },
+  { name: "[Exemplo] Fábio Funcionário", email: "funcionario@nos.local", role: "funcionario" },
+  { name: "[Exemplo] Fred Freelancer", email: "freelancer@nos.local", role: "freelancer" },
+  { name: "[Exemplo] Clara Cliente", email: "cliente@nos.local", role: "cliente" },
+] as const;
+
+async function seedDevRoleUsers() {
+  if (isProd) throw new Error("--dev não pode ser usado em produção. Crie as contas com: npm run user:create");
+  const existing = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(inArray(users.email, DEV_ROLE_USERS.map((user) => user.email)));
+  const missing = DEV_ROLE_USERS.filter((user) => !existing.some((row) => row.email === user.email));
+  if (missing.length === 0) return false;
+  const passwordHash = await hashPassword(DEV_PASSWORD);
+  await db.insert(users).values(missing.map((user) => ({ ...user, passwordHash })));
+  return true;
+}
+
+const DEMO_PROJECT_TITLE = "[Exemplo] Conteúdo mensal — Café da Praça";
+
+/**
+ * Liga as contas de exemplo aos dados de exemplo: funcionário e freelancer entram como membros do projeto de
+ * exemplo; a conta de cliente fica vinculada à ficha do cliente desse projeto. Idempotente.
+ */
+async function seedDemoAccess() {
+  const [project] = await db.select({ id: projects.id, clientId: projects.clientId }).from(projects).where(eq(projects.title, DEMO_PROJECT_TITLE));
+  if (!project) return false;
+  const accounts = await db
+    .select({ id: users.id, role: users.role })
+    .from(users)
+    .where(inArray(users.email, DEV_ROLE_USERS.map((user) => user.email)));
+  const byRole = (role: string) => accounts.find((account) => account.role === role)?.id;
+  const employee = byRole("funcionario");
+  const freelancer = byRole("freelancer");
+  const client = byRole("cliente");
+  let created = 0;
+  if (employee) {
+    created += (await db.insert(projectMembers).values({ projectId: project.id, userId: employee, role: "Editor", canEdit: true, canDownload: true, canUpload: true }).onConflictDoNothing().returning({ id: projectMembers.id })).length;
+  }
+  if (freelancer) {
+    created += (await db.insert(projectMembers).values({ projectId: project.id, userId: freelancer, role: "Filmmaker", canUpload: true }).onConflictDoNothing().returning({ id: projectMembers.id })).length;
+  }
+  if (client && project.clientId) {
+    created += (await db.insert(clientUsers).values({ clientId: project.clientId, userId: client }).onConflictDoNothing().returning({ id: clientUsers.id })).length;
+  }
+  return created > 0;
+}
+
 // ------------------------------------------------------------ dados de exemplo
 async function seedDemo() {
   if (isProd && !args.has("--force")) throw new Error("--demo em produção exige --force (os dados são fictícios).");
@@ -530,7 +589,7 @@ async function seedDemo() {
     .insert(projects)
     .values({
       clientId: cafe,
-      title: "[Exemplo] Conteúdo mensal — Café da Praça",
+      title: DEMO_PROJECT_TITLE,
       serviceType: "pacote_mensal",
       stage: "edicao",
       ownerId: owner(1),
@@ -610,8 +669,9 @@ async function main() {
     ["modelos de proposta", seedProposalTemplates],
     ["biblioteca da marca", seedBrandAssets],
   ];
-  if (args.has("--dev")) steps.push(["contas de desenvolvimento", seedDevUsers]);
+  if (args.has("--dev")) steps.push(["contas de desenvolvimento", seedDevUsers], ["contas de exemplo dos perfis novos", seedDevRoleUsers]);
   if (args.has("--demo")) steps.push(["dados de exemplo", seedDemo]);
+  if (args.has("--dev") && args.has("--demo")) steps.push(["acessos de exemplo (membros de projeto, cliente vinculado)", seedDemoAccess]);
 
   for (const [label, run] of steps) {
     const created = await run();
@@ -619,6 +679,7 @@ async function main() {
   }
   if (args.has("--dev")) {
     console.log(`\nContas de desenvolvimento: pedro@nos.local e laura@nos.local — senha: ${DEV_PASSWORD}`);
+    console.log(`Perfis novos (mesma senha): ${DEV_ROLE_USERS.map((user) => user.email).join(", ")}`);
   }
 }
 

@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { f, parseForm } from "@/server/action";
 import { saveSetting } from "@/server/settings";
 
@@ -21,7 +21,7 @@ const schema = z.object({
 });
 
 export async function saveProposalDefaultsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("config", "editar");
   const parsed = parseForm(schema, formData);
   if (!parsed.ok) return parsed.state;
 

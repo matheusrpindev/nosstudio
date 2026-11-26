@@ -10,7 +10,7 @@
  * - Enums: listas em `src/lib/domain.ts` (fonte única, com rótulos em pt-BR).
  */
 import { relations, sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   AGENDA_KINDS,
   APPROVAL_STATUSES,
@@ -45,6 +45,7 @@ import {
   TESTIMONIAL_KINDS,
   USER_ROLES,
 } from "@/lib/domain";
+import type { PermissionOverrides } from "@/lib/permissions/matrix";
 
 // ------------------------------------------------------------------ helpers
 const id = () => integer("id").primaryKey({ autoIncrement: true });
@@ -90,6 +91,12 @@ export const users = sqliteTable("users", {
   active: bool("active", true),
   /** Força a troca de senha no próximo login (contas criadas por outra pessoa). */
   mustChangePassword: bool("must_change_password", false),
+  /**
+   * Ajustes individuais sobre a matriz do perfil: `{ grant: ["financeiro:ver"], deny: ["leads:excluir"] }`.
+   * Validado por zod ao gravar (`setUserPermissions`) e lido com tolerância (`parseOverrides`). Regras em
+   * `src/lib/permissions/matrix.ts`.
+   */
+  permissions: text("permissions", { mode: "json" }).$type<PermissionOverrides>().notNull().default({ grant: [], deny: [] }),
   lastLoginAt: integer("last_login_at", { mode: "timestamp_ms" }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -125,6 +132,39 @@ export const passwordResetTokens = sqliteTable(
     createdAt: createdAt(),
   },
   (t) => [index("password_reset_user_idx").on(t.userId)],
+);
+
+/**
+ * Convites: a ÚNICA forma de uma conta nascer fora do painel de usuários (não existe cadastro público).
+ * Como nos links de redefinição de senha, o banco guarda só o SHA-256 do token; o token vai no link do e-mail.
+ * Estados: pendente (nem aceito, nem revogado, dentro da validade) → aceito | revogado | expirado.
+ */
+export const userInvites = sqliteTable(
+  "user_invites",
+  {
+    id: id(),
+    email: text("email").notNull(), // sempre minúsculo
+    /** Nome sugerido por quem convidou (a pessoa pode corrigir ao aceitar). */
+    name: text("name").notNull().default(""),
+    role: text("role", { enum: USER_ROLES }).notNull(),
+    /** Convite de perfil `cliente`: a ficha de cliente a que a conta ficará vinculada. */
+    clientId: integer("client_id").references((): AnySQLiteColumn => clients.id, { onDelete: "cascade" }),
+    /** Convite de funcionário/freelancer: projeto em que a pessoa já entra como membro. */
+    projectId: integer("project_id").references((): AnySQLiteColumn => projects.id, { onDelete: "cascade" }),
+    /** Papel no projeto (texto livre: "Fotógrafo", "Editor"…), quando há `projectId`. */
+    projectRole: text("project_role").notNull().default(""),
+    /** SHA-256 (hex) do token do link. O token em si nunca é gravado. */
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    invitedBy: integer("invited_by").references(() => users.id, { onDelete: "set null" }),
+    acceptedAt: integer("accepted_at", { mode: "timestamp_ms" }),
+    /** Conta criada pelo aceite. */
+    acceptedUserId: integer("accepted_user_id").references(() => users.id, { onDelete: "set null" }),
+    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+    revokedBy: integer("revoked_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("user_invites_email_idx").on(t.email)],
 );
 
 /** Limitador de tentativas (login, recuperação de senha, formulário público). */
@@ -428,6 +468,54 @@ export const projects = sqliteTable(
   (t) => [index("projects_stage_idx").on(t.stage), index("projects_client_idx").on(t.clientId)],
 );
 
+/**
+ * Membros de um projeto: quem (funcionário, freelancer…) enxerga o projeto e o que pode fazer NELE.
+ * Perfis com visão geral (admin, sócio, gestor, técnico) não precisam estar aqui. Tirar a linha revoga o acesso.
+ */
+export const projectMembers = sqliteTable(
+  "project_members",
+  {
+    id: id(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Papel NESTE projeto — texto livre (sugestões em TEAM_FUNCTIONS): "Fotógrafo", "Editor"… */
+    role: text("role").notNull().default(""),
+    canView: bool("can_view", true),
+    canEdit: bool("can_edit", false),
+    canDownload: bool("can_download", false),
+    /** Enviar arquivos para o projeto. */
+    canUpload: bool("can_upload", false),
+    addedBy: integer("added_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("project_members_project_user_idx").on(t.projectId, t.userId), index("project_members_user_idx").on(t.userId)],
+);
+
+/**
+ * "Usuários vinculados" à ficha de um cliente: contas de perfil `cliente` que acompanham os projetos dele na
+ * Área do Cliente (N:N — a agência do cliente pode ter duas pessoas; uma pessoa pode responder por duas empresas).
+ */
+export const clientUsers = sqliteTable(
+  "client_users",
+  {
+    id: id(),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addedBy: integer("added_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("client_users_client_user_idx").on(t.clientId, t.userId), index("client_users_user_idx").on(t.userId)],
+);
+
 export const tasks = sqliteTable(
   "tasks",
   {
@@ -692,6 +780,18 @@ export const brandAssets = sqliteTable("brand_assets", {
 // ================================================================== RELAÇÕES
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
+  projectMemberships: many(projectMembers),
+  clientLinks: many(clientUsers),
+}));
+
+export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+  project: one(projects, { fields: [projectMembers.projectId], references: [projects.id] }),
+  user: one(users, { fields: [projectMembers.userId], references: [users.id] }),
+}));
+
+export const clientUsersRelations = relations(clientUsers, ({ one }) => ({
+  client: one(clients, { fields: [clientUsers.clientId], references: [clients.id] }),
+  user: one(users, { fields: [clientUsers.userId], references: [users.id] }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -725,6 +825,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   agendaEvents: many(agendaEvents),
   financeEntries: many(financeEntries),
   contentItems: many(contentItems),
+  linkedUsers: many(clientUsers),
 }));
 
 export const clientInteractionsRelations = relations(clientInteractions, ({ one }) => ({
@@ -739,6 +840,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   agendaEvents: many(agendaEvents),
   contracts: many(contracts),
   financeEntries: many(financeEntries),
+  members: many(projectMembers),
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
@@ -800,6 +902,9 @@ export const brandAssetsRelations = relations(brandAssets, ({ one }) => ({
 // ===================================================================== TIPOS
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
+export type UserInvite = typeof userInvites.$inferSelect;
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type ClientUser = typeof clientUsers.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
 export type Service = typeof services.$inferSelect;

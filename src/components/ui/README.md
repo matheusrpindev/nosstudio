@@ -7,7 +7,52 @@ veja [`WIDGETS.md`](./WIDGETS.md) e `/painel/kit/widgets`.
 
 Vocabulário visual: as classes de `src/app/globals.css` (`.btn`, `.input`, `.label`, `.hint`, `.field-error`, `.card`,
 `.badge-*`, `.link`). Os componentes embrulham essas classes; use-as direto quando precisar de um elemento nativo
-com a mesma cara. Roxo = ação principal; lima = um destaque pontual (nunca texto lima sobre fundo claro).
+com a mesma cara. O painel é **escuro**: lima = ação principal e destaque; roxo = detalhe (ver "Cores e tema" logo abaixo).
+
+---
+
+## Cores e tema (leia antes de escrever uma classe de cor)
+
+O painel e as telas de acesso usam o **tema escuro** (fundo preto, detalhes em roxo, destaques em lima). Ele é ligado pela
+classe `tema-painel` na raiz dos layouts (`painel/_shell/shell.tsx` e `(auth)/layout.tsx`); o CSS
+(`:root:has(.tema-painel)` em `globals.css`) troca os **tokens semânticos** para o documento inteiro, inclusive os portais
+do Radix. O site público não tem essa classe e fica claro. Componentes do kit e páginas do painel usam **só tokens
+semânticos** — nunca hex, nunca cor da paleta no lugar de um papel.
+
+| Papel | Classe | No escuro | Use para |
+| --- | --- | --- | --- |
+| Fundo da página | `bg-fundo` | preto `#101014` | (já vem do `<body>`) anel de separação: `ring-fundo` |
+| Superfície | `bg-superficie` | grafite `#1B1B22` | cartões, diálogos, gavetas, barra inferior |
+| Superfície elevada | `bg-superficie-alta` | `#26262F` | hover neutro, bloco dentro de cartão, menus/popovers/toasts, barras fixas |
+| Campo | `bg-campo` | `#131318` | fundo de input (a classe `.input` já usa) |
+| Bordas | `border-borda` · `divide-borda` / `border-borda-forte` | `#30303C` / `#727084` | divisórias e cartões / contorno de controles (3:1) |
+| Texto | `text-texto` / `text-texto-suave` | `#F6F4EF` / `#A7A4B3` | principal / secundário |
+| Detalhe (roxo legível) | `text-detalhe` · `border-detalhe` · `fill-detalhe` | `#B9A8FF` | links, ícones, botão ghost, contorno de seleção |
+| Fundo de detalhe | `bg-detalhe-suave` (borda: `border-detalhe-medio`) | `#2B2056` (`#4A3A9C`) | chips, seleção, hover de linha/link, alerta de informação |
+| Ação principal / ativo | `bg-primaria` + `text-sobre-primaria` · `text-primaria` | lima + grafite | botão primário, switch ligado, "hoje", barra de progresso, aba ativa, números de indicador |
+| Foco | `outline-foco` · `focus:border-foco` · `ring-foco/20` | lima | (o `:focus-visible` global já aplica) |
+| Menu | `bg-menu` + `border-menu-borda` | `#17112C` + roxo | barra lateral, barra superior do celular, lado da marca no login |
+| Estados | `text-sucesso` · `text-perigo` · `text-alerta` + `bg-*-claro` | tons claros sobre fundo escuro da cor | badges, alertas, mensagens |
+| Perigo sólido | `bg-perigo-solido text-white` | `#C9372C` | botão danger, toast de erro |
+| Contraste máximo | `bg-inverso text-sobre-inverso` | off-white + grafite | tooltip |
+| Véu | `bg-veu` | preto 68% | atrás de diálogos e gavetas |
+
+**Paleta fixa** (não muda com o tema): `roxo`, `lima`, `lavanda`, `offwhite`, `grafite`, `preto`, `white`. No painel ela
+só entra como **preenchimento com o texto certo por cima**: `bg-lima text-grafite` (item ativo do menu, badge lima),
+`bg-roxo text-white` + `border-detalhe-medio`/`ring-detalhe-medio` (cartão de destaque, avatar, opção selecionada),
+`text-white`/`text-lavanda` sobre `bg-menu`/`bg-roxo`.
+
+**Não use no painel:** `text-roxo`/`border-roxo` (some no preto: é `detalhe`), `text-grafite` fora de um fundo lima
+(é `texto`), `text-cinza` (`texto-suave`), `bg-white` (`superficie`), `bg-offwhite` (`superficie-alta`),
+`border-areia*` (`borda*`), `bg-lavanda-claro` (`detalhe-suave`), `bg-grafite/50` (`veu`), `bg-perigo text-white`
+(`perigo-solido`), hex em `className`/`style`, sombras com cor fixa. Sombra: `shadow-cartao` não aparece no escuro
+(separação = borda + diferença de superfície); `shadow-flutuante` só em quem flutua.
+
+**Representações do site e da marca** (prévia do Google, prévia da barra de avisos, amostras da paleta, logo sobre claro)
+mostram as cores reais: use a paleta fixa ou embrulhe o bloco em `className="tema-claro"`, que devolve os tokens
+semânticos aos valores claros só naquele trecho. Sempre com uma borda (`border-borda-forte`) para a amostra não sumir.
+
+Impressão (contratos): os tokens escuros valem só em `@media screen`; no papel volta o tema claro.
 
 ---
 
@@ -122,7 +167,7 @@ Fora de um `Field`: `useFieldState(name)` (erro e valor a repopular) e `useActio
 
 | Componente | Props principais | Exemplo |
 | --- | --- | --- |
-| `Button` | `variant: primary \| accent \| secondary \| ghost \| danger \| danger-ghost`, `size: sm \| md \| lg`, `icon`, `iconRight`, `loading`, `block` | `<Button icon={<Plus />} onClick={…}>Nova tarefa</Button>` (`type="button"` por padrão) |
+| `Button` | `variant: primary` (lima, ação principal) `\| accent` (roxo preenchido, 2ª ação de peso) `\| secondary \| ghost \| danger \| danger-ghost`, `size: sm \| md \| lg`, `icon`, `iconRight`, `loading`, `block` | `<Button icon={<Plus />} onClick={…}>Nova tarefa</Button>` (`type="button"` por padrão) |
 | `ButtonLink` | as de `Button` + `href`, `external` | `<ButtonLink href="/painel/leads/novo" icon={<Plus />}>Cadastrar lead</ButtonLink>` · `external` abre em nova aba com `rel` seguro · `download` (exportações, PDF de rota): vira `<a>` comum, sem prefetch — o `<Link>` chamaria a rota só de a página abrir |
 | `IconButton` | `aria-label` (**obrigatório**), `variant` (padrão `ghost`), `size: sm \| md`, `loading` | `<IconButton aria-label="Excluir item"><Trash2 /></IconButton>` |
 | `buttonClasses()` | `{ variant, size, block }` | Para dar cara de botão a outro elemento (`<label>`, `<summary>`). |
@@ -139,7 +184,7 @@ Fora de um `Field`: `useFieldState(name)` (erro e valor a repopular) e `useActio
 | `StatusBadge` | `ui/badge` | `value`, `labels` (de `domain.ts`), `tones` (mapa do módulo) | `<StatusBadge value={lead.status} labels={LEAD_STATUS_LABELS} tones={LEAD_STATUS_TONES} />` |
 | `EmptyState` | `ui/empty-state` | `icon`, `title`, `description`, `action`, `variant: card \| plain` | `<EmptyState icon={<Inbox />} title="Nenhum lead" action={<ButtonLink …/>} />` (`plain` dentro de `DataList`/`Card`) |
 | `Skeleton` / `SkeletonText` | `ui/skeleton` | `className` (tamanho) · `lines` | `<Skeleton className="h-8 w-48" />` |
-| `Spinner` | `ui/spinner` | `label` (`""` se já há texto ao lado), `className` | `<Spinner label="" className="text-roxo" /> Gerando PDF…` |
+| `Spinner` | `ui/spinner` | `label` (`""` se já há texto ao lado), `className` | `<Spinner label="" className="text-detalhe" /> Gerando PDF…` |
 
 ## Sobreposições (Radix: foco preso, Esc fecha, foco volta ao gatilho)
 

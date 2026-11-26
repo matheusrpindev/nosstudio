@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * Server Actions de Orçamentos e propostas. Padrão do painel: `requireUser()` → validar com zod → mutação em
+ * Server Actions de Orçamentos e propostas. Padrão do painel: `requirePermission(módulo, ação)` → validar com zod → mutação em
  * `src/server/proposals/admin.ts` → `logAudit()` → `refresh()`/`redirect()`.
  *
  * Nada daqui devolve custos, margens ou notas internas para fora do painel: o PDF sai só pela rota
@@ -13,7 +13,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission, type CurrentUser } from "@/lib/auth";
 import { CLIENT_STATUS_LABELS, PROPOSAL_MODALITIES, PROPOSAL_STATUS_LABELS, PROPOSAL_STATUSES } from "@/lib/domain";
 import { isValidPhone } from "@/lib/format";
 import { f, jsonField, parseForm, zodFieldErrors } from "@/server/action";
@@ -58,7 +58,7 @@ const newProposalSchema = z
   });
 
 export async function createProposalAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
   const parsed = parseForm(newProposalSchema, formData);
   if (!parsed.ok) return parsed.state;
   const data = parsed.data;
@@ -90,7 +90,7 @@ const newTemplateSchema = z.object({
 });
 
 export async function createTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
   const parsed = parseForm(newTemplateSchema, formData);
   if (!parsed.ok) return parsed.state;
   const id = await createTemplate({ ...parsed.data, title: DEFAULT_TITLES[parsed.data.modality], userId: user.id });
@@ -102,7 +102,7 @@ export async function createTemplateAction(_prev: ActionState, formData: FormDat
 const saveAsTemplateSchema = z.object({ id: f.id("Proposta inválida."), templateName: f.text(120, "Dê um nome ao modelo.") });
 
 export async function saveAsTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
   const parsed = parseForm(saveAsTemplateSchema, formData);
   if (!parsed.ok) return parsed.state;
   const result = await saveProposalAsTemplate(parsed.data.id, parsed.data.templateName, user.id);
@@ -133,7 +133,7 @@ const FIELD_NAMES: Record<string, string> = {
  * contas antes de gravar. Em caso de erro, `fieldErrors` usa o caminho do campo (`items.2.title`).
  */
 export async function saveProposalAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
   const idParsed = idSchema.safeParse({ id: formData.get("id") });
   if (!idParsed.success) return actionError("Proposta inválida.");
   const id = idParsed.data.id;
@@ -178,7 +178,7 @@ export async function saveProposalAction(_prev: ActionState, formData: FormData)
 
 // ----------------------------------------------------------- duplicar / versão
 export async function duplicateProposalAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const result = await duplicateProposal(parsed.data.id, user.id);
@@ -195,7 +195,7 @@ export async function duplicateProposalAction(_prev: ActionState, formData: Form
 }
 
 export async function createVersionAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const result = await createProposalVersion(parsed.data.id, user.id);
@@ -207,7 +207,7 @@ export async function createVersionAction(_prev: ActionState, formData: FormData
 
 // ------------------------------------------------------------------- status
 /** O avanço automático do cliente no funil também fica na auditoria (sem nome do cliente: só o id). */
-async function auditClientMove(user: Awaited<ReturnType<typeof requireUser>>, move: FunnelMove, cause: string) {
+async function auditClientMove(user: CurrentUser, move: FunnelMove, cause: string) {
   await logAudit({
     user,
     action: "status",
@@ -220,7 +220,7 @@ async function auditClientMove(user: Awaited<ReturnType<typeof requireUser>>, mo
 const statusSchema = z.object({ id: f.id("Proposta inválida."), status: z.enum(PROPOSAL_STATUSES, { error: "Status inválido." }) });
 
 export async function setProposalStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
   const parsed = parseForm(statusSchema, formData);
   if (!parsed.ok) return parsed.state;
   const result = await setProposalStatus(parsed.data.id, parsed.data.status, user.id);
@@ -246,7 +246,8 @@ export async function setProposalStatusAction(_prev: ActionState, formData: Form
 
 // ------------------------------------------------------- projeto e contrato
 export async function convertToProjectAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
+  await requirePermission("projetos", "editar");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const result = await convertProposalToProject(parsed.data.id, user.id);
@@ -264,7 +265,8 @@ export async function convertToProjectAction(_prev: ActionState, formData: FormD
 const contractSchema = z.object({ id: f.id("Proposta inválida."), contractId: f.optionalId() });
 
 export async function linkContractAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "editar");
+  await requirePermission("contratos", "editar");
   const parsed = parseForm(contractSchema, formData);
   if (!parsed.ok) return parsed.state;
   const result = await linkProposalContract(parsed.data.id, parsed.data.contractId);
@@ -284,7 +286,7 @@ export async function linkContractAction(_prev: ActionState, formData: FormData)
 
 // ------------------------------------------------------------------- excluir
 export async function deleteProposalAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("propostas", "excluir");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
   const result = await deleteProposal(parsed.data.id);

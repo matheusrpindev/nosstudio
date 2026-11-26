@@ -6,7 +6,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { f, parseForm, parseInput } from "@/server/action";
 import { deleteFaq, moveFaq, saveFaq, setFaqPublished } from "@/server/site/admin/faqs";
 import { parseSiteForm } from "@/server/site/admin/form";
@@ -28,7 +28,7 @@ const schema = z
   });
 
 export async function saveFaqAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseSiteForm(schema, formData);
   if (!parsed.ok) return parsed.state;
   const { id, ...data } = parsed.data;
@@ -46,7 +46,7 @@ export async function saveFaqAction(_prev: ActionState, formData: FormData): Pro
 }
 
 export async function toggleFaqAction(id: number, published: boolean): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), published: z.boolean() }), { id, published });
   if (!parsed.ok) return parsed.state;
   const result = await setFaqPublished(parsed.data.id, parsed.data.published);
@@ -58,7 +58,7 @@ export async function toggleFaqAction(id: number, published: boolean): Promise<A
 }
 
 export async function moveFaqAction(id: number, direction: "up" | "down"): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const parsed = parseInput(z.object({ id: f.id(), direction: z.enum(["up", "down"]) }), { id, direction });
   if (!parsed.ok) return parsed.state;
   if (await moveFaq(parsed.data.id, parsed.data.direction)) {
@@ -70,7 +70,7 @@ export async function moveFaqAction(id: number, direction: "up" | "down"): Promi
 }
 
 export async function deleteFaqAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "excluir");
   const parsed = parseForm(z.object({ id: f.id("Pergunta inválida.") }), formData);
   if (!parsed.ok) return parsed.state;
   if (await deleteFaq(parsed.data.id)) {

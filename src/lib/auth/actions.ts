@@ -11,7 +11,9 @@ import { rateLimitIp } from "@/lib/client-ip";
 import { env, smtpConfigured } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { getClientIp, getUserAgent } from "@/lib/request";
-import { FORCE_PASSWORD_PATH, LOGIN_PATH, PANEL_HOME, requireUser, safeNextPath } from "./index";
+import { USER_ROLE_LABELS } from "@/lib/domain";
+import { ENVIRONMENT_LABELS, landingFor, parseOverrides } from "@/lib/permissions";
+import { FORCE_PASSWORD_PATH, LOGIN_PATH, NO_ACCESS_PATH, requireSessionUser, safeNextPath } from "./index";
 import { hashPassword, passwordProblem, verifyAgainstDummy, verifyPassword } from "./password";
 import { checkLoginAttempt, clearLoginAttempts, loginGateMessage } from "./login-limits";
 import { consumeRateLimit, retryMessage, unlockLogin } from "./rate-limit";
@@ -58,12 +60,30 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
   }
 
   await clearLoginAttempts(email, ipBucket);
+  // Para onde esta conta vai (src/lib/permissions/landing.ts). Perfil cujo ambiente ainda não tem telas
+  // (Área da Equipe, Área do Cliente, painel restrito): a senha está certa, mas NÃO abrimos sessão — a pessoa
+  // lê o motivo aqui mesmo, na tela de login. Assim ninguém cai no painel por falta de outro lugar.
+  const landing = landingFor({ role: user.role, permissions: parseOverrides(user.permissions) });
+  if (!landing.ok) {
+    await logAudit({
+      user,
+      action: "login_sem_ambiente",
+      entity: "user",
+      entityId: user.id,
+      summary: `Senha correta, mas o perfil ${USER_ROLE_LABELS[user.role]} ainda não tem ambiente liberado`,
+    });
+    return actionError(landing.message, { values });
+  }
+
   await createSession(user.id, { ip, userAgent: await getUserAgent() });
   await rememberDevice(email);
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
-  await logAudit({ user, action: "login", entity: "user", entityId: user.id, summary: "Entrou no painel" });
+  await logAudit({ user, action: "login", entity: "user", entityId: user.id, summary: `Entrou (${ENVIRONMENT_LABELS[landing.environment]})` });
 
-  redirect(user.mustChangePassword ? `${FORCE_PASSWORD_PATH}?obrigatoria=1` : next);
+  // `next` só vale dentro do painel (safeNextPath); nos outros ambientes a pessoa começa pelo início dele.
+  const inPanel = landing.environment === "painel";
+  if (user.mustChangePassword && inPanel) redirect(`${FORCE_PASSWORD_PATH}?obrigatoria=1`);
+  redirect(inPanel ? next : landing.path);
 }
 
 // -------------------------------------------------------------------- logout
@@ -211,7 +231,8 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
 
 // ------------------------------------------------- troca de senha (logado)
 export async function changePasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const current = await requireUser({ allowPasswordChange: true });
+  // Trocar a própria senha é da CONTA, não do painel: vale para qualquer sessão, de qualquer ambiente.
+  const current = await requireSessionUser({ allowPasswordChange: true });
   const session = await getSession();
   const currentPassword = field(formData, "currentPassword");
   const password = field(formData, "password");
@@ -243,6 +264,9 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
   await revokeResetTokens(user.id);
   await logAudit({ user, action: "senha_alterada", entity: "user", entityId: user.id, summary: "Alterou a própria senha" });
 
-  if (current.mustChangePassword) redirect(PANEL_HOME);
+  if (current.mustChangePassword) {
+    const landing = landingFor(current);
+    redirect(landing.ok ? landing.path : NO_ACCESS_PATH);
+  }
   return actionOk("Senha alterada. Os outros aparelhos conectados foram desconectados.");
 }

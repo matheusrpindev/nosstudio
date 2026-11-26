@@ -9,12 +9,52 @@ function labels<const T extends readonly string[]>(_keys: T, map: Record<T[numbe
 }
 
 // ---------------------------------------------------------------- usuários
-export const USER_ROLES = ["admin", "tecnico"] as const;
+/**
+ * Perfis de acesso (briefing v2, seção 28). O que cada perfil pode fazer NÃO fica aqui: ambientes e matriz de
+ * permissões vivem em `src/lib/permissions` (fonte única). `tecnico` é o acesso temporário do desenvolvedor.
+ */
+export const USER_ROLES = ["admin", "socio", "gestor", "funcionario", "freelancer", "cliente", "tecnico"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 export const USER_ROLE_LABELS = labels(USER_ROLES, {
   admin: "Administrador(a)",
+  socio: "Sócio(a)",
+  gestor: "Gestor(a) de projetos",
+  funcionario: "Funcionário(a)",
+  freelancer: "Freelancer",
+  cliente: "Cliente",
   tecnico: "Acesso técnico (temporário)",
 });
+/** Uma frase por perfil, para as telas de usuários e convites. */
+export const USER_ROLE_DESCRIPTIONS = labels(USER_ROLES, {
+  admin: "Acesso completo, inclusive gerenciar contas, exportar dados e ver a auditoria.",
+  socio: "Acesso completo, como o administrador, incluindo a área societária (pró-labore, retiradas, distribuição).",
+  gestor: "Opera o dia a dia: leads, clientes, propostas, contratos, projetos, agenda, conteúdo, arquivos e equipe. Não vê o financeiro nem as configurações.",
+  funcionario: "Trabalha nos projetos em que foi incluído: tarefas, agenda, conteúdo e arquivos desses projetos. Sem comercial nem financeiro.",
+  freelancer: "Só a Área da Equipe, e apenas os projetos para os quais foi escalado.",
+  cliente: "Só a Área do Cliente, e apenas os projetos dos clientes a que a conta está vinculada.",
+  tecnico: "Conta do desenvolvedor para dar suporte. Acessa o painel, mas não gerencia contas nem exporta dados. É temporária: revogue quando o suporte acabar.",
+});
+
+/**
+ * Funções iniciais da equipe (briefing v2, seção 17). São SUGESTÕES para o papel de alguém num projeto
+ * (`project_members.role` é texto livre: novas funções podem ser digitadas).
+ */
+export const TEAM_FUNCTIONS = [
+  "Fotógrafo",
+  "Filmmaker",
+  "Editor",
+  "Designer",
+  "Social media",
+  "Storymaker",
+  "Tráfego",
+  "Roteirista",
+  "Assistente",
+  "Drone",
+  "Áudio",
+  "Iluminação",
+  "Atendimento",
+  "Administrativo",
+] as const;
 
 // ------------------------------------------------------- paleta / aparência
 /** Cores oficiais da marca. Usadas, por exemplo, na barra de avisos (fundo/texto). */

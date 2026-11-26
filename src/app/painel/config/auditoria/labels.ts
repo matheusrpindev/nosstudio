@@ -4,17 +4,24 @@
  * por exemplo — aparecem como estão.
  */
 export const ACTION_LABELS: Record<string, string> = {
+  acesso_concedido: "Concedeu acesso",
+  acesso_revogado: "Revogou acesso",
   activate: "Reativou",
+  convite_aceito: "Aceitou convite",
+  convite_criado: "Convidou",
+  convite_revogado: "Revogou convite",
   create: "Criou",
   deactivate: "Desativou",
   delete: "Excluiu",
   export: "Exportou",
   login: "Entrou",
   login_falhou: "Login recusado",
+  login_sem_ambiente: "Login sem ambiente liberado",
   logout: "Saiu",
   password_change: "Trocou a senha",
   password_reset: "Gerou nova senha",
   pdf: "Gerou PDF",
+  permissoes: "Ajustou permissões",
   restore: "Restaurou o padrão",
   senha_alterada: "Trocou a senha",
   senha_redefinida: "Redefiniu a senha",
@@ -33,6 +40,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   brand_asset: "Marca",
   client: "Cliente",
   client_interaction: "Atendimento",
+  client_user: "Usuário vinculado a cliente",
   content: "Conteúdo",
   content_item: "Conteúdo",
   contract: "Contrato",
@@ -47,6 +55,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   package: "Pacote",
   portfolio: "Portfólio",
   project: "Projeto",
+  project_member: "Equipe do projeto",
   proposal: "Orçamento",
   proposal_template: "Modelo de orçamento",
   service: "Serviço",
@@ -55,6 +64,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   task: "Tarefa",
   testimonial: "Depoimento",
   user: "Usuário",
+  user_invite: "Convite",
   session: "Sessão",
 };
 

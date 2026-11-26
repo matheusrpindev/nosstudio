@@ -23,7 +23,7 @@ export type DrawerProps = {
   side?: keyof typeof SIDES;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** Classes do painel (ex.: fundo roxo no menu do painel). */
+  /** Classes do painel (ex.: `bg-menu` no menu do painel). */
   className?: string;
   /** Sem cabeçalho nem padding: o conteúdo controla o próprio layout (o título continua para leitores de tela). */
   hideHeader?: boolean;

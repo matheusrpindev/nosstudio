@@ -5,7 +5,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { TASK_PRIORITIES } from "@/lib/domain";
 import { f, formToObject, parseForm, parseInput } from "@/server/action";
 import {
@@ -38,7 +38,7 @@ export async function createTaskAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("tarefas", "editar");
   const parsed = parseForm(quickSchema, formData);
   if (!parsed.ok) return parsed.state;
   const input = {
@@ -78,7 +78,7 @@ export async function updateTaskAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("tarefas", "editar");
   const parsed = parseForm(editSchema, formData);
   if (!parsed.ok) return parsed.state;
   const { id, ...input } = parsed.data;
@@ -105,7 +105,7 @@ export async function setTaskDoneAction(
   taskId: number,
   done: boolean,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("tarefas", "editar");
   const parsed = parseInput(
     z.object({ id: f.id("Tarefa inválida."), done: z.boolean() }),
     { id: taskId, done },
@@ -129,7 +129,7 @@ export async function deleteTaskAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("tarefas", "excluir");
   const parsed = parseForm(
     z.object({ id: f.id("Tarefa inválida.") }),
     formData,

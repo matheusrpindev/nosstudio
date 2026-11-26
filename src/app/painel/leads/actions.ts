@@ -2,7 +2,7 @@
 
 /**
  * Server Actions do módulo de Leads — o padrão de TODA action do painel:
- *   1. `requireUser()` primeiro (o proxy não é barreira de segurança);
+ *   1. `requirePermission(módulo, ação)` primeiro (o proxy não é barreira de segurança);
  *   2. validar o que veio do cliente com zod (`parseForm` devolve o estado de erro pronto);
  *   3. mutação pelo arquivo do módulo em `src/server/…` (aqui: `src/server/leads/admin.ts`);
  *   4. `logAudit()`;
@@ -14,7 +14,7 @@ import { z } from "zod";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CONTACT_SOURCES, LEAD_STATUS_LABELS, LEAD_STATUSES, SERVICE_INTERESTS } from "@/lib/domain";
 import { isValidPhone } from "@/lib/format";
 import { f, parseForm } from "@/server/action";
@@ -35,7 +35,7 @@ const manualLeadSchema = z.object({
 });
 
 export async function createLeadAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("leads", "editar");
   const parsed = parseForm(manualLeadSchema, formData);
   if (!parsed.ok) return parsed.state;
 
@@ -52,7 +52,7 @@ const statusSchema = z.object({
 });
 
 export async function updateLeadStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("leads", "editar");
   const parsed = parseForm(statusSchema, formData);
   if (!parsed.ok) return parsed.state;
 
@@ -69,7 +69,7 @@ export async function updateLeadStatusAction(_prev: ActionState, formData: FormD
  * Não é action de formulário, então recebe o id direto — e valida do mesmo jeito.
  */
 export async function markLeadReadAction(id: number): Promise<void> {
-  await requireUser();
+  await requirePermission("leads", "ver");
   const parsed = z.number().int().positive().safeParse(id);
   if (!parsed.success) return;
   if (await markLeadRead(parsed.data)) refresh();
@@ -77,7 +77,8 @@ export async function markLeadReadAction(id: number): Promise<void> {
 
 // ------------------------------------------------------- converter em cliente
 export async function convertLeadAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("leads", "editar");
+  await requirePermission("clientes", "editar");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
 
@@ -92,7 +93,7 @@ export async function convertLeadAction(_prev: ActionState, formData: FormData):
 
 // --------------------------------------------------------------------- excluir
 export async function deleteLeadAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("leads", "excluir");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
 

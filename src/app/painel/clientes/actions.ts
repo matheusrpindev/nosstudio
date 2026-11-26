@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * Server Actions de Clientes. Padrão do painel: requireUser → zod → mutação (src/server/clients/admin.ts) →
+ * Server Actions de Clientes. Padrão do painel: requirePermission → zod → mutação (src/server/clients/admin.ts) →
  * logAudit → refresh()/redirect().
  */
 import { inArray } from "drizzle-orm";
@@ -13,7 +13,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CLIENT_KINDS, CLIENT_STATUS_LABELS, CLIENT_STATUSES, CONTACT_SOURCES, INTERACTION_KINDS, SERVICE_INTERESTS } from "@/lib/domain";
 import { isISODate } from "@/lib/dates";
 import { isValidPhone, onlyDigits } from "@/lib/format";
@@ -88,7 +88,7 @@ async function ownerExists(ownerId: number | null): Promise<boolean> {
 }
 
 export async function createClientAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "editar");
   const parsed = parseClientForm(formData);
   if (!parsed.ok) return parsed.state;
   if (!(await ownerExists(parsed.data.ownerId))) return actionError("Selecione um responsável válido.", { fieldErrors: { ownerId: "Responsável inválido." }, values: formToValues(formData) });
@@ -100,7 +100,7 @@ export async function createClientAction(_prev: ActionState, formData: FormData)
 }
 
 export async function updateClientAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "editar");
   const id = parseForm(idSchema, formData);
   if (!id.ok) return id.state;
   const parsed = parseClientForm(formData);
@@ -132,7 +132,7 @@ function formToValues(formData: FormData): Record<string, string> {
 // ---------------------------------------------------------------------- status
 /** Chamada pelo funil (Board): recebe `(id, coluna)` direto, não um FormData. A mensagem de erro aparece acima do quadro. */
 export async function moveClientAction(cardId: number, toColumnId: string): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "editar");
   const parsed = parseInput(z.object({ id: f.id("Cliente inválido."), status: z.enum(CLIENT_STATUSES, { error: "Etapa inválida." }) }), { id: cardId, status: toColumnId });
   if (!parsed.ok) return actionError(parsed.state.message ?? "Movimento inválido.");
 
@@ -163,7 +163,7 @@ const statusSchema = z
 
 /** Formulário "Andamento" da ficha. */
 export async function updateClientStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "editar");
   const parsed = parseForm(statusSchema, formData);
   if (!parsed.ok) return parsed.state;
 
@@ -195,7 +195,7 @@ const interactionSchema = z.object({
 });
 
 export async function addInteractionAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "editar");
   const parsed = parseForm(interactionSchema, formData);
   if (!parsed.ok) return parsed.state;
 
@@ -214,7 +214,7 @@ export async function addInteractionAction(_prev: ActionState, formData: FormDat
 
 // --------------------------------------------------------------------- excluir
 export async function deleteClientAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "excluir");
   const parsed = parseForm(idSchema, formData);
   if (!parsed.ok) return parsed.state;
 

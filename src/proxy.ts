@@ -1,9 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Checagem OTIMISTA de acesso ao painel: sem cookie de sessão, nem tenta renderizar — manda para o login.
- * A autorização de verdade acontece no servidor, em cada página/ação, via `requireUser()` (src/lib/auth).
+ * Checagem OTIMISTA de acesso aos ambientes privados (painel, Área da Equipe, Área do Cliente): sem cookie de
+ * sessão, nem tenta renderizar — manda para o login. O proxy NÃO sabe o perfil de ninguém: quem decide se a
+ * conta entra naquele ambiente e o que ela vê é o servidor, em cada página/ação, via `requireUser()`,
+ * `requirePermission()` e `requireEnvironment()` (src/lib/auth).
  * Aqui também renovamos a validade do cookie a cada visita (sessão deslizante de 30 dias).
+ *
+ * `/equipe` e `/cliente` ainda não têm telas (respondem 404 a quem está logado); já entram no matcher para que
+ * as rotas nasçam atrás da mesma barreira. Os prefixos repetem `ENVIRONMENT_PATHS` de src/lib/permissions — o
+ * matcher precisa ser literal.
  */
 const COOKIE_NAMES = ["__Host-nos_session", "nos_session"];
 const THIRTY_DAYS = 60 * 60 * 24 * 30;
@@ -12,8 +18,8 @@ export function proxy(request: NextRequest) {
   const cookie = COOKIE_NAMES.map((name) => request.cookies.get(name)).find(Boolean);
 
   if (!cookie?.value) {
-    // Chamadas de API do painel recebem 401 em JSON (um redirecionamento viraria HTML de login no fetch).
-    if (request.nextUrl.pathname.startsWith("/painel/api/")) {
+    // Chamadas de API dos ambientes recebem 401 em JSON (um redirecionamento viraria HTML de login no fetch).
+    if (/^\/(painel|equipe|cliente)\/api\//.test(request.nextUrl.pathname)) {
       return NextResponse.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401 });
     }
     const login = new URL("/login", request.url);
@@ -38,5 +44,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/painel/:path*"],
+  matcher: ["/painel/:path*", "/equipe/:path*", "/cliente/:path*"],
 };

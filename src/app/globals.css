@@ -117,7 +117,7 @@
   :root:has(.tema-painel:not([hidden], [style*="display: none"], [style*="display:none"])) {
     color-scheme: dark;
     background: var(--color-fundo);
-    scrollbar-color: var(--color-borda-forte) var(--color-fundo);
+    scrollbar-color: var(--color-borda-forte) transparent;
 
     --color-fundo: #101014; /* preto oficial */
     --color-superficie: #1b1b22; /* grafite */
@@ -148,11 +148,22 @@
     --color-alerta: #f2c14e;
     --color-alerta-claro: #3f3519;
 
-    /* a separação vem de borda e de diferença de superfície, não de sombra */
-    --shadow-cartao: 0 0 #0000;
-    --shadow-flutuante: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 48px rgb(0 0 0 / 0.6);
-
     --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a7a4b3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* Sombras: o Tailwind embute o valor de `--shadow-*` na utility, então a troca é por regra, não por variável.
+     No escuro a separação vem de borda e de diferença de superfície; só o que flutua (menus, diálogos, toasts)
+     ganha sombra preta e um fio claro. */
+  :root:has(.tema-painel) :is(.shadow-cartao, .card) {
+    --tw-shadow: 0 0 #0000;
+  }
+  :root:has(.tema-painel) .shadow-flutuante {
+    --tw-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 48px rgb(0 0 0 / 0.6);
+  }
+
+  /* placeholder: os 70% do tema claro não fecham AA sobre o campo escuro (4,3:1); 85% dá 5,7:1 */
+  :root:has(.tema-painel) .input::placeholder {
+    color: color-mix(in oklab, var(--color-texto-suave) 85%, transparent);
   }
 
   /* preenchimento automático do navegador: mantém o campo escuro e o texto claro */
@@ -170,8 +181,6 @@
 .tema-claro {
   color-scheme: light;
   color: var(--color-texto);
-  --shadow-cartao: 0 1px 2px rgb(27 27 34 / 0.04), 0 4px 16px rgb(27 27 34 / 0.04);
-  --shadow-flutuante: 0 8px 30px rgb(27 27 34 / 0.14);
   --color-fundo: #f6f4ef;
   --color-superficie: #ffffff;
   --color-superficie-alta: #f6f4ef;
@@ -211,8 +220,9 @@
   .btn-primary {
     @apply bg-primaria hover:bg-primaria-hover text-sobre-primaria;
   }
+  /* segunda ação de peso ao lado de uma primária (ex.: "Chamar no WhatsApp"): roxo preenchido com realce */
   .btn-accent {
-    @apply bg-lima text-grafite hover:bg-lima-escuro;
+    @apply bg-roxo border-detalhe-medio hover:bg-roxo-escuro text-white;
   }
   .btn-secondary {
     @apply border-borda-forte text-texto hover:border-detalhe hover:text-detalhe bg-superficie;

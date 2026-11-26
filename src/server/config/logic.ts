@@ -89,9 +89,9 @@ export function nextDayStartMs(iso: string, timeZone: string): number {
 
 // ------------------------------------------------------------- tabelas exportadas
 /** Tabelas que NUNCA saem na exportação: credenciais, sessões e controle de abuso. */
-export const EXPORT_EXCLUDED_TABLES: ReadonlySet<string> = new Set(["sessions", "password_reset_tokens", "rate_limits"]);
+export const EXPORT_EXCLUDED_TABLES: ReadonlySet<string> = new Set(["sessions", "password_reset_tokens", "rate_limits", "user_invites"]);
 /** Colunas que nunca saem, em qualquer tabela (nome no banco e na propriedade do Drizzle). */
-export const EXPORT_EXCLUDED_COLUMNS: ReadonlySet<string> = new Set(["password_hash", "passwordHash"]);
+export const EXPORT_EXCLUDED_COLUMNS: ReadonlySet<string> = new Set(["password_hash", "passwordHash", "token_hash", "tokenHash"]);
 
 /** Remove das linhas qualquer coluna proibida (defesa extra, além de não selecioná-las). */
 export function stripSecretColumns<T extends Record<string, unknown>>(row: T): Partial<T> {

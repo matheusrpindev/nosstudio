@@ -23,8 +23,6 @@ const PALETTE_ROLE: Record<string, string> = {
   offwhite: "Fundo claro",
   grafite: "Texto e fundo escuro",
 };
-/** Cores claras precisam de borda para a amostra não sumir no fundo da página. */
-const LIGHT_SWATCHES = new Set<BrandColor>(["lima", "lavanda", "offwhite"]);
 
 /** SVGs do logo que vêm com o site (`/brand/*.svg`): são os únicos arquivos da marca que o site público serve. */
 const isLogoSvg = (item: BrandAssetItem) => item.category === "logo" && /^\/brand\/[a-z0-9-]+\.svg$/.test(item.url);
@@ -93,7 +91,8 @@ export default async function BrandPage() {
               <li key={color} className="flex min-w-0 flex-col gap-2">
                 <div
                   aria-hidden="true"
-                  className={`h-20 rounded-campo ${LIGHT_SWATCHES.has(color) ? "border-borda-forte border" : ""}`}
+                  // amostra da cor real da marca; a borda evita que grafite e offwhite sumam no fundo do cartão
+                  className="border-borda-forte h-20 rounded-campo border"
                   style={{ backgroundColor: BRAND_COLOR_HEX[color] }}
                 />
                 <div>

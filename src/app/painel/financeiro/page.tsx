@@ -270,7 +270,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
             description="Valor definido por vocês, não vem do banco."
             action={<ReserveDialog valueCents={reserve.cashReserveCents} goalCents={reserve.cashReserveGoalCents} note={reserve.note} />}
           />
-          <p className="text-detalhe text-3xl font-extrabold tabular-nums">{formatBRL(reserve.cashReserveCents)}</p>
+          <p className="text-primaria text-3xl font-extrabold tabular-nums">{formatBRL(reserve.cashReserveCents)}</p>
           {progress !== null ? (
             <div className="mt-4">
               <div role="progressbar" aria-label="Progresso da reserva de caixa" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="bg-detalhe-suave h-3 overflow-hidden rounded-full">

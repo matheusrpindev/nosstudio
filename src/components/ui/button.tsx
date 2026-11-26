@@ -7,7 +7,7 @@ export type ButtonVariant = "primary" | "accent" | "secondary" | "ghost" | "dang
 export type ButtonSize = "sm" | "md" | "lg";
 
 type StyleProps = {
-  /** `primary` (lima no tema escuro do painel) é a ação principal da tela; `accent` é sempre lima (ex.: sobre o menu). */
+  /** `primary` (lima no tema escuro do painel) é a ação principal da tela; `accent` (roxo preenchido) é a segunda ação de peso ao lado dela. */
   variant?: ButtonVariant;
   size?: ButtonSize;
   /** Ícone à esquerda do texto (ex.: `<Plus />` do lucide-react). O tamanho é ajustado sozinho. */

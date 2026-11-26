@@ -1,8 +1,11 @@
 /**
- * Cria (ou redefine) uma conta do painel pela linha de comando.
+ * Cria (ou redefine) uma conta pela linha de comando.
  *
- *   npm run user:create -- --name "Pedro Henrique" --email pedro@dominio.com.br
+ *   npm run user:create -- --name "Pedro Henrique" --email pedro@dominio.com.br            (perfil padrão: admin)
+ *   npm run user:create -- --name "Laura Nepomuceno" --email laura@dominio.com.br --role socio
  *   npm run user:create -- --name "Dev" --email dev@dominio.com.br --role tecnico
+ *   Perfis: admin, socio, gestor, funcionario, freelancer, cliente, tecnico (o que cada um acessa: docs/permissoes.md).
+ *   Conta de cliente ou de freelancer criada aqui nasce SEM vínculo com cliente/projeto: prefira o convite.
  *   npm run user:create -- --email pedro@dominio.com.br --reset        (gera nova senha temporária)
  *   npm run user:create -- --email dev@dominio.com.br --deactivate     (revoga o acesso)
  *   npm run user:create -- --email pedro@dominio.com.br --unlock       (destrava o login após "Muitas tentativas")
@@ -16,7 +19,8 @@ import { sessions, users } from "@/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 import { unlockLogin } from "@/lib/auth/rate-limit";
 import { revokeResetTokens } from "@/lib/auth/reset-tokens";
-import { USER_ROLES, type UserRole } from "@/lib/domain";
+import { USER_ROLE_LABELS, USER_ROLES, type UserRole } from "@/lib/domain";
+import { ENVIRONMENT_LABELS, environmentsOf } from "@/lib/permissions";
 
 function arg(name: string): string | undefined {
   const index = process.argv.indexOf(`--${name}`);
@@ -75,7 +79,8 @@ async function main() {
     const role = (arg("role") ?? "admin") as UserRole;
     if (!USER_ROLES.includes(role)) throw new Error(`Perfil inválido. Use: ${USER_ROLES.join(", ")}`);
     await db.insert(users).values({ name, email, passwordHash, role, mustChangePassword: true });
-    console.log(`✔ Conta criada: ${name} <${email}> (${role}).`);
+    const areas = environmentsOf(role).map((environment) => ENVIRONMENT_LABELS[environment]).join(" e ");
+    console.log(`✔ Conta criada: ${name} <${email}> — ${USER_ROLE_LABELS[role]} (${areas}).`);
   }
   console.log(`\n  Senha temporária: ${password}\n\n  Ela aparece só agora. No primeiro acesso em /login o sistema pede uma senha nova.`);
 }

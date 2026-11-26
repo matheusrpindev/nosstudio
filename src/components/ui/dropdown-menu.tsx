@@ -24,7 +24,7 @@ export function DropdownMenu({ trigger, children, align = "end", side = "bottom"
           side={side}
           sideOffset={6}
           collisionPadding={8}
-          className="flutuante-entrada border-borda shadow-flutuante z-[60] min-w-48 rounded-campo border bg-superficie p-1.5"
+          className="flutuante-entrada border-borda shadow-flutuante z-[60] min-w-48 rounded-campo border bg-superficie-alta p-1.5"
         >
           {children}
         </RadixMenu.Content>

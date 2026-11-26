@@ -29,7 +29,7 @@ export type DataListProps<T> = {
   rowKey: (row: T) => string | number;
   /** Destino ao clicar na linha (o link fica na coluna `primary`; a linha inteira é clicável). */
   href?: (row: T) => string;
-  /** Linhas em destaque (ex.: não lidas): fundo lavanda e marcador roxo. */
+  /** Linhas em destaque (ex.: não lidas): fundo `detalhe-suave` e marcador na cor de destaque. */
   highlight?: (row: T) => boolean;
   /** Texto para leitores de tela quando há linhas em destaque (ex.: "Não lido"). */
   highlightLabel?: string;

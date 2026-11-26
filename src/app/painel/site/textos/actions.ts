@@ -2,7 +2,7 @@
 
 /**
  * Server Actions do editor de textos do site. Uma action serve às 12 seções (a chave vem no campo oculto
- * `_section`): requireUser → monta o objeto a partir do mapa (`build.ts`) → saveSiteContent (zod) →
+ * `_section`): requirePermission → monta o objeto a partir do mapa (`build.ts`) → saveSiteContent (zod) →
  * invalidateSite() → logAudit → refresh().
  */
 import { refresh } from "next/cache";
@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { flashToast } from "@/components/ui/flash";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { SITE_CONTENT_LABELS } from "@/lib/site/content";
 import { getMediaByIds } from "@/server/media";
 import { saveSiteContent } from "@/server/site/content";
@@ -20,7 +20,7 @@ import { isSiteContentKey } from "./config";
 import { resetSiteContent } from "./store";
 
 export async function saveSectionAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const key = formData.get("_section");
   if (typeof key !== "string" || !isSiteContentKey(key)) return actionError("Seção desconhecida. Recarregue a página.");
 
@@ -52,7 +52,7 @@ export async function saveSectionAction(_prev: ActionState, formData: FormData):
  * parâmetro novo: é ele que faz o formulário ser remontado já com os textos originais.
  */
 export async function restoreSectionAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requirePermission("site", "editar");
   const key = formData.get("_section");
   if (typeof key !== "string" || !isSiteContentKey(key)) return actionError("Seção desconhecida. Recarregue a página.");
 
