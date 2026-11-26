@@ -13,7 +13,7 @@ import { MobileNav } from "./mobile-nav";
 import { NavList } from "./nav-list";
 
 /**
- * Moldura do painel: barra lateral (desktop) ou barras superior/inferior (celular) + área de conteúdo.
+ * Moldura do painel (tema escuro: a classe `tema-painel` na raiz liga os tokens escuros — ver globals.css): barra lateral (desktop) ou barras superior/inferior (celular) + área de conteúdo.
  * Roda dentro do <Suspense> do layout. `allowPasswordChange` evita laço de redirecionamento: a tela de troca
  * obrigatória de senha também vive dentro deste layout — cada PÁGINA continua chamando `requireUser()` sozinha.
  */
@@ -22,12 +22,12 @@ export async function Shell({ children }: { children: ReactNode }) {
   const badges: NavBadges = { newLeads: await countNewLeads() };
 
   return (
-    <div className="flex min-h-dvh flex-1 flex-col lg:pl-64">
+    <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:pl-64">
       <a href="#conteudo" className="btn btn-accent fixed top-2 left-2 z-[80] -translate-y-20 focus-visible:translate-y-0">
         Pular para o conteúdo
       </a>
 
-      <aside className="bg-roxo fixed inset-y-0 left-0 z-30 hidden w-64 flex-col text-white lg:flex">
+      <aside className="bg-menu border-menu-borda fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r text-white lg:flex">
         <Link href="/painel" className="flex h-[4.5rem] shrink-0 items-center gap-2.5 px-6 focus-visible:outline-white" aria-label="NÓS Studio — painel, visão geral">
           <Logo variant="wordmark" tone="branco" label="" className="h-6" />
           <span aria-hidden="true" className="text-lavanda mt-0.5 text-sm font-medium tracking-wide">
@@ -93,9 +93,9 @@ function AccountBlock({ user }: { user: CurrentUser }) {
 /** Esqueleto mostrado enquanto a sessão é lida (primeira carga). */
 export function ShellFallback() {
   return (
-    <div className="flex min-h-dvh flex-1 flex-col lg:pl-64" aria-busy="true">
-      <div className="bg-roxo fixed inset-y-0 left-0 hidden w-64 lg:block" />
-      <div className="bg-roxo h-14 lg:hidden" />
+    <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:pl-64" aria-busy="true">
+      <div className="bg-menu border-menu-borda fixed inset-y-0 left-0 hidden w-64 border-r lg:block" />
+      <div className="bg-menu border-menu-borda h-14 border-b lg:hidden" />
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 sm:px-6 lg:px-10 lg:pt-9">
         <PageSkeleton />
       </div>

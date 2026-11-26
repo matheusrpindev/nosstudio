@@ -10,7 +10,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   // necessário para `env(safe-area-inset-bottom)` valer na barra inferior do celular
   viewportFit: "cover",
-  themeColor: "#3b1f8e",
+  // preto oficial (token `preto`): a barra do navegador acompanha o tema escuro do painel
+  themeColor: "#101014",
 };
 
 /**

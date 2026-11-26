@@ -170,6 +170,8 @@
 .tema-claro {
   color-scheme: light;
   color: var(--color-texto);
+  --shadow-cartao: 0 1px 2px rgb(27 27 34 / 0.04), 0 4px 16px rgb(27 27 34 / 0.04);
+  --shadow-flutuante: 0 8px 30px rgb(27 27 34 / 0.14);
   --color-fundo: #f6f4ef;
   --color-superficie: #ffffff;
   --color-superficie-alta: #f6f4ef;
