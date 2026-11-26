@@ -8,6 +8,7 @@ import { createClient, type Client } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { withBusyRetry } from "./busy";
 import * as schema from "./schema";
 
 export const DATABASE_URL = process.env.DATABASE_URL || "file:./data/nos.db";
@@ -19,10 +20,13 @@ function create(): Instance {
     const file = DATABASE_URL.slice("file:".length);
     mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
   }
-  const client = createClient({
-    url: DATABASE_URL,
-    authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
-  });
+  // Duas gravações simultâneas não podem derrubar uma delas com "database is locked": ver ./busy.ts.
+  const client = withBusyRetry(
+    createClient({
+      url: DATABASE_URL,
+      authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
+    }),
+  );
   return { client, db: drizzle(client, { schema }) };
 }
 
