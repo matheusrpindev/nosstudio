@@ -11,7 +11,7 @@ const SHORTCUTS = [
 export function Shortcuts() {
   return (
     <section aria-labelledby="atalhos-titulo">
-      <h2 id="atalhos-titulo" className="text-cinza text-xs font-bold tracking-[0.14em] uppercase">
+      <h2 id="atalhos-titulo" className="text-texto-suave text-xs font-bold tracking-[0.14em] uppercase">
         Atalhos
       </h2>
       <ul className="mt-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">

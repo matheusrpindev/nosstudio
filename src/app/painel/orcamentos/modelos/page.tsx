@@ -68,18 +68,18 @@ export default async function TemplatesPage() {
           {templates.map((template) => (
             <Card as="li" key={template.id} className="flex flex-col">
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <h2 className="text-grafite min-w-0 text-base leading-snug font-bold break-words">{template.templateName}</h2>
+                <h2 className="text-texto min-w-0 text-base leading-snug font-bold break-words">{template.templateName}</h2>
                 <Badge tone="roxo">{PROPOSAL_MODALITY_LABELS[template.modality]}</Badge>
               </div>
-              <p className="text-cinza mt-1 text-sm break-words">{template.title}</p>
+              <p className="text-texto-suave mt-1 text-sm break-words">{template.title}</p>
               <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <dt className="text-cinza text-[0.8125rem]">Itens</dt>
-                  <dd className="text-grafite font-semibold tabular-nums">{template.itemCount}</dd>
+                  <dt className="text-texto-suave text-[0.8125rem]">Itens</dt>
+                  <dd className="text-texto font-semibold tabular-nums">{template.itemCount}</dd>
                 </div>
                 <div>
-                  <dt className="text-cinza text-[0.8125rem]">Total de referência</dt>
-                  <dd className="text-grafite font-semibold">{template.totalCents > 0 ? <Money cents={template.totalCents} /> : "A definir"}</dd>
+                  <dt className="text-texto-suave text-[0.8125rem]">Total de referência</dt>
+                  <dd className="text-texto font-semibold">{template.totalCents > 0 ? <Money cents={template.totalCents} /> : "A definir"}</dd>
                 </div>
               </dl>
               <div className="mt-5 flex flex-wrap items-center gap-2 pt-1 max-sm:[&>a]:flex-1">
@@ -98,7 +98,7 @@ export default async function TemplatesPage() {
                   title="Duplicar este modelo?"
                   description={
                     <>
-                      Vamos criar uma cópia de <strong className="text-grafite">{template.templateName}</strong> e abrir o editor.
+                      Vamos criar uma cópia de <strong className="text-texto">{template.templateName}</strong> e abrir o editor.
                     </>
                   }
                   confirmLabel="Duplicar"
@@ -115,7 +115,7 @@ export default async function TemplatesPage() {
                   title="Excluir este modelo?"
                   description={
                     <>
-                      O modelo <strong className="text-grafite">{template.templateName}</strong> será apagado. As propostas já criadas a partir dele não mudam.
+                      O modelo <strong className="text-texto">{template.templateName}</strong> será apagado. As propostas já criadas a partir dele não mudam.
                     </>
                   }
                   confirmLabel="Excluir modelo"

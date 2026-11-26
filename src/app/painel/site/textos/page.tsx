@@ -29,16 +29,16 @@ export default async function SiteTextsPage() {
             <li key={key}>
               <Link
                 href={`/painel/site/textos/${key}`}
-                className="card card-pad group hover:border-roxo focus-visible:border-roxo flex h-full min-h-32 flex-col gap-2 transition-colors"
+                className="card card-pad group hover:border-detalhe focus-visible:border-foco flex h-full min-h-32 flex-col gap-2 transition-colors"
               >
                 <span className="flex items-start justify-between gap-2">
-                  <span className="text-grafite text-base leading-snug font-bold">{section.title}</span>
-                  <ArrowUpRight aria-hidden="true" className="text-areia-escuro group-hover:text-roxo size-4 shrink-0" />
+                  <span className="text-texto text-base leading-snug font-bold">{section.title}</span>
+                  <ArrowUpRight aria-hidden="true" className="text-borda-forte group-hover:text-detalhe size-4 shrink-0" />
                 </span>
-                <span className="text-cinza text-sm leading-relaxed">{section.summary}</span>
+                <span className="text-texto-suave text-sm leading-relaxed">{section.summary}</span>
                 <span className="mt-auto pt-1 text-xs">
                   {info.customized ? (
-                    <span className="text-cinza flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="text-texto-suave flex flex-wrap items-center gap-x-2 gap-y-1">
                       <Badge tone="roxo">Editado</Badge>
                       {info.updatedAt ? <DateText value={info.updatedAt} format="relative" /> : null}
                     </span>

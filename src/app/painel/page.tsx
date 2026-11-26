@@ -29,11 +29,11 @@ export default async function PainelHomePage() {
   return (
     <div className="space-y-8">
       <header>
-        <p className="text-cinza text-sm font-semibold first-letter:uppercase">
+        <p className="text-texto-suave text-sm font-semibold first-letter:uppercase">
           {formatWeekday(today)}, {formatDateLong(today)}
         </p>
-        <h1 className="text-grafite mt-1 text-[1.75rem] leading-tight font-extrabold tracking-tight sm:text-4xl">Olá, {firstName}.</h1>
-        <p className="text-cinza mt-2 max-w-xl text-[0.9375rem] leading-relaxed">Uma visão rápida da situação da NÓS Studio.</p>
+        <h1 className="text-texto mt-1 text-[1.75rem] leading-tight font-extrabold tracking-tight sm:text-4xl">Olá, {firstName}.</h1>
+        <p className="text-texto-suave mt-2 max-w-xl text-[0.9375rem] leading-relaxed">Uma visão rápida da situação da NÓS Studio.</p>
       </header>
 
       <SummaryCards summary={summary} today={today} />

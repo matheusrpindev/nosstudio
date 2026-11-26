@@ -182,15 +182,15 @@ function BoardView({ rows, today, empty }: { rows: ProjectListItem[]; today: str
       {cancelled.length > 0 ? (
         <Card as="section" aria-labelledby="cancelados-titulo" className="mt-6">
           <details>
-            <summary id="cancelados-titulo" className="text-grafite flex min-h-11 cursor-pointer items-center text-sm font-semibold">
+            <summary id="cancelados-titulo" className="text-texto flex min-h-11 cursor-pointer items-center text-sm font-semibold">
               Cancelados ({cancelled.length})
             </summary>
-            <ul className="divide-areia mt-2 divide-y">
+            <ul className="divide-borda mt-2 divide-y">
               {cancelled.map((project) => (
                 <li key={project.id}>
-                  <Link href={`/painel/projetos/${project.id}`} className="hover:text-roxo flex min-h-11 flex-wrap items-center justify-between gap-x-4 py-2 text-sm">
+                  <Link href={`/painel/projetos/${project.id}`} className="hover:text-detalhe flex min-h-11 flex-wrap items-center justify-between gap-x-4 py-2 text-sm">
                     <span className="font-semibold">{project.title}</span>
-                    <span className="text-cinza">{project.clientName ?? "Sem cliente"}</span>
+                    <span className="text-texto-suave">{project.clientName ?? "Sem cliente"}</span>
                   </Link>
                 </li>
               ))}
@@ -211,13 +211,13 @@ const listColumns = (today: string): DataListColumn<ProjectListItem>[] => [
     cell: (project) => (
       <>
         <span className="block break-words">{project.title}</span>
-        <span className="text-cinza block text-[0.8125rem] font-normal">{project.clientName ?? "Sem cliente"}</span>
+        <span className="text-texto-suave block text-[0.8125rem] font-normal">{project.clientName ?? "Sem cliente"}</span>
       </>
     ),
   },
   { key: "servico", header: "Serviço", hideOnMobile: true, cell: (project) => SERVICE_INTEREST_LABELS[project.serviceType] },
   { key: "etapa", header: "Etapa", cell: (project) => <StatusBadge value={project.stage} labels={PROJECT_STAGE_LABELS} tones={PROJECT_STAGE_TONES} /> },
-  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (project) => project.ownerName ?? <span className="text-cinza">—</span> },
+  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (project) => project.ownerName ?? <span className="text-texto-suave">—</span> },
   {
     key: "prazo",
     header: "Entrega",
@@ -225,7 +225,7 @@ const listColumns = (today: string): DataListColumn<ProjectListItem>[] => [
     cell: (project) => (
       <span className="inline-flex flex-wrap items-center justify-end gap-2">
         <DeadlineBadge deadline={project.deliveryDeadline} stage={project.stage} today={today} />
-        <DateText value={project.deliveryDeadline} className="text-grafite" />
+        <DateText value={project.deliveryDeadline} className="text-texto" />
       </span>
     ),
   },
@@ -240,7 +240,7 @@ const fileColumns = (today: string): DataListColumn<ProjectListItem>[] => [
     cell: (project) => (
       <>
         <span className="block break-words">{project.title}</span>
-        <span className="text-cinza block text-[0.8125rem] font-normal">{project.clientName ?? "Sem cliente"}</span>
+        <span className="text-texto-suave block text-[0.8125rem] font-normal">{project.clientName ?? "Sem cliente"}</span>
       </>
     ),
   },
@@ -257,7 +257,7 @@ const fileColumns = (today: string): DataListColumn<ProjectListItem>[] => [
       ) : (
         <span className="inline-flex flex-wrap items-center gap-2">
           <DeadlineBadge deadline={project.deliveryDeadline} stage={project.stage} today={today} />
-          {project.deliveryDeadline ? <span>Prazo <DateText value={project.deliveryDeadline} /></span> : <span className="text-cinza">Sem prazo</span>}
+          {project.deliveryDeadline ? <span>Prazo <DateText value={project.deliveryDeadline} /></span> : <span className="text-texto-suave">Sem prazo</span>}
         </span>
       ),
   },
@@ -267,7 +267,7 @@ const fileColumns = (today: string): DataListColumn<ProjectListItem>[] => [
     cell: (project) => (
       <span className="block">
         <StatusBadge value={project.backupStatus} labels={BACKUP_STATUS_LABELS} tones={BACKUP_TONES} />
-        {project.backupNote ? <span className="text-cinza mt-1 block max-w-56 text-xs break-words md:text-left">{project.backupNote}</span> : null}
+        {project.backupNote ? <span className="text-texto-suave mt-1 block max-w-56 text-xs break-words md:text-left">{project.backupNote}</span> : null}
       </span>
     ),
   },

@@ -3,7 +3,7 @@ import { Alert } from "@/components/ui/alert";
 import { cn } from "@/lib/cn";
 import { CONTRACT_FIELDS, findUnfilledFields } from "@/server/contracts/fields";
 
-const tokenClasses = "border-areia text-grafite rounded border bg-white px-1.5 py-0.5 font-mono text-[0.8125rem] break-all";
+const tokenClasses = "border-borda text-texto rounded border bg-superficie px-1.5 py-0.5 font-mono text-[0.8125rem] break-all";
 
 /** Um campo como aparece no texto: `{{cliente}}`. */
 export function FieldToken({ children }: { children: string }) {
@@ -13,11 +13,11 @@ export function FieldToken({ children }: { children: string }) {
 /** Lista dos campos automáticos, com uma linha de explicação cada (editor de modelo). */
 export function ContractFieldsHelp({ className }: { className?: string }) {
   return (
-    <section aria-labelledby="campos-automaticos-titulo" className={cn("bg-offwhite border-areia rounded-campo border p-4", className)}>
-      <h2 id="campos-automaticos-titulo" className="text-grafite text-sm font-bold">
+    <section aria-labelledby="campos-automaticos-titulo" className={cn("bg-superficie-alta border-borda rounded-campo border p-4", className)}>
+      <h2 id="campos-automaticos-titulo" className="text-texto text-sm font-bold">
         Campos automáticos
       </h2>
-      <p className="text-cinza mt-1 text-sm leading-relaxed">
+      <p className="text-texto-suave mt-1 text-sm leading-relaxed">
         Escreva o campo entre chaves duplas no texto, como <FieldToken>{"{{cliente}}"}</FieldToken>. Ao criar um contrato com este modelo, cada campo é trocado pelo dado do cliente, da
         proposta ou do projeto escolhidos. Se o dado não estiver cadastrado, o campo continua no texto e a tela do contrato avisa para preencher à mão.
       </p>
@@ -27,11 +27,11 @@ export function ContractFieldsHelp({ className }: { className?: string }) {
             <dt className="shrink-0 sm:w-52">
               <FieldToken>{`{{${field.key}}}`}</FieldToken>
             </dt>
-            <dd className="text-cinza mt-0.5 text-sm sm:mt-0">{field.description}</dd>
+            <dd className="text-texto-suave mt-0.5 text-sm sm:mt-0">{field.description}</dd>
           </div>
         ))}
       </dl>
-      <p className="text-cinza mt-3 text-[0.8125rem] leading-relaxed">
+      <p className="text-texto-suave mt-3 text-[0.8125rem] leading-relaxed">
         Os valores vêm da proposta como o cliente a vê no PDF: custos, margem, notas internas e desconto não aprovado nunca entram no contrato.
       </p>
     </section>

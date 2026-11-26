@@ -76,12 +76,12 @@ export function TaskRow({
         <p
           className={cn(
             "text-[0.9375rem] leading-snug font-semibold break-words",
-            done ? "text-cinza line-through" : "text-grafite",
+            done ? "text-texto-suave line-through" : "text-texto",
           )}
         >
           {task.title}
         </p>
-        <div className="text-cinza mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[0.8125rem]">
+        <div className="text-texto-suave mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[0.8125rem]">
           {late > 0 ? (
             <Badge tone="perigo">
               <AlertTriangle aria-hidden="true" className="size-3.5" />
@@ -125,7 +125,7 @@ export function TaskRow({
           ) : null}
         </div>
         {task.description.trim() ? (
-          <p className="text-cinza mt-1.5 text-[0.8125rem] leading-snug break-words whitespace-pre-line">
+          <p className="text-texto-suave mt-1.5 text-[0.8125rem] leading-snug break-words whitespace-pre-line">
             {task.description}
           </p>
         ) : null}
@@ -222,7 +222,7 @@ export function TaskRow({
           title="Excluir esta tarefa?"
           description={
             <>
-              <strong className="text-grafite">{task.title}</strong> será
+              <strong className="text-texto">{task.title}</strong> será
               apagada e não dá para desfazer.
             </>
           }

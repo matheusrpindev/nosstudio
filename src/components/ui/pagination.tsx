@@ -39,10 +39,10 @@ export function Pagination({ page, pageSize, total, param = "pagina", noun = "it
   const from = (page - 1) * pageSize + 1;
   const to = Math.min(total, page * pageSize);
   const summary = (
-    <p className="text-cinza text-sm tabular-nums">
+    <p className="text-texto-suave text-sm tabular-nums">
       {to >= from ? (
         <>
-          <span className="text-grafite font-semibold">
+          <span className="text-texto font-semibold">
             {from}–{to}
           </span>{" "}
           de {total} {noun}
@@ -72,7 +72,7 @@ export function Pagination({ page, pageSize, total, param = "pagina", noun = "it
     <nav aria-label="Paginação" className={cn("mt-4 flex items-center justify-between gap-3 px-1", className)}>
       {summary}
       <div className="flex items-center gap-2">
-        <span className="text-cinza text-sm tabular-nums max-sm:sr-only">
+        <span className="text-texto-suave text-sm tabular-nums max-sm:sr-only">
           Página {page} de {pageCount}
         </span>
         {step(page - 1, "Página anterior", <ChevronLeft aria-hidden="true" className="size-5" />, page <= 1)}

@@ -39,8 +39,8 @@ export function ServiceForm({ action, service, cover, gallery }: { action: FormA
 
       <Switch name="visible" label="Mostrar no site" hint="Desligado, o serviço fica guardado e não aparece para os visitantes." defaultChecked={service?.visible ?? true} />
 
-      <details className="border-areia rounded-campo border px-4 py-3">
-        <summary className="text-grafite min-h-11 cursor-pointer py-2.5 text-sm font-semibold">Avançado</summary>
+      <details className="border-borda rounded-campo border px-4 py-3">
+        <summary className="text-texto min-h-11 cursor-pointer py-2.5 text-sm font-semibold">Avançado</summary>
         <div className="space-y-5 pt-2 pb-1">
           <Field name="slug" label="Endereço do serviço" optional hint="Deixe em branco para gerar a partir do nome. Se o nome mudar, o endereço antigo continua o mesmo.">
             <Input maxLength={80} autoCapitalize="none" autoComplete="off" defaultValue={service?.slug} placeholder="gerado automaticamente" />

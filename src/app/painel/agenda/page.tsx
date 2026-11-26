@@ -121,7 +121,7 @@ export default async function AgendaPage({
                 href={`/painel/agenda/novo?data=${date}`}
                 aria-label={`Novo compromisso em ${formatDate(date)}`}
                 title="Novo compromisso neste dia"
-                className="text-roxo hover:bg-lavanda-claro pointer-coarse:opacity-100 inline-flex size-11 items-center justify-center rounded-full sm:size-7 sm:opacity-0 sm:group-hover/dia:opacity-100 sm:focus-visible:opacity-100"
+                className="text-detalhe hover:bg-detalhe-suave pointer-coarse:opacity-100 inline-flex size-11 items-center justify-center rounded-full sm:size-7 sm:opacity-0 sm:group-hover/dia:opacity-100 sm:focus-visible:opacity-100"
               >
                 <Plus aria-hidden="true" className="size-5 sm:size-4" />
               </Link>

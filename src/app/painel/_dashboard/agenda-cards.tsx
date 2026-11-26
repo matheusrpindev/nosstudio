@@ -26,11 +26,11 @@ function timeLabel(event: DashboardEvent) {
 
 function EventLine({ event }: { event: DashboardEvent }) {
   return (
-    <Link href={`/painel/agenda/${event.id}`} className="hover:bg-lavanda-claro/60 focus-visible:bg-lavanda-claro/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors">
-      <span className="text-roxo w-[4.25rem] shrink-0 pt-0.5 text-[0.8125rem] leading-tight font-bold tabular-nums">{timeLabel(event)}</span>
+    <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave/60 focus-visible:bg-detalhe-suave/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors">
+      <span className="text-detalhe w-[4.25rem] shrink-0 pt-0.5 text-[0.8125rem] leading-tight font-bold tabular-nums">{timeLabel(event)}</span>
       <span className="min-w-0 flex-1">
-        <span className="text-grafite block text-[0.9375rem] leading-snug font-semibold break-words">{event.title}</span>
-        <span className="text-cinza mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+        <span className="text-texto block text-[0.9375rem] leading-snug font-semibold break-words">{event.title}</span>
+        <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
           <Badge tone={KIND_TONES[event.kind]}>{AGENDA_KIND_LABELS[event.kind]}</Badge>
           {event.clientName ? <span className="break-words">{event.clientName}</span> : null}
           {event.location ? (
@@ -77,10 +77,10 @@ export function WeekAgenda({ events, today }: { events: DashboardEvent[]; today:
           <div className="space-y-4">
             {groups.map((group) => (
               <div key={group.date}>
-                <h3 className="text-cinza mb-1 text-xs font-bold tracking-[0.1em] uppercase">
+                <h3 className="text-texto-suave mb-1 text-xs font-bold tracking-[0.1em] uppercase">
                   {dayLabel(group.date, today)} <span className="font-semibold normal-case tracking-normal">· {formatDateShort(group.date)}</span>
                 </h3>
-                <ul className="divide-areia divide-y">
+                <ul className="divide-borda divide-y">
                   {group.items.map((event) => (
                     <li key={event.id}>
                       <EventLine event={event} />
@@ -110,17 +110,17 @@ export function UpcomingShoots({ events, today }: { events: DashboardEvent[]; to
             description="Cadastre na agenda para não esquecer o equipamento nem o deslocamento."
           />
         ) : (
-          <ul className="divide-areia divide-y">
+          <ul className="divide-borda divide-y">
             {events.map((event) => (
               <li key={event.id}>
-                <Link href={`/painel/agenda/${event.id}`} className="hover:bg-lavanda-claro/60 focus-visible:bg-lavanda-claro/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors">
-                  <span className="bg-lavanda-claro text-roxo w-14 shrink-0 rounded-campo px-1 py-1.5 text-center leading-none">
+                <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave/60 focus-visible:bg-detalhe-suave/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors">
+                  <span className="bg-detalhe-suave text-detalhe w-14 shrink-0 rounded-campo px-1 py-1.5 text-center leading-none">
                     <span className="block text-base font-extrabold tabular-nums">{event.date.slice(8, 10)}</span>
                     <span className="mt-0.5 block text-[0.6875rem] font-bold uppercase">{formatDateShort(event.date).split(" ")[1]}</span>
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="text-grafite block text-[0.9375rem] leading-snug font-semibold break-words">{event.title}</span>
-                    <span className="text-cinza mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+                    <span className="text-texto block text-[0.9375rem] leading-snug font-semibold break-words">{event.title}</span>
+                    <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
                       <Badge tone={KIND_TONES[event.kind]}>{AGENDA_KIND_LABELS[event.kind]}</Badge>
                       <span>
                         {dayLabel(event.date, today)}

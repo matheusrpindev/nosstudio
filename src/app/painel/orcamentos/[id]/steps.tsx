@@ -63,14 +63,14 @@ export function StepDados({
             <Input value={draft.templateName} maxLength={120} onChange={(event) => patch({ templateName: event.target.value })} />
           </Field>
         ) : (
-          <dl className="bg-offwhite rounded-campo grid grid-cols-2 gap-3 px-4 py-3 sm:max-w-sm">
+          <dl className="bg-superficie-alta rounded-campo grid grid-cols-2 gap-3 px-4 py-3 sm:max-w-sm">
             <div>
-              <dt className="text-cinza text-xs font-semibold">Número</dt>
-              <dd className="text-grafite font-bold tabular-nums">{number}</dd>
+              <dt className="text-texto-suave text-xs font-semibold">Número</dt>
+              <dd className="text-texto font-bold tabular-nums">{number}</dd>
             </div>
             <div>
-              <dt className="text-cinza text-xs font-semibold">Versão</dt>
-              <dd className="text-grafite font-bold tabular-nums">{version}</dd>
+              <dt className="text-texto-suave text-xs font-semibold">Versão</dt>
+              <dd className="text-texto font-bold tabular-nums">{version}</dd>
             </div>
           </dl>
         )}
@@ -212,8 +212,8 @@ function ItemsList({
               <Textarea rows={1} value={item.description} maxLength={1000} onChange={(event) => update({ description: event.target.value })} />
             </Mini>
             {total > 0 && (item.quantity !== 1 || kind === "opcional") ? (
-              <p className="text-cinza col-span-2 text-xs sm:col-span-12">
-                Total do item: <strong className="text-grafite tabular-nums">{formatBRL(total)}</strong>
+              <p className="text-texto-suave col-span-2 text-xs sm:col-span-12">
+                Total do item: <strong className="text-texto tabular-nums">{formatBRL(total)}</strong>
               </p>
             ) : null}
           </div>
@@ -295,13 +295,13 @@ export function StepPreco({ draft, patch, numbers, errors, attempted, listsKey }
     <div className="space-y-4">
       <Card as="section" aria-labelledby="etapa-preco-total">
         <CardHeader id="etapa-preco-total" title="Preço ao cliente" description="Calculado a partir dos itens inclusos (etapa Escopo). É o que aparece em “Investimento” no PDF." />
-        <dl className="divide-areia divide-y">
+        <dl className="divide-borda divide-y">
           <SumRow label="Itens inclusos" value={formatBRL(client.itemsTotalCents)} />
           {client.discountCents > 0 ? <SumRow label={draft.discountLabel.trim() || "Desconto"} value={`− ${formatBRL(client.discountCents)}`} /> : null}
           <SumRow strong label="Total ao cliente" value={formatBRL(client.totalCents)} />
           {client.optionalsTotalCents > 0 ? <SumRow label="Opcionais (fora do total)" value={formatBRL(client.optionalsTotalCents)} /> : null}
         </dl>
-        <div className="border-areia mt-3 border-t pt-2">
+        <div className="border-borda mt-3 border-t pt-2">
           <Checkbox
             label="Mostrar o valor de cada item no PDF"
             hint="Desmarcado, o PDF mostra só o total. Os opcionais sempre aparecem com valor."
@@ -369,7 +369,7 @@ export function StepPreco({ draft, patch, numbers, errors, attempted, listsKey }
                 <MoneyInput value={draft.entryCents || null} onValueChange={(cents) => patch({ entryCents: cents ?? 0 })} />
               </Field>
             )}
-            <dl className="bg-offwhite rounded-campo divide-areia divide-y px-4 py-1">
+            <dl className="bg-superficie-alta rounded-campo divide-borda divide-y px-4 py-1">
               <SumRow label={`Sinal${client.entryCents > 0 ? ` (${formatPercent(client.entryPercent)})` : ""}`} value={formatBRL(client.entryCents)} />
               <SumRow label="Saldo restante" value={formatBRL(client.balanceCents)} />
             </dl>
@@ -379,9 +379,9 @@ export function StepPreco({ draft, patch, numbers, errors, attempted, listsKey }
 
       <Card as="section" aria-labelledby="etapa-preco-parcelas">
         <CardHeader id="etapa-preco-parcelas" title="Parcelas e vencimentos" description="O plano de pagamento que aparece no PDF. Deixe vazio se as condições forem só em texto." />
-        <div className="bg-lavanda-claro rounded-campo mb-4 flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-end">
+        <div className="bg-detalhe-suave rounded-campo mb-4 flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-end">
           <label className="block sm:w-56">
-            <span className="text-grafite mb-1 block text-sm font-semibold">Dividir o saldo em</span>
+            <span className="text-texto mb-1 block text-sm font-semibold">Dividir o saldo em</span>
             <select className="input" value={installments} onChange={(event) => setInstallments(Number(event.target.value))}>
               {Array.from({ length: 12 }, (_, index) => index + 1).map((count) => (
                 <option key={count} value={count}>
@@ -393,7 +393,7 @@ export function StepPreco({ draft, patch, numbers, errors, attempted, listsKey }
           <Button variant="secondary" icon={<Sparkles />} onClick={suggest} disabled={client.totalCents <= 0}>
             {draft.payments.length > 0 ? "Recalcular parcelas" : "Sugerir parcelas"}
           </Button>
-          <p className="text-cinza text-xs leading-snug sm:flex-1 sm:pb-1">
+          <p className="text-texto-suave text-xs leading-snug sm:flex-1 sm:pb-1">
             {client.totalCents <= 0
               ? "Defina os valores dos itens para sugerir as parcelas."
               : draft.payments.length > 0

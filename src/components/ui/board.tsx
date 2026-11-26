@@ -64,7 +64,7 @@ export type BoardProps<C extends BoardCard> = {
 };
 
 const TONE_DOT: Record<BoardTone, string> = {
-  neutral: "bg-areia-escuro",
+  neutral: "bg-borda-forte",
   roxo: "bg-roxo",
   lima: "bg-lima",
   sucesso: "bg-sucesso",
@@ -273,7 +273,7 @@ export function Board<C extends BoardCard>({
             aria-current={visibleColumn === column.id ? "true" : undefined}
             className={cn(
               "inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-[0.8125rem] font-semibold",
-              visibleColumn === column.id ? "border-roxo bg-roxo text-white" : "border-areia-escuro text-grafite bg-white",
+              visibleColumn === column.id ? "border-detalhe bg-roxo text-white" : "border-borda-forte text-texto bg-superficie",
             )}
             onClick={() =>
               scrollerRef.current
@@ -282,7 +282,7 @@ export function Board<C extends BoardCard>({
             }
           >
             {column.title}
-            <span className={cn("tabular-nums", visibleColumn === column.id ? "text-lavanda" : "text-cinza")}>{grouped.get(column.id)?.length ?? 0}</span>
+            <span className={cn("tabular-nums", visibleColumn === column.id ? "text-lavanda" : "text-texto-suave")}>{grouped.get(column.id)?.length ?? 0}</span>
           </button>
         ))}
       </nav>
@@ -354,7 +354,7 @@ export function Board<C extends BoardCard>({
 
         <DragOverlay dropAnimation={null}>
           {activeCard ? (
-            <div className="border-roxo shadow-flutuante rounded-campo w-[17rem] rotate-1 cursor-grabbing border bg-white p-3">{body(activeCard)}</div>
+            <div className="border-detalhe shadow-flutuante rounded-campo w-[17rem] rotate-1 cursor-grabbing border bg-superficie p-3">{body(activeCard)}</div>
           ) : null}
         </DragOverlay>
       </DndContext>
@@ -388,20 +388,20 @@ function BoardColumnView({
       aria-labelledby={headingId}
       className={cn(
         "rounded-cartao flex w-[84vw] max-w-80 shrink-0 snap-center flex-col border bg-white/60 transition-colors sm:max-h-[72vh] sm:w-72",
-        highlighted ? "border-roxo bg-lavanda-claro/70" : "border-areia",
+        highlighted ? "border-detalhe bg-detalhe-suave/70" : "border-borda",
       )}
     >
       <header className="flex items-center gap-2 px-3 pt-3 pb-2">
         <span aria-hidden="true" className={cn("size-2.5 shrink-0 rounded-full", TONE_DOT[column.tone ?? "neutral"])} />
-        <h3 id={headingId} className="text-grafite min-w-0 flex-1 truncate text-sm font-bold">
+        <h3 id={headingId} className="text-texto min-w-0 flex-1 truncate text-sm font-bold">
           {column.title}
         </h3>
-        <span className="bg-areia/70 text-grafite min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-semibold tabular-nums" aria-label={`${count} ${count === 1 ? "cartão" : "cartões"}`}>
+        <span className="bg-borda/70 text-texto min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-semibold tabular-nums" aria-label={`${count} ${count === 1 ? "cartão" : "cartões"}`}>
           {count}
         </span>
       </header>
       {count === 0 ? (
-        <p className="text-cinza border-areia-escuro rounded-campo mx-2 mb-2 border border-dashed px-3 py-5 text-center text-[0.8125rem]">{emptyLabel}</p>
+        <p className="text-texto-suave border-borda-forte rounded-campo mx-2 mb-2 border border-dashed px-3 py-5 text-center text-[0.8125rem]">{emptyLabel}</p>
       ) : (
         <ul className="flex min-h-0 flex-col gap-2 px-2 pb-2 sm:overflow-y-auto">{children}</ul>
       )}
@@ -436,7 +436,7 @@ function BoardCardView({
       data-card={card.id}
       {...listeners}
       className={cn(
-        "border-areia rounded-campo shadow-cartao hover:border-areia-escuro relative cursor-grab touch-manipulation border bg-white transition-[opacity,border-color] select-none",
+        "border-borda rounded-campo shadow-cartao hover:border-borda-forte relative cursor-grab touch-manipulation border bg-superficie transition-[opacity,border-color] select-none",
         hidden && "opacity-40",
         pending && "opacity-70",
       )}
@@ -447,14 +447,14 @@ function BoardCardView({
           ref={setActivatorNodeRef}
           {...attributes}
           type="button"
-          className="text-cinza hover:bg-lavanda-claro hover:text-roxo -mt-1.5 -mr-2 hidden size-9 shrink-0 cursor-grab items-center justify-center rounded-md sm:inline-flex"
+          className="text-texto-suave hover:bg-detalhe-suave hover:text-detalhe -mt-1.5 -mr-2 hidden size-9 shrink-0 cursor-grab items-center justify-center rounded-md sm:inline-flex"
           aria-label={`Arrastar ${name}`}
           title="Arrastar (ou espaço e setas no teclado)"
         >
           <GripVertical aria-hidden="true" className="size-4" />
         </button>
       </div>
-      <div className="border-areia border-t px-1.5 py-1">
+      <div className="border-borda border-t px-1.5 py-1">
         <label className="sr-only" htmlFor={selectId}>{`Mover ${name} para outra coluna`}</label>
         <select
           id={selectId}
@@ -462,7 +462,7 @@ function BoardCardView({
           onChange={(event) => {
             if (event.target.value) onSelect(event.target.value);
           }}
-          className="text-roxo hover:bg-lavanda-claro focus-visible:bg-lavanda-claro min-h-11 w-full cursor-pointer appearance-none rounded-md bg-transparent px-1.5 text-base font-semibold sm:min-h-9 sm:text-[0.8125rem]"
+          className="text-detalhe hover:bg-detalhe-suave focus-visible:bg-detalhe-suave min-h-11 w-full cursor-pointer appearance-none rounded-md bg-transparent px-1.5 text-base font-semibold sm:min-h-9 sm:text-[0.8125rem]"
         >
           <option value="" disabled>
             Mover para…

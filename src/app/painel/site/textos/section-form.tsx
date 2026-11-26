@@ -100,7 +100,7 @@ function TextControl({ field, ctx }: { field: LineField | AreaField; ctx: Ctx })
 function LinkControl({ field, ctx }: { field: Extract<FieldSpec, { type: "link" }>; ctx: Ctx }) {
   const value = (pick(ctx.initial, field.path) ?? { label: "", href: "" }) as { label: string; href: string };
   return (
-    <fieldset className="border-areia rounded-campo min-w-0 border p-4">
+    <fieldset className="border-borda rounded-campo min-w-0 border p-4">
       <legend className="label px-1">{field.label}</legend>
       <div className="grid gap-4 sm:grid-cols-[1fr_1.2fr]">
         <Field name={`${field.path}.label`} label="Texto do botão" hint={`Até ${maxLengthAt(ctx.sectionKey, `${field.path}.label`) ?? 80} caracteres. Deixe vazio para esconder o botão (o link abaixo fica guardado, mas não aparece no site).`}>
@@ -210,7 +210,7 @@ function SeoPageControl({ field, ctx }: { field: Extract<FieldSpec, { type: "seo
   const crumbs = field.publicPath === "/" ? "" : ` › ${field.publicPath.slice(1)}`;
 
   return (
-    <fieldset className="border-areia rounded-campo min-w-0 border p-4">
+    <fieldset className="border-borda rounded-campo min-w-0 border p-4">
       <legend className="label px-1">{field.label}</legend>
       <div className="space-y-4">
         <Field name={`${field.path}.title`} label="Título" required={field.required} hint={<>O Google costuma mostrar até uns 60 caracteres. · <Counter length={title.length} max={titleMax} /></>}>
@@ -219,14 +219,14 @@ function SeoPageControl({ field, ctx }: { field: Extract<FieldSpec, { type: "seo
         <Field name={`${field.path}.description`} label="Descrição" hint={<>Uma ou duas frases que convidem a clicar. Vazia, vale a descrição da página inicial. · <Counter length={description.length} max={descriptionMax} /></>}>
           <Textarea rows={2} defaultValue={asText(initial.description)} onChange={(event) => setDescription(event.target.value)} />
         </Field>
-        <div className="rounded-campo bg-offwhite border-areia border p-3" aria-label={`Prévia no Google: ${field.label}`} role="group">
-          <p className="text-cinza mb-1 text-[0.6875rem] font-bold tracking-wider uppercase">Prévia no Google</p>
-          <p className="text-cinza truncate text-xs">
+        <div className="rounded-campo bg-superficie-alta border-borda border p-3" aria-label={`Prévia no Google: ${field.label}`} role="group">
+          <p className="text-texto-suave mb-1 text-[0.6875rem] font-bold tracking-wider uppercase">Prévia no Google</p>
+          <p className="text-texto-suave truncate text-xs">
             {ctx.siteHost}
             {crumbs}
           </p>
           <p className="mt-0.5 text-[1.0625rem] leading-snug text-[#1a0dab]">{truncate(shownTitle, 60) || "Sem título"}</p>
-          <p className="text-cinza mt-0.5 text-[0.8125rem] leading-snug break-words">{truncate(description, 160) || "Sem descrição."}</p>
+          <p className="text-texto-suave mt-0.5 text-[0.8125rem] leading-snug break-words">{truncate(description, 160) || "Sem descrição."}</p>
         </div>
       </div>
     </fieldset>
@@ -341,11 +341,11 @@ export function SectionForm({
         </Card>
       ))}
 
-      <div className="rounded-cartao border-areia shadow-flutuante sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom)+0.5rem)] z-20 flex items-center gap-3 border bg-white/95 p-3 backdrop-blur lg:bottom-4">
+      <div className="rounded-cartao border-borda shadow-flutuante sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom)+0.5rem)] z-20 flex items-center gap-3 border bg-white/95 p-3 backdrop-blur lg:bottom-4">
         <SubmitButton icon={<Save />} pendingLabel="Salvando…">
           Salvar alterações
         </SubmitButton>
-        <p className="text-cinza min-w-0 text-[0.8125rem] leading-snug sm:text-sm">As mudanças aparecem no site assim que você salva.</p>
+        <p className="text-texto-suave min-w-0 text-[0.8125rem] leading-snug sm:text-sm">As mudanças aparecem no site assim que você salva.</p>
       </div>
     </ActionForm>
   );

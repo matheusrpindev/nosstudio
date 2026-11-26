@@ -91,12 +91,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               }
             />
             {links.length > 0 ? (
-              <ul className="divide-areia divide-y">
+              <ul className="divide-borda divide-y">
                 {links.map((link) => (
                   <li key={link.key} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">
                     <div className="min-w-0">
-                      <p className="text-grafite text-sm font-semibold">{link.label}</p>
-                      <p className="text-cinza text-[0.8125rem] break-all">{linkHost(link.url)}</p>
+                      <p className="text-texto text-sm font-semibold">{link.label}</p>
+                      <p className="text-texto-suave text-[0.8125rem] break-all">{linkHost(link.url)}</p>
                     </div>
                     <ButtonLink href={link.url} external variant="secondary" size="sm" iconRight={<ExternalLink />} className="max-sm:min-h-11">
                       Abrir<span className="sr-only"> {link.label}</span>
@@ -105,7 +105,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 ))}
               </ul>
             ) : (
-              <p className="text-cinza mb-2 text-sm">Nenhum link cadastrado. Use “Editar links” para colocar a pasta do Drive, a galeria, as referências e os arquivos finais.</p>
+              <p className="text-texto-suave mb-2 text-sm">Nenhum link cadastrado. Use “Editar links” para colocar a pasta do Drive, a galeria, as referências e os arquivos finais.</p>
             )}
             <DescriptionList
               className="mt-3"
@@ -129,11 +129,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               }
             />
             {tasks.length > 0 ? (
-              <ul className="divide-areia mb-4 divide-y">
+              <ul className="divide-borda mb-4 divide-y">
                 {tasks.map((task) => (
                   <li key={task.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5">
-                    <span className={task.done ? "text-cinza line-through" : "text-grafite font-medium"}>{task.title}</span>
-                    <span className="text-cinza flex items-center gap-2 text-[0.8125rem]">
+                    <span className={task.done ? "text-texto-suave line-through" : "text-texto font-medium"}>{task.title}</span>
+                    <span className="text-texto-suave flex items-center gap-2 text-[0.8125rem]">
                       {task.done ? <Badge tone="sucesso">Concluída</Badge> : task.priority === "alta" ? <Badge tone="alerta">{TASK_PRIORITY_LABELS[task.priority]}</Badge> : null}
                       {task.dueDate ? (
                         <span>
@@ -146,7 +146,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 ))}
               </ul>
             ) : (
-              <p className="text-cinza mb-4 text-sm">Nenhuma tarefa ainda. Anote abaixo o que precisa ser feito neste projeto.</p>
+              <p className="text-texto-suave mb-4 text-sm">Nenhuma tarefa ainda. Anote abaixo o que precisa ser feito neste projeto.</p>
             )}
             <ActionForm action={addProjectTaskAction} hidden={{ id: project.id }} resetOnSuccess className="space-y-3">
               <FieldRow>
@@ -165,7 +165,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
           <Card as="section" aria-labelledby="notas-titulo">
             <CardHeader id="notas-titulo" title="Observações" />
-            {project.notes.trim() ? <Markdown className="prosa">{project.notes}</Markdown> : <p className="text-cinza text-sm">Sem observações. Use “Editar” para registrar combinados e detalhes de produção.</p>}
+            {project.notes.trim() ? <Markdown className="prosa">{project.notes}</Markdown> : <p className="text-texto-suave text-sm">Sem observações. Use “Editar” para registrar combinados e detalhes de produção.</p>}
           </Card>
         </div>
 
@@ -233,12 +233,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               }
             />
             {events.length > 0 ? (
-              <ul className="divide-areia divide-y">
+              <ul className="divide-borda divide-y">
                 {events.map((event) => (
                   <li key={event.id}>
-                    <Link href={`/painel/agenda/${event.id}`} className="hover:text-roxo flex min-h-11 flex-col justify-center py-2">
-                      <span className="text-grafite text-sm font-semibold break-words">{event.title}</span>
-                      <span className="text-cinza text-[0.8125rem]">
+                    <Link href={`/painel/agenda/${event.id}`} className="hover:text-detalhe flex min-h-11 flex-col justify-center py-2">
+                      <span className="text-texto text-sm font-semibold break-words">{event.title}</span>
+                      <span className="text-texto-suave text-[0.8125rem]">
                         {AGENDA_KIND_LABELS[event.kind]} · <DateText value={event.date} />
                         {event.startTime ? ` às ${event.startTime}` : ""}
                         {event.location ? ` · ${event.location}` : ""}
@@ -248,7 +248,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 ))}
               </ul>
             ) : (
-              <p className="text-cinza text-sm">Nenhum compromisso. Marque a gravação, reuniões e a entrega na agenda.</p>
+              <p className="text-texto-suave text-sm">Nenhum compromisso. Marque a gravação, reuniões e a entrega na agenda.</p>
             )}
           </Card>
 
@@ -268,18 +268,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               }
             />
             {contracts.length > 0 ? (
-              <ul className="divide-areia divide-y">
+              <ul className="divide-borda divide-y">
                 {contracts.map((contract) => (
                   <li key={contract.id}>
-                    <Link href={`/painel/contratos/${contract.id}`} className="hover:text-roxo flex min-h-11 flex-wrap items-center justify-between gap-2 py-2">
-                      <span className="text-grafite text-sm font-semibold break-words">{contract.title}</span>
+                    <Link href={`/painel/contratos/${contract.id}`} className="hover:text-detalhe flex min-h-11 flex-wrap items-center justify-between gap-2 py-2">
+                      <span className="text-texto text-sm font-semibold break-words">{contract.title}</span>
                       <Badge tone={contract.status === "assinado" ? "sucesso" : contract.status === "cancelado" ? "neutral" : "roxo"}>{CONTRACT_STATUS_LABELS[contract.status]}</Badge>
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-cinza text-sm">Nenhum contrato vinculado a este projeto.</p>
+              <p className="text-texto-suave text-sm">Nenhum contrato vinculado a este projeto.</p>
             )}
           </Card>
 
@@ -299,16 +299,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               }
             />
             {finance.length > 0 ? (
-              <ul className="divide-areia divide-y">
+              <ul className="divide-borda divide-y">
                 {finance.map((entry) => (
                   <li key={entry.id}>
-                    <Link href={`/painel/financeiro/${entry.id}`} className="hover:text-roxo flex min-h-11 items-center justify-between gap-3 py-2">
+                    <Link href={`/painel/financeiro/${entry.id}`} className="hover:text-detalhe flex min-h-11 items-center justify-between gap-3 py-2">
                       <span className="min-w-0">
-                        <span className="text-grafite block text-sm font-semibold break-words">
+                        <span className="text-texto block text-sm font-semibold break-words">
                           {entry.description}
                           {entry.installmentLabel ? ` · ${entry.installmentLabel}` : ""}
                         </span>
-                        <span className="text-cinza block text-[0.8125rem]">
+                        <span className="text-texto-suave block text-[0.8125rem]">
                           {entry.type === "receita" ? "Receita" : "Despesa"} ·{" "}
                           {entry.paidAt ? (
                             <>
@@ -327,7 +327,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 ))}
               </ul>
             ) : (
-              <p className="text-cinza text-sm">Nenhum lançamento vinculado a este projeto.</p>
+              <p className="text-texto-suave text-sm">Nenhum lançamento vinculado a este projeto.</p>
             )}
           </Card>
 
@@ -352,7 +352,7 @@ function DeleteProject({ projectId, title, taskCount }: { projectId: number; tit
       title="Excluir este projeto?"
       description={
         <>
-          <strong className="text-grafite">{title}</strong> será apagado e não dá para desfazer.{" "}
+          <strong className="text-texto">{title}</strong> será apagado e não dá para desfazer.{" "}
           {taskCount > 0 ? `As ${taskCount} tarefa${taskCount === 1 ? "" : "s"} do projeto também serão apagadas.` : "Ele não tem tarefas."}
         </>
       }

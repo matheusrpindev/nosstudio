@@ -14,7 +14,7 @@ function CaptionTextarea({ defaultValue }: { defaultValue: string }) {
   return (
     <>
       <Textarea rows={5} maxLength={5000} defaultValue={defaultValue} onInput={(event) => setLength(event.currentTarget.value.length)} />
-      <p className={over ? "text-alerta mt-1 text-[0.8125rem] font-semibold" : "text-cinza mt-1 text-[0.8125rem]"} aria-live="polite">
+      <p className={over ? "text-alerta mt-1 text-[0.8125rem] font-semibold" : "text-texto-suave mt-1 text-[0.8125rem]"} aria-live="polite">
         {length.toLocaleString("pt-BR")} {length === 1 ? "caractere" : "caracteres"}
         {over ? " — passou do limite de 2.200 do Instagram" : " · o Instagram aceita até 2.200"}
       </p>

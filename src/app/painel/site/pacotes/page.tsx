@@ -38,12 +38,12 @@ export default async function PackagesPage() {
               {pkg.name}
               {pkg.recommended ? <Badge tone="lima">Recomendado</Badge> : null}
             </span>
-            {pkg.tagline ? <span className="text-cinza line-clamp-2 block text-[0.8125rem] font-normal">{pkg.tagline}</span> : null}
+            {pkg.tagline ? <span className="text-texto-suave line-clamp-2 block text-[0.8125rem] font-normal">{pkg.tagline}</span> : null}
           </>
         ),
       },
       { key: "preco", header: "Preço no site", cell: (pkg) => priceText(pkg) },
-      { key: "entregas", header: "Entregas com quantidade", hideOnMobile: true, cell: (pkg) => (pkg.deliverables.length > 0 ? `${pkg.deliverables.length}` : <span className="text-cinza">Não exibe</span>) },
+      { key: "entregas", header: "Entregas com quantidade", hideOnMobile: true, cell: (pkg) => (pkg.deliverables.length > 0 ? `${pkg.deliverables.length}` : <span className="text-texto-suave">Não exibe</span>) },
       { key: "visivel", header: "No site", interactive: true, cell: (pkg) => <RowSwitch id={pkg.id} checked={pkg.visible} label={`Mostrar “${pkg.name}” no site`} action={togglePackageAction} /> },
       {
         key: "ordem",
@@ -84,8 +84,8 @@ export default async function PackagesPage() {
           const group = all.filter((pkg) => pkg.kind === kind);
           return (
             <section key={kind} aria-labelledby={`grupo-${kind}`}>
-              <h2 id={`grupo-${kind}`} className="text-grafite mb-3 text-lg font-bold">
-                {title} <span className="text-cinza text-sm font-medium">({group.length})</span>
+              <h2 id={`grupo-${kind}`} className="text-texto mb-3 text-lg font-bold">
+                {title} <span className="text-texto-suave text-sm font-medium">({group.length})</span>
               </h2>
               <DataList
                 caption={title}

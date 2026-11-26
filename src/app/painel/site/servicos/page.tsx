@@ -27,12 +27,12 @@ export default async function ServicesPage() {
       cell: (service) => (
         <>
           <span className="block break-words">{service.title}</span>
-          {service.summary ? <span className="text-cinza line-clamp-2 block text-[0.8125rem] font-normal">{service.summary}</span> : null}
+          {service.summary ? <span className="text-texto-suave line-clamp-2 block text-[0.8125rem] font-normal">{service.summary}</span> : null}
         </>
       ),
     },
     { key: "interesse", header: "Interesse no formulário", hideOnMobile: true, cell: (service) => SERVICE_INTEREST_LABELS[service.interest] },
-    { key: "pagina", header: "Página própria", hideOnMobile: true, cell: (service) => (service.pagePath ? <Badge tone="roxo">{service.pagePath}</Badge> : <span className="text-cinza">—</span>) },
+    { key: "pagina", header: "Página própria", hideOnMobile: true, cell: (service) => (service.pagePath ? <Badge tone="roxo">{service.pagePath}</Badge> : <span className="text-texto-suave">—</span>) },
     { key: "visivel", header: "No site", interactive: true, cell: (service) => <RowSwitch id={service.id} checked={service.visible} label={`Mostrar “${service.title}” no site`} action={toggleServiceAction} /> },
     {
       key: "ordem",

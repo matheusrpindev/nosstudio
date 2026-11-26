@@ -46,22 +46,22 @@ export function Dialog({ trigger, title, description, children, footer, size = "
     <RadixDialog.Root open={isOpen} onOpenChange={setOpen}>
       {trigger ? <RadixDialog.Trigger asChild>{trigger}</RadixDialog.Trigger> : null}
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="sobreposicao-fundo bg-grafite/50 fixed inset-0 z-50" />
+        <RadixDialog.Overlay className="sobreposicao-fundo bg-veu fixed inset-0 z-50" />
         <RadixDialog.Content
           {...(description ? {} : { "aria-describedby": undefined })}
           className={cn(
-            "dialogo-entrada shadow-flutuante fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] w-full flex-col rounded-t-cartao bg-white outline-none",
+            "dialogo-entrada shadow-flutuante fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] w-full flex-col rounded-t-cartao bg-superficie outline-none",
             "sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[85dvh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-cartao",
             SIZES[size],
           )}
         >
           <div className="flex items-start gap-3 px-5 pt-5 pb-3 sm:px-6">
             <div className="min-w-0 flex-1">
-              <RadixDialog.Title className="text-grafite text-lg leading-snug font-bold">{title}</RadixDialog.Title>
-              {description ? <RadixDialog.Description className="text-cinza mt-1 text-sm leading-relaxed">{description}</RadixDialog.Description> : null}
+              <RadixDialog.Title className="text-texto text-lg leading-snug font-bold">{title}</RadixDialog.Title>
+              {description ? <RadixDialog.Description className="text-texto-suave mt-1 text-sm leading-relaxed">{description}</RadixDialog.Description> : null}
             </div>
             <RadixDialog.Close asChild>
-              <button type="button" aria-label="Fechar" className="btn btn-ghost btn-icon text-cinza -mt-1.5 -mr-2 shrink-0">
+              <button type="button" aria-label="Fechar" className="btn btn-ghost btn-icon text-texto-suave -mt-1.5 -mr-2 shrink-0">
                 <X aria-hidden="true" className="size-5" />
               </button>
             </RadixDialog.Close>
@@ -69,7 +69,7 @@ export function Dialog({ trigger, title, description, children, footer, size = "
           <DialogCloseContext value={() => setOpen(false)}>
             <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-1 pb-5 sm:px-6">{children}</div>
             {footer ? (
-              <div className="border-areia flex flex-col-reverse gap-2 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6 sm:pb-4">
+              <div className="border-borda flex flex-col-reverse gap-2 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6 sm:pb-4">
                 {footer}
               </div>
             ) : null}
@@ -132,19 +132,19 @@ export function ConfirmDialog({
     <RadixAlertDialog.Root open={isOpen} onOpenChange={setOpen}>
       {trigger ? <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger> : null}
       <RadixAlertDialog.Portal>
-        <RadixAlertDialog.Overlay className="sobreposicao-fundo bg-grafite/50 fixed inset-0 z-50" />
+        <RadixAlertDialog.Overlay className="sobreposicao-fundo bg-veu fixed inset-0 z-50" />
         <RadixAlertDialog.Content
           {...(description ? {} : { "aria-describedby": undefined })}
           className={cn(
             // texto longo ou tela baixa: como o <Dialog>, nunca passa da altura da tela — rola por dentro
-            "dialogo-entrada shadow-flutuante fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] w-full overflow-y-auto overscroll-contain rounded-t-cartao bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none",
+            "dialogo-entrada shadow-flutuante fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] w-full overflow-y-auto overscroll-contain rounded-t-cartao bg-superficie p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none",
             "sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[85dvh] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-cartao sm:p-6",
           )}
         >
-          <RadixAlertDialog.Title className="text-grafite text-lg leading-snug font-bold">{title}</RadixAlertDialog.Title>
+          <RadixAlertDialog.Title className="text-texto text-lg leading-snug font-bold">{title}</RadixAlertDialog.Title>
           {description ? (
             <RadixAlertDialog.Description asChild>
-              <div className="text-cinza mt-2 text-sm leading-relaxed">{description}</div>
+              <div className="text-texto-suave mt-2 text-sm leading-relaxed">{description}</div>
             </RadixAlertDialog.Description>
           ) : null}
           <ActionForm action={action} hidden={hidden} onSuccess={() => setOpen(false)} className="mt-4 space-y-4">

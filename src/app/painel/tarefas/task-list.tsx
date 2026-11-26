@@ -59,13 +59,13 @@ export function TaskList({ groups, recentDone, today, options }: Props) {
             title={
               <span className={cn(group.key === "atrasadas" && "text-perigo")}>
                 {group.label}{" "}
-                <span className="text-cinza font-semibold">
+                <span className="text-texto-suave font-semibold">
                   ({group.tasks.length})
                 </span>
               </span>
             }
           />
-          <ul className="divide-areia divide-y px-2 pb-2 sm:px-3">
+          <ul className="divide-borda divide-y px-2 pb-2 sm:px-3">
             {group.tasks.map((task) => (
               <TaskRow
                 key={task.id}
@@ -82,19 +82,19 @@ export function TaskList({ groups, recentDone, today, options }: Props) {
 
       {recentDone.length > 0 ? (
         <details className="card group/concluidas">
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2 text-sm font-bold text-grafite sm:px-5 [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2 text-sm font-bold text-texto sm:px-5 [&::-webkit-details-marker]:hidden">
             <span>
               Concluídas recentemente{" "}
-              <span className="text-cinza font-semibold">
+              <span className="text-texto-suave font-semibold">
                 ({recentDone.length})
               </span>
             </span>
             <ChevronDown
               aria-hidden="true"
-              className="text-cinza size-5 transition-transform group-open/concluidas:rotate-180"
+              className="text-texto-suave size-5 transition-transform group-open/concluidas:rotate-180"
             />
           </summary>
-          <ul className="divide-areia border-areia divide-y border-t px-2 pb-2 sm:px-3">
+          <ul className="divide-borda border-borda divide-y border-t px-2 pb-2 sm:px-3">
             {recentDone.map((task) => (
               <TaskRow
                 key={task.id}

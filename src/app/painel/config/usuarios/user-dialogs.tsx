@@ -37,16 +37,16 @@ function TemporaryPasswordPanel({ credentials, intro, onDone }: { credentials: T
       <Alert tone="alerta" title="Anote agora: esta senha não aparece de novo">
         {intro} Entregue a senha direto à pessoa (pessoalmente ou por mensagem privada). No primeiro acesso, o painel pede uma senha nova. Se perder, é só gerar outra.
       </Alert>
-      <dl className="bg-offwhite rounded-campo space-y-3 p-4 text-sm">
+      <dl className="bg-superficie-alta rounded-campo space-y-3 p-4 text-sm">
         <div>
-          <dt className="text-cinza text-xs font-semibold tracking-wide uppercase">Conta</dt>
-          <dd className="text-grafite font-semibold break-words">{credentials.name}</dd>
-          <dd className="text-cinza break-all">{credentials.email}</dd>
+          <dt className="text-texto-suave text-xs font-semibold tracking-wide uppercase">Conta</dt>
+          <dd className="text-texto font-semibold break-words">{credentials.name}</dd>
+          <dd className="text-texto-suave break-all">{credentials.email}</dd>
         </div>
         <div>
-          <dt className="text-cinza text-xs font-semibold tracking-wide uppercase">Senha temporária</dt>
+          <dt className="text-texto-suave text-xs font-semibold tracking-wide uppercase">Senha temporária</dt>
           <dd>
-            <output data-testid="senha-temporaria" className="text-grafite block font-mono text-xl font-bold tracking-wider break-all select-all">
+            <output data-testid="senha-temporaria" className="text-texto block font-mono text-xl font-bold tracking-wider break-all select-all">
               {credentials.password}
             </output>
           </dd>

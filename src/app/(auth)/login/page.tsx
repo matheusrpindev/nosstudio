@@ -12,8 +12,8 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 export default function LoginPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
-      <h1 className="text-grafite text-[1.75rem] leading-tight font-extrabold tracking-tight">Entrar no painel</h1>
-      <p className="text-cinza mt-2 text-[0.9375rem] leading-relaxed">Use o e-mail e a senha da sua conta da NÓS Studio.</p>
+      <h1 className="text-texto text-[1.75rem] leading-tight font-extrabold tracking-tight">Entrar no painel</h1>
+      <p className="text-texto-suave mt-2 text-[0.9375rem] leading-relaxed">Use o e-mail e a senha da sua conta da NÓS Studio.</p>
       {/* Ler a sessão e a URL é trabalho de requisição: fica atrás do Suspense (Cache Components). */}
       <Suspense fallback={<FormSkeleton />}>
         <LoginGate searchParams={searchParams} />

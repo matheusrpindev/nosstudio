@@ -88,7 +88,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
         return (
           <>
             <span className="block break-words">{entry.description}</span>
-            <span className="text-cinza block text-[0.8125rem] font-normal break-words">
+            <span className="text-texto-suave block text-[0.8125rem] font-normal break-words">
               <span className="sr-only">{FINANCE_TYPE_LABELS[entry.type]}: </span>
               {meta}
             </span>
@@ -105,7 +105,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
           <>
             <DateText value={entry.dueDate} />
             {status === "realizado" ? (
-              <span className="text-cinza block text-[0.8125rem]">
+              <span className="text-texto-suave block text-[0.8125rem]">
                 {entry.type === "receita" ? "Recebido" : "Pago"} em <DateText value={entry.paidAt} />
               </span>
             ) : status === "vencido" ? (
@@ -194,7 +194,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
               <Link href={overdueHref("receita")} className="border-perigo/30 bg-perigo-claro hover:border-perigo block rounded-cartao border p-4 transition-colors sm:p-5">
                 <p className="text-perigo text-sm font-semibold">A receber vencido</p>
                 <p className="text-perigo mt-1.5 text-2xl font-extrabold tabular-nums">{formatBRL(overdue.receber.cents)}</p>
-                <p className="text-grafite mt-1 text-[0.8125rem]">
+                <p className="text-texto mt-1 text-[0.8125rem]">
                   {overdue.receber.count} {overdue.receber.count === 1 ? "lançamento atrasado" : "lançamentos atrasados"} · ver lista
                 </p>
               </Link>
@@ -203,7 +203,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
               <Link href={overdueHref("despesa")} className="border-perigo/30 bg-perigo-claro hover:border-perigo block rounded-cartao border p-4 transition-colors sm:p-5">
                 <p className="text-perigo text-sm font-semibold">A pagar vencido</p>
                 <p className="text-perigo mt-1.5 text-2xl font-extrabold tabular-nums">{formatBRL(overdue.pagar.cents)}</p>
-                <p className="text-grafite mt-1 text-[0.8125rem]">
+                <p className="text-texto mt-1 text-[0.8125rem]">
                   {overdue.pagar.count} {overdue.pagar.count === 1 ? "lançamento atrasado" : "lançamentos atrasados"} · ver lista
                 </p>
               </Link>
@@ -217,7 +217,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
       {/* --------------------------------------------------------- resumo do mês */}
       <section aria-labelledby="resumo-titulo" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="resumo-titulo" className="text-grafite text-xl font-extrabold first-letter:uppercase">
+          <h2 id="resumo-titulo" className="text-texto text-xl font-extrabold first-letter:uppercase">
             {formatMonth(month)}
           </h2>
           <nav aria-label="Mês" className="flex items-center gap-2">
@@ -234,10 +234,10 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
             </Link>
           </nav>
         </div>
-        <p className="text-cinza -mt-2 text-[0.8125rem]">O que foi pago conta no mês do pagamento; o que está em aberto conta no mês do vencimento.</p>
+        <p className="text-texto-suave -mt-2 text-[0.8125rem]">O que foi pago conta no mês do pagamento; o que está em aberto conta no mês do vencimento.</p>
 
         <div>
-          <h3 className="text-cinza mb-2 text-xs font-bold tracking-wide uppercase">Receitas</h3>
+          <h3 className="text-texto-suave mb-2 text-xs font-bold tracking-wide uppercase">Receitas</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard className="max-sm:col-span-2" size="md" label="Receitas previstas" value={formatBRL(summary.receitas.previstoCents)} caption="Tudo que era para entrar no mês" />
             <StatCard size="md" label="Recebidas" value={formatBRL(summary.receitas.realizadoCents)} caption="Já entrou" />
@@ -245,7 +245,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
           </div>
         </div>
         <div>
-          <h3 className="text-cinza mb-2 text-xs font-bold tracking-wide uppercase">Despesas</h3>
+          <h3 className="text-texto-suave mb-2 text-xs font-bold tracking-wide uppercase">Despesas</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard className="max-sm:col-span-2" size="md" label="Despesas previstas" value={formatBRL(summary.despesas.previstoCents)} caption="Tudo que era para sair no mês" />
             <StatCard size="md" label="Pagas" value={formatBRL(summary.despesas.realizadoCents)} caption="Já saiu" />
@@ -253,7 +253,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
           </div>
         </div>
         <div>
-          <h3 className="text-cinza mb-2 text-xs font-bold tracking-wide uppercase">Resultado</h3>
+          <h3 className="text-texto-suave mb-2 text-xs font-bold tracking-wide uppercase">Resultado</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <StatCard tone="destaque" size="md" label="Resultado do mês (realizado)" value={formatBRL(summary.resultadoRealizadoCents)} caption="Recebido menos pago" />
             <StatCard size="md" label="Resultado previsto" value={formatBRL(summary.resultadoPrevistoCents)} caption="Receitas previstas menos despesas previstas" />
@@ -270,21 +270,21 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
             description="Valor definido por vocês, não vem do banco."
             action={<ReserveDialog valueCents={reserve.cashReserveCents} goalCents={reserve.cashReserveGoalCents} note={reserve.note} />}
           />
-          <p className="text-roxo text-3xl font-extrabold tabular-nums">{formatBRL(reserve.cashReserveCents)}</p>
+          <p className="text-detalhe text-3xl font-extrabold tabular-nums">{formatBRL(reserve.cashReserveCents)}</p>
           {progress !== null ? (
             <div className="mt-4">
-              <div role="progressbar" aria-label="Progresso da reserva de caixa" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="bg-lavanda-claro h-3 overflow-hidden rounded-full">
+              <div role="progressbar" aria-label="Progresso da reserva de caixa" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="bg-detalhe-suave h-3 overflow-hidden rounded-full">
                 <div className="bg-roxo h-full rounded-full" style={{ width: `${progress}%` }} />
               </div>
-              <p className="text-grafite mt-2 text-sm">
+              <p className="text-texto mt-2 text-sm">
                 <strong>{progress}%</strong> da meta de {formatBRL(reserve.cashReserveGoalCents)}
-                {reserve.cashReserveCents < reserve.cashReserveGoalCents ? <span className="text-cinza"> · faltam {formatBRL(reserve.cashReserveGoalCents - reserve.cashReserveCents)}</span> : <span className="text-sucesso font-semibold"> · meta atingida</span>}
+                {reserve.cashReserveCents < reserve.cashReserveGoalCents ? <span className="text-texto-suave"> · faltam {formatBRL(reserve.cashReserveGoalCents - reserve.cashReserveCents)}</span> : <span className="text-sucesso font-semibold"> · meta atingida</span>}
               </p>
             </div>
           ) : (
-            <p className="text-cinza mt-3 text-sm">Sem meta definida. Use &quot;Editar reserva&quot; para informar uma meta.</p>
+            <p className="text-texto-suave mt-3 text-sm">Sem meta definida. Use &quot;Editar reserva&quot; para informar uma meta.</p>
           )}
-          {reserve.note ? <p className="text-cinza border-areia mt-4 border-t pt-3 text-sm break-words whitespace-pre-line">{reserve.note}</p> : null}
+          {reserve.note ? <p className="text-texto-suave border-borda mt-4 border-t pt-3 text-sm break-words whitespace-pre-line">{reserve.note}</p> : null}
         </Card>
 
         <Card as="section" aria-labelledby="grafico-titulo">
@@ -296,10 +296,10 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
       {/* ------------------------------------------------------- lançamentos */}
       <section id="lancamentos" aria-labelledby="lancamentos-titulo" className="scroll-mt-20 space-y-4">
         <div>
-          <h2 id="lancamentos-titulo" className="text-grafite text-xl font-extrabold">
+          <h2 id="lancamentos-titulo" className="text-texto text-xl font-extrabold">
             {scopeLabel}
           </h2>
-          <p className="text-cinza mt-1 text-sm">
+          <p className="text-texto-suave mt-1 text-sm">
             {listed.length} {listed.length === 1 ? "lançamento" : "lançamentos"}
             {filtered ? " com os filtros escolhidos" : ""}.
           </p>
@@ -332,25 +332,25 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
         {listed.length > 0 ? (
           <Card className="grid gap-4 sm:grid-cols-3" aria-label="Totais do filtro">
             <div>
-              <p className="text-cinza text-sm font-semibold">Receitas</p>
-              <p className="text-grafite mt-1 text-lg font-extrabold tabular-nums">{formatBRL(listTotals.receitas.previstoCents)}</p>
-              <p className="text-cinza text-[0.8125rem]">
+              <p className="text-texto-suave text-sm font-semibold">Receitas</p>
+              <p className="text-texto mt-1 text-lg font-extrabold tabular-nums">{formatBRL(listTotals.receitas.previstoCents)}</p>
+              <p className="text-texto-suave text-[0.8125rem]">
                 {formatBRL(listTotals.receitas.realizadoCents)} recebidas · {formatBRL(listTotals.receitas.abertoCents)} a receber
               </p>
             </div>
             <div>
-              <p className="text-cinza text-sm font-semibold">Despesas</p>
-              <p className="text-grafite mt-1 text-lg font-extrabold tabular-nums">{formatBRL(listTotals.despesas.previstoCents)}</p>
-              <p className="text-cinza text-[0.8125rem]">
+              <p className="text-texto-suave text-sm font-semibold">Despesas</p>
+              <p className="text-texto mt-1 text-lg font-extrabold tabular-nums">{formatBRL(listTotals.despesas.previstoCents)}</p>
+              <p className="text-texto-suave text-[0.8125rem]">
                 {formatBRL(listTotals.despesas.realizadoCents)} pagas · {formatBRL(listTotals.despesas.abertoCents)} a pagar
               </p>
             </div>
             <div>
-              <p className="text-cinza text-sm font-semibold">Resultado realizado</p>
+              <p className="text-texto-suave text-sm font-semibold">Resultado realizado</p>
               <p className="mt-1 text-lg font-extrabold tabular-nums">
                 <Money cents={listTotals.resultadoRealizadoCents} colored />
               </p>
-              <p className="text-cinza text-[0.8125rem]">Previsto: {formatBRL(listTotals.resultadoPrevistoCents)}</p>
+              <p className="text-texto-suave text-[0.8125rem]">Previsto: {formatBRL(listTotals.resultadoPrevistoCents)}</p>
             </div>
           </Card>
         ) : null}

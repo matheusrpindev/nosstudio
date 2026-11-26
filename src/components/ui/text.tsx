@@ -13,7 +13,7 @@ type MoneyProps = {
 
 /** Dinheiro formatado (`R$ 1.234,56`) com algarismos alinhados. Sempre a partir de centavos. */
 export function Money({ cents, colored, fallback = "—", className }: MoneyProps) {
-  if (cents == null) return <span className={cn("text-cinza", className)}>{fallback}</span>;
+  if (cents == null) return <span className={cn("text-texto-suave", className)}>{fallback}</span>;
   return (
     <span className={cn("whitespace-nowrap tabular-nums", colored && cents > 0 && "text-sucesso", colored && cents < 0 && "text-perigo", className)}>
       {formatBRL(cents)}
@@ -35,7 +35,7 @@ type DateTextProps = {
 
 /** Data formatada dentro de `<time>`. Instantes são convertidos para o fuso do estúdio. */
 export function DateText({ value, format = "date", fallback = "—", className }: DateTextProps) {
-  if (!value) return <span className={cn("text-cinza", className)}>{fallback}</span>;
+  if (!value) return <span className={cn("text-texto-suave", className)}>{fallback}</span>;
   const iso = value instanceof Date ? todayISO(value) : value;
   let text: string;
   if (format === "datetime" && value instanceof Date) text = formatDateTime(value);
@@ -43,7 +43,7 @@ export function DateText({ value, format = "date", fallback = "—", className }
   else if (format === "short") text = formatDateShort(iso);
   else if (format === "relative") text = formatRelativeDay(iso, todayISO());
   else text = formatDate(iso);
-  if (!text) return <span className={cn("text-cinza", className)}>{fallback}</span>;
+  if (!text) return <span className={cn("text-texto-suave", className)}>{fallback}</span>;
   return (
     <time dateTime={value instanceof Date ? value.toISOString() : iso} className={cn("whitespace-nowrap", className)}>
       {text}

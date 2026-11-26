@@ -66,7 +66,7 @@ const financeListUrl = (id: number) => `/painel/financeiro?proposta=${id}#lancam
 function entrySituation(entry: { type: FinanceType; dueDate: string; paidAt: string | null }, today: string): { text: string; tone: string } {
   if (entry.paidAt) return { text: `${entry.type === "receita" ? "Recebido" : "Pago"} em ${formatDate(entry.paidAt)}`, tone: "text-sucesso" };
   if (entry.dueDate < today) return { text: `Vencido em ${formatDate(entry.dueDate)}`, tone: "text-perigo" };
-  return { text: `Vence em ${formatDate(entry.dueDate)}`, tone: "text-cinza" };
+  return { text: `Vence em ${formatDate(entry.dueDate)}`, tone: "text-texto-suave" };
 }
 
 function StatusButton({ id, status, children, title, description, confirmLabel, icon, variant = "secondary", disabled, tone = "primary" }: {
@@ -117,7 +117,7 @@ function TemplateControl({ id, defaultTemplateName }: Pick<Props, "id" | "defaul
             title="Duplicar este modelo?"
             description={
               <>
-                Vamos criar uma cópia de <strong className="text-grafite">{defaultTemplateName}</strong> e abrir o editor dela.
+                Vamos criar uma cópia de <strong className="text-texto">{defaultTemplateName}</strong> e abrir o editor dela.
               </>
             }
             confirmLabel="Duplicar"
@@ -179,9 +179,9 @@ export function ControlStep(props: Props) {
           key={pdfKey}
           title={`Pré-visualização do PDF da proposta ${label}`}
           src={`${pdfUrl(id)}?v=${pdfKey}#toolbar=0&navpanes=0`}
-          className="border-areia bg-offwhite rounded-campo h-[70vh] min-h-96 w-full border"
+          className="border-borda bg-superficie-alta rounded-campo h-[70vh] min-h-96 w-full border"
         />
-        <p className="text-cinza mt-2 text-xs">Se a pré-visualização não aparecer neste aparelho (comum no celular), use “Baixar PDF” ou “Abrir em nova aba”.</p>
+        <p className="text-texto-suave mt-2 text-xs">Se a pré-visualização não aparecer neste aparelho (comum no celular), use “Baixar PDF” ou “Abrir em nova aba”.</p>
       </Card>
 
       <Card as="section" aria-labelledby="etapa-pdf-status">
@@ -301,7 +301,7 @@ export function ControlStep(props: Props) {
         </div>
         {!clientId && status === "rascunho" ? <p className="text-alerta mt-3 text-sm font-semibold">Escolha o cliente na etapa Dados e salve para poder marcar como enviada.</p> : null}
         {status !== "rascunho" ? (
-          <p className="text-cinza mt-3 text-sm">Para mudar valores de uma proposta já enviada sem perder o que o cliente recebeu, crie uma nova versão (abaixo).</p>
+          <p className="text-texto-suave mt-3 text-sm">Para mudar valores de uma proposta já enviada sem perder o que o cliente recebeu, crie uma nova versão (abaixo).</p>
         ) : null}
       </Card>
 
@@ -324,7 +324,7 @@ export function ControlStep(props: Props) {
             </div>
           ) : (
             <>
-              <p className="text-grafite mb-3 text-sm">
+              <p className="text-texto mb-3 text-sm">
                 <strong className="tabular-nums">{finance.count}</strong> {finance.count === 1 ? "lançamento" : "lançamentos"}
                 {finance.receivableCents > 0 ? (
                   <>
@@ -333,15 +333,15 @@ export function ControlStep(props: Props) {
                   </>
                 ) : null}
               </p>
-              <ul className="divide-areia border-areia rounded-campo mb-3 divide-y border">
+              <ul className="divide-borda border-borda rounded-campo mb-3 divide-y border">
                 {finance.entries.map((entry) => {
                   const situation = entrySituation(entry, today);
                   return (
                     <li key={entry.id}>
-                      <Link href={`/painel/financeiro/${entry.id}`} className="hover:bg-offwhite flex min-h-11 flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3 py-2.5 text-sm">
-                        <span className="text-grafite min-w-0 flex-1 basis-48 font-semibold break-words">{entry.description}</span>
+                      <Link href={`/painel/financeiro/${entry.id}`} className="hover:bg-superficie-alta flex min-h-11 flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3 py-2.5 text-sm">
+                        <span className="text-texto min-w-0 flex-1 basis-48 font-semibold break-words">{entry.description}</span>
                         <span className={`${situation.tone} text-[0.8125rem]`}>{situation.text}</span>
-                        <span className="text-grafite font-bold tabular-nums">
+                        <span className="text-texto font-bold tabular-nums">
                           {entry.type === "despesa" ? "− " : ""}
                           {formatBRL(entry.amountCents)}
                         </span>
@@ -350,7 +350,7 @@ export function ControlStep(props: Props) {
                   );
                 })}
               </ul>
-              {finance.count > finance.entries.length ? <p className="text-cinza mb-3 text-sm">Mostrando os {finance.entries.length} primeiros por vencimento.</p> : null}
+              {finance.count > finance.entries.length ? <p className="text-texto-suave mb-3 text-sm">Mostrando os {finance.entries.length} primeiros por vencimento.</p> : null}
               <div className="flex flex-wrap gap-2 max-sm:[&>*]:w-full">
                 <ButtonLink href={financeListUrl(id)} icon={<Wallet />}>
                   Ver lançamentos desta proposta
@@ -362,7 +362,7 @@ export function ControlStep(props: Props) {
             </>
           )}
           {finance.count > 0 ? null : dirty ? (
-            <p className="text-cinza mt-3 text-sm">As parcelas vêm da última versão salva da proposta.</p>
+            <p className="text-texto-suave mt-3 text-sm">As parcelas vêm da última versão salva da proposta.</p>
           ) : null}
         </Card>
       ) : null}
@@ -370,7 +370,7 @@ export function ControlStep(props: Props) {
       <Card as="section" aria-labelledby="etapa-pdf-contrato">
         <CardHeader id="etapa-pdf-contrato" title="Contrato" description="Vincule o contrato do cliente a esta proposta para achar tudo num lugar só." />
         {!clientId ? (
-          <p className="text-cinza text-sm">Escolha o cliente na etapa Dados para vincular um contrato.</p>
+          <p className="text-texto-suave text-sm">Escolha o cliente na etapa Dados para vincular um contrato.</p>
         ) : (
           <div className="space-y-4">
             {contracts.length > 0 ? (
@@ -389,7 +389,7 @@ export function ControlStep(props: Props) {
                 </FormActions>
               </ActionForm>
             ) : (
-              <p className="text-cinza text-sm">Este cliente ainda não tem contratos.</p>
+              <p className="text-texto-suave text-sm">Este cliente ainda não tem contratos.</p>
             )}
             <div className="flex flex-wrap items-center gap-3">
               {contractId ? (
@@ -411,20 +411,20 @@ export function ControlStep(props: Props) {
           title="Versões"
           description="Cada versão guarda exatamente o que foi montado naquele momento. O número da proposta é o mesmo em todas."
         />
-        <ol className="divide-areia divide-y">
+        <ol className="divide-borda divide-y">
           {versions.map((item) => (
             <li key={item.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
               <span className="min-w-0 flex-1 text-sm">
                 {item.id === id ? (
-                  <span className="text-grafite font-bold">
-                    Versão {item.version} <span className="text-cinza font-normal">(esta)</span>
+                  <span className="text-texto font-bold">
+                    Versão {item.version} <span className="text-texto-suave font-normal">(esta)</span>
                   </span>
                 ) : (
                   <Link href={`/painel/orcamentos/${item.id}`} className="link font-semibold">
                     Versão {item.version}
                   </Link>
                 )}
-                <span className="text-cinza block text-[0.8125rem]">
+                <span className="text-texto-suave block text-[0.8125rem]">
                   criada em <DateText value={new Date(item.createdAt)} format="datetime" />
                   {item.sentAt ? (
                     <>
@@ -504,7 +504,7 @@ export function ControlStep(props: Props) {
             />
           ) : null}
         </div>
-        {status !== "rascunho" ? <p className="text-cinza mt-3 text-sm">Só rascunhos podem ser excluídos: propostas enviadas ficam como histórico.</p> : null}
+        {status !== "rascunho" ? <p className="text-texto-suave mt-3 text-sm">Só rascunhos podem ser excluídos: propostas enviadas ficam como histórico.</p> : null}
       </Card>
     </div>
   );

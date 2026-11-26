@@ -35,13 +35,13 @@ export function Checklist({ projectId, items }: { projectId: number; items: Chec
     <div>
       {optimistic.length > 0 ? (
         <>
-          <p className="text-cinza mb-2 text-sm" aria-live="polite">
+          <p className="text-texto-suave mb-2 text-sm" aria-live="polite">
             <span className="tabular-nums">
               {done} de {optimistic.length}
             </span>{" "}
             concluídos
           </p>
-          <ul className="divide-areia divide-y">
+          <ul className="divide-borda divide-y">
             {optimistic.map((item) => (
               <li key={item.id} className="flex items-center gap-1">
                 <label className="flex min-h-11 flex-1 cursor-pointer items-center gap-3 py-1 pr-2">
@@ -51,7 +51,7 @@ export function Checklist({ projectId, items }: { projectId: number; items: Chec
                     checked={item.done}
                     onChange={(event) => run({ type: "toggle", id: item.id, done: event.target.checked }, () => toggleChecklistItemAction(projectId, item.id, event.target.checked))}
                   />
-                  <span className={item.done ? "text-cinza break-words line-through" : "text-grafite break-words"}>{item.text}</span>
+                  <span className={item.done ? "text-texto-suave break-words line-through" : "text-texto break-words"}>{item.text}</span>
                 </label>
                 <IconButton aria-label={`Remover "${item.text}"`} variant="danger-ghost" onClick={() => run({ type: "remove", id: item.id }, () => removeChecklistItemAction(projectId, item.id))}>
                   <Trash2 />
@@ -61,7 +61,7 @@ export function Checklist({ projectId, items }: { projectId: number; items: Chec
           </ul>
         </>
       ) : (
-        <p className="text-cinza mb-3 text-sm">Nenhum item ainda. Liste o que precisa acontecer até a entrega (ex.: “Receber briefing”, “Alinhar roteiro”, “Enviar para revisão”).</p>
+        <p className="text-texto-suave mb-3 text-sm">Nenhum item ainda. Liste o que precisa acontecer até a entrega (ex.: “Receber briefing”, “Alinhar roteiro”, “Enviar para revisão”).</p>
       )}
 
       <ActionForm action={addChecklistItemAction} hidden={{ id: projectId }} resetOnSuccess success="none" className="mt-3 flex items-start gap-2">

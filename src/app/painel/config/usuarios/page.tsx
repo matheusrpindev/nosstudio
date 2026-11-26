@@ -29,9 +29,9 @@ export default async function UsersPage() {
           <span className="min-w-0">
             <span className="block break-words">
               {user.name}
-              {user.id === admin.id ? <span className="text-cinza ml-1.5 text-xs font-normal">(você)</span> : null}
+              {user.id === admin.id ? <span className="text-texto-suave ml-1.5 text-xs font-normal">(você)</span> : null}
             </span>
-            <span className="text-cinza block text-[0.8125rem] font-normal break-all">{user.email}</span>
+            <span className="text-texto-suave block text-[0.8125rem] font-normal break-all">{user.email}</span>
           </span>
         </span>
       ),
@@ -80,7 +80,7 @@ export default async function UsersPage() {
         columns={columns}
         rows={users}
         rowKey={(user) => user.id}
-        empty={<p className="text-cinza flex items-center justify-center gap-2 px-6 py-10 text-sm"><Info aria-hidden="true" className="size-4" />Nenhuma conta cadastrada.</p>}
+        empty={<p className="text-texto-suave flex items-center justify-center gap-2 px-6 py-10 text-sm"><Info aria-hidden="true" className="size-4" />Nenhuma conta cadastrada.</p>}
       />
     </>
   );

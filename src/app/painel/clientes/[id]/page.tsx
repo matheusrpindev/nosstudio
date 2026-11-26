@@ -101,20 +101,20 @@ export default async function ClientPage({ params }: Props) {
               title="Excluir este cliente?"
               description={
                 <>
-                  O cadastro de <strong className="text-grafite">{client.name}</strong> e o <strong className="text-grafite">histórico de atendimento</strong>
+                  O cadastro de <strong className="text-texto">{client.name}</strong> e o <strong className="text-texto">histórico de atendimento</strong>
                   {footprint.interactions > 0 ? ` (${footprint.interactions} ${footprint.interactions === 1 ? "registro" : "registros"})` : ""}
                   {footprint.contentItems > 0 ? `, além de ${footprint.contentItems} ${footprint.contentItems === 1 ? "item" : "itens"} do calendário de conteúdo deste cliente,` : ""} serão apagados e não dá para desfazer.
                   <span className="mt-2 block">
                     {remaining ? (
                       <>
-                        <strong className="text-grafite">Continuam existindo</strong>, sem cliente vinculado: {remaining}. Eles podem citar o nome da pessoa.
+                        <strong className="text-texto">Continuam existindo</strong>, sem cliente vinculado: {remaining}. Eles podem citar o nome da pessoa.
                       </>
                     ) : (
                       "Não há orçamentos, projetos, contratos, lançamentos, compromissos nem tarefas ligados a este cliente."
                     )}
                   </span>
                   <span className="mt-2 block">
-                    Pedido de <strong className="text-grafite">eliminação de dados</strong> (LGPD)?{remaining ? " Antes, apague ou edite esses registros (abas desta ficha)." : ""} Os backups antigos ainda guardam os dados até serem substituídos.
+                    Pedido de <strong className="text-texto">eliminação de dados</strong> (LGPD)?{remaining ? " Antes, apague ou edite esses registros (abas desta ficha)." : ""} Os backups antigos ainda guardam os dados até serem substituídos.
                   </span>
                 </>
               }
@@ -159,7 +159,7 @@ export default async function ClientPage({ params }: Props) {
                 <CardHeader id="proximo-titulo" title="Próximo passo" />
                 {client.nextStep || client.nextStepDate ? (
                   <div className="space-y-1">
-                    <p className="text-grafite text-[0.9375rem] break-words whitespace-pre-line">{client.nextStep || "Sem descrição"}</p>
+                    <p className="text-texto text-[0.9375rem] break-words whitespace-pre-line">{client.nextStep || "Sem descrição"}</p>
                     {client.nextStepDate ? (
                       <p className="text-sm">
                         <DateText value={client.nextStepDate} format="long" /> (<DateText value={client.nextStepDate} format="relative" />){" "}
@@ -168,7 +168,7 @@ export default async function ClientPage({ params }: Props) {
                     ) : null}
                   </div>
                 ) : (
-                  <p className="text-cinza text-sm">
+                  <p className="text-texto-suave text-sm">
                     Nada definido. <Link href={`/painel/clientes/${client.id}/editar`} className="link">Defina o próximo passo</Link> para não esquecer este cliente.
                   </p>
                 )}
@@ -200,7 +200,7 @@ export default async function ClientPage({ params }: Props) {
                 />
                 {/* LGPD (acesso/portabilidade): só administradores exportam dados — a rota confere de novo e registra na auditoria */}
                 {isAdmin ? (
-                  <div className="border-areia mt-4 border-t pt-4">
+                  <div className="border-borda mt-4 border-t pt-4">
                     <ButtonLink href={`/painel/clientes/${client.id}/dados`} download prefetch={false} variant="secondary" size="sm" className="min-h-11 sm:min-h-9" icon={<FileJson />}>
                       Dados deste titular (JSON)
                     </ButtonLink>
@@ -211,7 +211,7 @@ export default async function ClientPage({ params }: Props) {
 
               <Card as="section" aria-labelledby="notas-titulo">
                 <CardHeader id="notas-titulo" title="Observações internas" description="Só os sócios veem." />
-                {client.notes.trim() ? <p className="text-grafite text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{client.notes}</p> : <p className="text-cinza text-sm">Nenhuma observação.</p>}
+                {client.notes.trim() ? <p className="text-texto text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{client.notes}</p> : <p className="text-texto-suave text-sm">Nenhuma observação.</p>}
               </Card>
             </div>
 
@@ -229,18 +229,18 @@ export default async function ClientPage({ params }: Props) {
               <Card as="section" aria-labelledby="datas-titulo">
                 <CardHeader id="datas-titulo" title="Datas importantes" />
                 {client.importantDates.length > 0 ? (
-                  <ul className="divide-areia divide-y">
+                  <ul className="divide-borda divide-y">
                     {[...client.importantDates]
                       .sort((a, b) => a.date.localeCompare(b.date))
                       .map((item, index) => (
                         <li key={`${item.date}-${index}`} className="flex items-baseline justify-between gap-3 py-2 first:pt-0 last:pb-0">
-                          <span className="text-grafite min-w-0 text-[0.9375rem] break-words">{item.label}</span>
-                          <DateText value={item.date} className="text-cinza shrink-0 text-sm" />
+                          <span className="text-texto min-w-0 text-[0.9375rem] break-words">{item.label}</span>
+                          <DateText value={item.date} className="text-texto-suave shrink-0 text-sm" />
                         </li>
                       ))}
                   </ul>
                 ) : (
-                  <p className="text-cinza text-sm">
+                  <p className="text-texto-suave text-sm">
                     Nenhuma. <Link href={`/painel/clientes/${client.id}/editar`} className="link">Adicionar data</Link>
                   </p>
                 )}
@@ -274,18 +274,18 @@ export default async function ClientPage({ params }: Props) {
               {interactions.length === 0 ? (
                 <EmptyState variant="plain" title="Nenhum atendimento registrado" description="Use o formulário ao lado para registrar o primeiro contato." />
               ) : (
-                <ol className="border-areia relative ml-2 space-y-5 border-l-2 pl-5">
+                <ol className="border-borda relative ml-2 space-y-5 border-l-2 pl-5">
                   {interactions.map((item) => (
                     <li key={item.id} className="relative">
                       <span aria-hidden="true" className="bg-roxo ring-offwhite absolute top-1.5 -left-[1.8rem] size-2.5 rounded-full ring-4" />
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <Badge tone={INTERACTION_TONES[item.kind]}>{INTERACTION_KIND_LABELS[item.kind]}</Badge>
-                        <span className="text-cinza text-[0.8125rem]">
+                        <span className="text-texto-suave text-[0.8125rem]">
                           <DateText value={item.occurredAt} format="datetime" />
                           {item.authorName ? ` · ${item.authorName}` : ""}
                         </span>
                       </div>
-                      <p className="text-grafite mt-1.5 text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{item.content}</p>
+                      <p className="text-texto mt-1.5 text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{item.content}</p>
                     </li>
                   ))}
                 </ol>
@@ -318,7 +318,7 @@ export default async function ClientPage({ params }: Props) {
 function SectionHeader({ title, action }: { title: string; action: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-grafite text-base font-bold">{title}</h2>
+      <h2 className="text-texto text-base font-bold">{title}</h2>
       {action}
     </div>
   );
@@ -333,7 +333,7 @@ function ProposalsSection({ clientId, rows }: { clientId: number; rows: ClientRe
       cell: (row) => (
         <>
           <span className="block break-words">{row.title}</span>
-          <span className="text-cinza block text-[0.8125rem] font-normal">
+          <span className="text-texto-suave block text-[0.8125rem] font-normal">
             {row.number}
             {row.version > 1 ? ` · versão ${row.version}` : ""}
           </span>
@@ -390,7 +390,7 @@ function ContractsSection({ clientId, rows }: { clientId: number; rows: ClientRe
       cell: (row) => (
         <>
           <span className="block break-words">{row.title}</span>
-          <span className="text-cinza block text-[0.8125rem] font-normal">{CONTRACT_KIND_LABELS[row.kind]}</span>
+          <span className="text-texto-suave block text-[0.8125rem] font-normal">{CONTRACT_KIND_LABELS[row.kind]}</span>
         </>
       ),
     },
@@ -422,7 +422,7 @@ function FinanceSection({ clientId, finance }: { clientId: number; finance: Clie
       cell: (row) => (
         <>
           <span className="block break-words">{row.description}</span>
-          <span className="text-cinza block text-[0.8125rem] font-normal">
+          <span className="text-texto-suave block text-[0.8125rem] font-normal">
             {row.type === "receita" ? "Receita" : "Despesa"}
             {row.installmentLabel ? ` · ${row.installmentLabel}` : ""}
           </span>
@@ -445,10 +445,10 @@ function FinanceSection({ clientId, finance }: { clientId: number; finance: Clie
             { label: "Despesas (pagas de previstas)", value: summary.expensePaid, extra: summary.expensePlanned },
           ].map((item) => (
             <div key={item.label} className="card card-pad !p-4">
-              <dt className="text-cinza text-[0.8125rem] font-semibold">{item.label}</dt>
-              <dd className="text-grafite mt-1 text-lg font-bold">
+              <dt className="text-texto-suave text-[0.8125rem] font-semibold">{item.label}</dt>
+              <dd className="text-texto mt-1 text-lg font-bold">
                 <Money cents={item.value} />
-                {item.extra !== undefined ? <span className="text-cinza block text-[0.8125rem] font-normal">de <Money cents={item.extra} /></span> : null}
+                {item.extra !== undefined ? <span className="text-texto-suave block text-[0.8125rem] font-normal">de <Money cents={item.extra} /></span> : null}
               </dd>
             </div>
           ))}
@@ -462,7 +462,7 @@ function FinanceSection({ clientId, finance }: { clientId: number; finance: Clie
         href={(row) => `/painel/financeiro/${row.id}`}
         empty={<EmptyState variant="plain" icon={<Wallet />} title="Nenhum lançamento financeiro" description="Registre a entrada e as parcelas deste cliente para acompanhar previsto × recebido." action={<ButtonLink href={`/painel/financeiro/novo?tipo=receita&cliente=${clientId}`} icon={<Wallet />}>Nova receita</ButtonLink>} />}
       />
-      {finance.total > entries.length ? <p className="text-cinza mt-2 text-sm">Mostrando {entries.length} de {finance.total} lançamentos. Veja todos em <Link href="/painel/financeiro" className="link">Financeiro</Link>.</p> : null}
+      {finance.total > entries.length ? <p className="text-texto-suave mt-2 text-sm">Mostrando {entries.length} de {finance.total} lançamentos. Veja todos em <Link href="/painel/financeiro" className="link">Financeiro</Link>.</p> : null}
     </>
   );
 }
@@ -475,15 +475,15 @@ function AgendaSection({ clientId, events, tasks, today }: { clientId: number; e
         {events.length === 0 ? (
           <EmptyState variant="plain" icon={<CalendarPlus />} title="Nada agendado" description="Agende uma reunião, gravação ou entrega com este cliente." action={<ButtonLink href={`/painel/agenda/novo?cliente=${clientId}`} icon={<CalendarPlus />}>Agendar</ButtonLink>} />
         ) : (
-          <ul className="divide-areia divide-y">
+          <ul className="divide-borda divide-y">
             {events.map((event) => (
               <li key={event.id}>
-                <Link href={`/painel/agenda/${event.id}`} className="hover:bg-lavanda-claro -mx-2 flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2">
+                <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave -mx-2 flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2">
                   <span className="min-w-0">
-                    <span className="text-grafite block text-[0.9375rem] font-semibold break-words">{event.title}</span>
-                    <span className="text-cinza block text-[0.8125rem]">{AGENDA_KIND_LABELS[event.kind]}</span>
+                    <span className="text-texto block text-[0.9375rem] font-semibold break-words">{event.title}</span>
+                    <span className="text-texto-suave block text-[0.8125rem]">{AGENDA_KIND_LABELS[event.kind]}</span>
                   </span>
-                  <span className="text-cinza shrink-0 text-right text-sm">
+                  <span className="text-texto-suave shrink-0 text-right text-sm">
                     <DateText value={event.date} format="short" />
                     {event.startTime ? <span className="block">{event.startTime}</span> : null}
                   </span>
@@ -499,12 +499,12 @@ function AgendaSection({ clientId, events, tasks, today }: { clientId: number; e
         {tasks.length === 0 ? (
           <EmptyState variant="plain" icon={<ListPlus />} title="Nenhuma tarefa em aberto" description="Crie tarefas ligadas a este cliente para não perder prazos." action={<ButtonLink href={`/painel/tarefas?cliente=${clientId}`} icon={<ListPlus />}>Abrir tarefas</ButtonLink>} />
         ) : (
-          <ul className="divide-areia divide-y">
+          <ul className="divide-borda divide-y">
             {tasks.map((task) => (
               <li key={task.id} className="flex min-h-11 items-center justify-between gap-3 py-2">
                 <span className="min-w-0">
-                  <span className="text-grafite block text-[0.9375rem] break-words">{task.title}</span>
-                  <span className="text-cinza block text-[0.8125rem]">
+                  <span className="text-texto block text-[0.9375rem] break-words">{task.title}</span>
+                  <span className="text-texto-suave block text-[0.8125rem]">
                     {task.ownerName ?? "Sem responsável"}
                     {task.priority === "alta" ? ` · prioridade ${TASK_PRIORITY_LABELS.alta.toLowerCase()}` : ""}
                   </span>
@@ -514,7 +514,7 @@ function AgendaSection({ clientId, events, tasks, today }: { clientId: number; e
                     <DateText value={task.dueDate} format="relative" />
                   </Badge>
                 ) : (
-                  <span className="text-cinza shrink-0 text-sm">Sem prazo</span>
+                  <span className="text-texto-suave shrink-0 text-sm">Sem prazo</span>
                 )}
               </li>
             ))}

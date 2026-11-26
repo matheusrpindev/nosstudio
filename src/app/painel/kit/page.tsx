@@ -43,11 +43,11 @@ const PAGE_SIZE = 2;
 
 function Section({ id, title, description, children }: { id: string; title: string; description?: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="scroll-mt-20 border-areia border-t pt-8">
-      <h2 id={id} className="text-grafite text-xl font-extrabold tracking-tight">
+    <section aria-labelledby={id} className="scroll-mt-20 border-borda border-t pt-8">
+      <h2 id={id} className="text-texto text-xl font-extrabold tracking-tight">
         {title}
       </h2>
-      {description ? <p className="text-cinza mt-1 max-w-2xl text-sm leading-relaxed">{description}</p> : null}
+      {description ? <p className="text-texto-suave mt-1 max-w-2xl text-sm leading-relaxed">{description}</p> : null}
       <div className="mt-5 space-y-5">{children}</div>
     </section>
   );
@@ -56,7 +56,7 @@ function Section({ id, title, description, children }: { id: string; title: stri
 function Demo({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <p className="text-cinza mb-2 text-xs font-bold tracking-[0.12em] uppercase">{label}</p>
+      <p className="text-texto-suave mb-2 text-xs font-bold tracking-[0.12em] uppercase">{label}</p>
       {children}
     </div>
   );
@@ -200,7 +200,7 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
               <Badge tone="sucesso">Sucesso</Badge>
               <Badge tone="alerta">Alerta</Badge>
               <Badge tone="perigo">Perigo</Badge>
-              <span aria-hidden="true" className="bg-areia mx-1 h-5 w-px" />
+              <span aria-hidden="true" className="bg-borda mx-1 h-5 w-px" />
               {(Object.keys(PROPOSAL_STATUS_LABELS) as ProposalStatus[]).map((status) => (
                 <StatusBadge key={status} value={status} labels={PROPOSAL_STATUS_LABELS} tones={PROPOSAL_TONES} />
               ))}
@@ -223,8 +223,8 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
                   </div>
                 </div>
                 <SkeletonText className="mt-5" />
-                <p className="text-cinza mt-5 flex items-center gap-2 text-sm">
-                  <Spinner label="" className="text-roxo" /> Gerando PDF…
+                <p className="text-texto-suave mt-5 flex items-center gap-2 text-sm">
+                  <Spinner label="" className="text-detalhe" /> Gerando PDF…
                 </p>
               </Card>
             </Demo>
@@ -242,7 +242,7 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
               }
             >
               <p className="font-bold">Como calculamos</p>
-              <p className="text-cinza mt-1 leading-relaxed">Total = itens inclusos − desconto aprovado. Custos internos nunca aparecem para o cliente.</p>
+              <p className="text-texto-suave mt-1 leading-relaxed">Total = itens inclusos − desconto aprovado. Custos internos nunca aparecem para o cliente.</p>
             </Popover>
           </div>
           <Demo label="Tabs (troca de conteúdo na mesma página)">
@@ -266,10 +266,10 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
                   />
                 </TabPanel>
                 <TabPanel value="historico">
-                  <p className="text-cinza text-sm">Três interações registradas.</p>
+                  <p className="text-texto-suave text-sm">Três interações registradas.</p>
                 </TabPanel>
                 <TabPanel value="arquivos">
-                  <p className="text-cinza text-sm">Nenhum arquivo.</p>
+                  <p className="text-texto-suave text-sm">Nenhum arquivo.</p>
                 </TabPanel>
               </Tabs>
             </Card>
@@ -305,7 +305,7 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
                   cell: (row) => (
                     <>
                       <span className="block">{row.title}</span>
-                      <span className="text-cinza block text-[0.8125rem] font-normal">{row.client}</span>
+                      <span className="text-texto-suave block text-[0.8125rem] font-normal">{row.client}</span>
                     </>
                   ),
                 },
@@ -337,14 +337,14 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
                   <Avatar name="Pedro Henrique" tone="roxo" />
                   <div>
                     <p className="text-sm font-bold">Pedro Henrique</p>
-                    <p className="text-cinza text-[0.8125rem]">pedro@nos.local</p>
+                    <p className="text-texto-suave text-[0.8125rem]">pedro@nos.local</p>
                   </div>
                 </CardSection>
                 <CardSection className="flex items-center gap-3">
                   <Avatar name="Laura Nepomuceno" />
                   <div>
                     <p className="text-sm font-bold">Laura Nepomuceno</p>
-                    <p className="text-cinza text-[0.8125rem]">laura@nos.local</p>
+                    <p className="text-texto-suave text-[0.8125rem]">laura@nos.local</p>
                   </div>
                   <span className="ml-auto flex items-center gap-1">
                     <Avatar name="Pedro Henrique" size="sm" tone="lima" labelled />

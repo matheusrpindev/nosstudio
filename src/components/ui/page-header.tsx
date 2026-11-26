@@ -21,7 +21,7 @@ export function PageHeader({ title, description, actions, back, badge, className
   return (
     <header className={cn("mb-6 sm:mb-8", className)}>
       {back ? (
-        <Link href={back.href} className="text-cinza hover:text-roxo -ml-1 mb-2 inline-flex min-h-11 sm:min-h-9 items-center gap-1.5 rounded-md px-1 text-sm font-semibold">
+        <Link href={back.href} className="text-texto-suave hover:text-detalhe -ml-1 mb-2 inline-flex min-h-11 sm:min-h-9 items-center gap-1.5 rounded-md px-1 text-sm font-semibold">
           <ArrowLeft aria-hidden="true" className="size-4" />
           {back.label}
         </Link>
@@ -29,10 +29,10 @@ export function PageHeader({ title, description, actions, back, badge, className
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <h1 className="text-grafite text-2xl leading-tight font-extrabold tracking-tight break-words sm:text-[1.75rem]">{title}</h1>
+            <h1 className="text-texto text-2xl leading-tight font-extrabold tracking-tight break-words sm:text-[1.75rem]">{title}</h1>
             {badge}
           </div>
-          {description ? <p className="text-cinza mt-1.5 max-w-2xl text-sm leading-relaxed sm:text-[0.9375rem]">{description}</p> : null}
+          {description ? <p className="text-texto-suave mt-1.5 max-w-2xl text-sm leading-relaxed sm:text-[0.9375rem]">{description}</p> : null}
         </div>
         {/* no celular os botões dividem a largura (ou empilham, se não couberem) */}
         {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2 max-sm:[&>*]:flex-1">{actions}</div> : null}

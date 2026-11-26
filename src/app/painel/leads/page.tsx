@@ -27,7 +27,7 @@ const columns: DataListColumn<LeadListItem>[] = [
     cell: (lead) => (
       <>
         <span className="block break-words">{lead.name}</span>
-        <span className="text-cinza block text-[0.8125rem] font-normal">
+        <span className="text-texto-suave block text-[0.8125rem] font-normal">
           {formatPhone(lead.whatsapp)}
           {lead.city ? ` · ${lead.city}` : ""}
         </span>
@@ -37,7 +37,7 @@ const columns: DataListColumn<LeadListItem>[] = [
   { key: "interesse", header: "Interesse", cell: (lead) => SERVICE_INTEREST_LABELS[lead.serviceInterest] },
   { key: "origem", header: "Origem", hideOnMobile: true, cell: (lead) => CONTACT_SOURCE_LABELS[lead.source] },
   { key: "status", header: "Status", cell: (lead) => <StatusBadge value={lead.status} labels={LEAD_STATUS_LABELS} tones={LEAD_STATUS_TONES} /> },
-  { key: "recebido", header: "Recebido em", align: "right", cell: (lead) => <DateText value={lead.createdAt} format="datetime" className="text-cinza" /> },
+  { key: "recebido", header: "Recebido em", align: "right", cell: (lead) => <DateText value={lead.createdAt} format="datetime" className="text-texto-suave" /> },
 ];
 
 export default async function LeadsPage({ searchParams }: { searchParams: PageSearchParams }) {

@@ -35,7 +35,7 @@ export function SummaryCards({ summary, today }: { summary: DashboardSummary; to
             <>
               {proposals.overdue > 0 ? <span className={urgent}>{plural(proposals.overdue, "vencido", "vencidos")}</span> : null}
               {proposals.overdue > 0 && proposals.soon > 0 ? " · " : null}
-              {proposals.soon > 0 ? <span className="text-grafite font-semibold">{plural(proposals.soon, "vence", "vencem")} em até 3 dias</span> : null}
+              {proposals.soon > 0 ? <span className="text-texto font-semibold">{plural(proposals.soon, "vence", "vencem")} em até 3 dias</span> : null}
             </>
           ) : (
             "Nenhum vence nos próximos 3 dias."

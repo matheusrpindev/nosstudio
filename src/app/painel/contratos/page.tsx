@@ -26,17 +26,17 @@ const columns: DataListColumn<ContractListItem>[] = [
     cell: (c) => (
       <>
         <span className="block break-words">{c.title}</span>
-        <span className="text-cinza block text-[0.8125rem] font-normal">
+        <span className="text-texto-suave block text-[0.8125rem] font-normal">
           {CONTRACT_KIND_LABELS[c.kind]}
           {c.versionLabel ? ` · ${c.versionLabel}` : ""}
         </span>
       </>
     ),
   },
-  { key: "cliente", header: "Cliente", cell: (c) => c.clientName ?? <span className="text-cinza">—</span> },
+  { key: "cliente", header: "Cliente", cell: (c) => c.clientName ?? <span className="text-texto-suave">—</span> },
   { key: "status", header: "Status", cell: (c) => <StatusBadge value={c.status} labels={CONTRACT_STATUS_LABELS} tones={CONTRACT_STATUS_TONES} /> },
-  { key: "assinatura", header: "Assinado em", hideOnMobile: true, cell: (c) => (c.signedAt ? <DateText value={c.signedAt} /> : <span className="text-cinza">—</span>) },
-  { key: "vigencia", header: "Vigência até", hideOnMobile: true, align: "right", cell: (c) => (c.validUntil ? <DateText value={c.validUntil} /> : <span className="text-cinza">—</span>) },
+  { key: "assinatura", header: "Assinado em", hideOnMobile: true, cell: (c) => (c.signedAt ? <DateText value={c.signedAt} /> : <span className="text-texto-suave">—</span>) },
+  { key: "vigencia", header: "Vigência até", hideOnMobile: true, align: "right", cell: (c) => (c.validUntil ? <DateText value={c.validUntil} /> : <span className="text-texto-suave">—</span>) },
 ];
 
 export default async function ContractsPage({ searchParams }: { searchParams: PageSearchParams }) {

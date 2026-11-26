@@ -27,14 +27,14 @@ const columns: DataListColumn<AuditLogEntry>[] = [
     className: "whitespace-nowrap",
     cell: (row) => <DateText value={row.createdAt} format="datetime" />,
   },
-  { key: "quem", header: "Quem", cell: (row) => row.userName ?? <span className="text-cinza">Sistema ou visitante</span> },
+  { key: "quem", header: "Quem", cell: (row) => row.userName ?? <span className="text-texto-suave">Sistema ou visitante</span> },
   {
     key: "acao",
     header: "Ação",
     cell: (row) => (
       <span className="flex flex-wrap items-center gap-1.5">
         <Badge tone={row.action === "delete" ? "perigo" : row.action === "export" || row.action === "login_falhou" ? "alerta" : "neutral"}>{actionLabel(row.action)}</Badge>
-        {row.entity ? <span className="text-cinza text-[0.8125rem]">{entityLabel(row.entity)}{row.entityId ? ` #${row.entityId}` : ""}</span> : null}
+        {row.entity ? <span className="text-texto-suave text-[0.8125rem]">{entityLabel(row.entity)}{row.entityId ? ` #${row.entityId}` : ""}</span> : null}
       </span>
     ),
   },

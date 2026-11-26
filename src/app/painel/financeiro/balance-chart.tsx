@@ -26,7 +26,7 @@ const BOTTOM = 38;
 export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; selectedMonth: string }) {
   const max = Math.max(0, ...points.flatMap((p) => [p.receitasCents, p.despesasCents]));
   if (max === 0) {
-    return <p className="text-cinza py-6 text-center text-sm">Ainda não há valores recebidos ou pagos nestes meses. Quando você marcar lançamentos como recebidos ou pagos, o gráfico aparece aqui.</p>;
+    return <p className="text-texto-suave py-6 text-center text-sm">Ainda não há valores recebidos ou pagos nestes meses. Quando você marcar lançamentos como recebidos ou pagos, o gráfico aparece aqui.</p>;
   }
   // topo "redondo" do eixo: 1, 2, 2,5, 5 ou 10 × potência de 10
   const magnitude = 10 ** Math.floor(Math.log10(max));
@@ -41,13 +41,13 @@ export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; 
 
   return (
     <figure className="m-0">
-      <ul className="text-grafite mb-3 flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium" aria-label="Legenda">
+      <ul className="text-texto mb-3 flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium" aria-label="Legenda">
         <li className="flex items-center gap-2">
           <span aria-hidden="true" className="bg-roxo inline-block size-3.5 rounded-[3px]" />
           Receitas recebidas
         </li>
         <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="bg-lavanda border-roxo inline-block size-3.5 rounded-[3px] border-[1.5px]" />
+          <span aria-hidden="true" className="bg-lavanda border-detalhe inline-block size-3.5 rounded-[3px] border-[1.5px]" />
           Despesas pagas
         </li>
       </ul>
@@ -55,8 +55,8 @@ export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; 
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary} className="h-auto w-full max-w-[34rem]">
         {ticks.map((tick) => (
           <g key={tick}>
-            <line x1={LEFT} x2={W - RIGHT} y1={y(tick)} y2={y(tick)} className={tick === 0 ? "stroke-areia-escuro" : "stroke-areia"} strokeWidth={1} />
-            <text x={LEFT - 6} y={y(tick) + 3.5} textAnchor="end" className="fill-cinza" fontSize={10}>
+            <line x1={LEFT} x2={W - RIGHT} y1={y(tick)} y2={y(tick)} className={tick === 0 ? "stroke-borda-forte" : "stroke-borda"} strokeWidth={1} />
+            <text x={LEFT - 6} y={y(tick) + 3.5} textAnchor="end" className="fill-texto-suave" fontSize={10}>
               {axisLabel(tick)}
             </text>
           </g>
@@ -71,23 +71,23 @@ export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; 
           const expense = (point.despesasCents / niceMax) * plotH;
           return (
             <g key={point.month}>
-              {selected ? <rect x={x0 + 2} y={TOP} width={group - 4} height={plotH} rx={4} className="fill-lavanda-claro" /> : null}
+              {selected ? <rect x={x0 + 2} y={TOP} width={group - 4} height={plotH} rx={4} className="fill-detalhe-suave" /> : null}
               {/* base reta + canto de cima arredondado; 2px de respiro entre as duas barras */}
               {income > 0 ? (
-                <path d={barPath(center - barW - 1, y(point.receitasCents), barW, income)} className="fill-roxo">
+                <path d={barPath(center - barW - 1, y(point.receitasCents), barW, income)} className="fill-detalhe">
                   <title>{`Receitas recebidas em ${monthName(point.month)}: ${formatBRL(point.receitasCents)}`}</title>
                 </path>
               ) : null}
               {expense > 0 ? (
-                <path d={barPath(center + 1, y(point.despesasCents), barW, expense)} className="fill-lavanda stroke-roxo" strokeWidth={1.5}>
+                <path d={barPath(center + 1, y(point.despesasCents), barW, expense)} className="fill-lavanda stroke-detalhe" strokeWidth={1.5}>
                   <title>{`Despesas pagas em ${monthName(point.month)}: ${formatBRL(point.despesasCents)}`}</title>
                 </path>
               ) : null}
-              <text x={center} y={H - BOTTOM + 15} textAnchor="middle" fontSize={11} className={selected ? "fill-roxo font-bold" : "fill-grafite"}>
+              <text x={center} y={H - BOTTOM + 15} textAnchor="middle" fontSize={11} className={selected ? "fill-detalhe font-bold" : "fill-texto"}>
                 {monthName(point.month).slice(0, 3)}
               </text>
               {showYear ? (
-                <text x={center} y={H - BOTTOM + 28} textAnchor="middle" fontSize={9} className="fill-cinza">
+                <text x={center} y={H - BOTTOM + 28} textAnchor="middle" fontSize={9} className="fill-texto-suave">
                   {yearText}
                 </text>
               ) : null}
@@ -97,19 +97,19 @@ export function BalanceChart({ points, selectedMonth }: { points: MonthPoint[]; 
       </svg>
 
       <details className="mt-3">
-        <summary className="text-roxo focus-visible:outline-roxo inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold underline-offset-2 hover:underline">Ver valores em tabela</summary>
+        <summary className="text-detalhe focus-visible:outline-foco inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold underline-offset-2 hover:underline">Ver valores em tabela</summary>
         <div className="overflow-x-auto">
           <table className="mt-1 w-full text-sm">
             <caption className="sr-only">{summary}</caption>
             <thead>
-              <tr className="text-cinza border-areia border-b text-left text-xs uppercase">
+              <tr className="text-texto-suave border-borda border-b text-left text-xs uppercase">
                 <th scope="col" className="py-2 pr-3 font-semibold">Mês</th>
                 <th scope="col" className="px-3 py-2 text-right font-semibold">Receitas</th>
                 <th scope="col" className="px-3 py-2 text-right font-semibold">Despesas</th>
                 <th scope="col" className="py-2 pl-3 text-right font-semibold">Resultado</th>
               </tr>
             </thead>
-            <tbody className="divide-areia divide-y">
+            <tbody className="divide-borda divide-y">
               {points.map((point) => (
                 <tr key={point.month}>
                   <th scope="row" className="py-2 pr-3 text-left font-medium whitespace-nowrap">{monthName(point.month)}</th>

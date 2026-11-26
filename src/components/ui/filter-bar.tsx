@@ -78,7 +78,7 @@ export function FilterBar({ search = {}, filters = [], preserve = [], children, 
             enterKeyHint="search"
             className="input pr-12"
           />
-          <button type="submit" aria-label="Buscar" title="Buscar" className="text-cinza hover:text-roxo absolute inset-y-0 right-0 inline-flex w-11 cursor-pointer items-center justify-center rounded-r-campo">
+          <button type="submit" aria-label="Buscar" title="Buscar" className="text-texto-suave hover:text-detalhe absolute inset-y-0 right-0 inline-flex w-11 cursor-pointer items-center justify-center rounded-r-campo">
             <Search aria-hidden="true" className="size-[1.125rem]" />
           </button>
         </div>
@@ -92,7 +92,7 @@ export function FilterBar({ search = {}, filters = [], preserve = [], children, 
               aria-label={filter.label}
               defaultValue={params.get(filter.name) ?? ""}
               onChange={(event) => event.currentTarget.form?.requestSubmit()}
-              className={cn("input md:w-auto md:max-w-56", params.get(filter.name) && "border-roxo text-roxo font-semibold")}
+              className={cn("input md:w-auto md:max-w-56", params.get(filter.name) && "border-detalhe text-detalhe font-semibold")}
             >
               <option value="">{filter.allLabel}</option>
               {normalizeOptions(filter.options).map((option) => (

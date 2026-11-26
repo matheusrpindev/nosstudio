@@ -106,7 +106,7 @@ export default async function EventPage({
           title="Excluir este compromisso?"
           description={
             <>
-              <strong className="text-grafite">{event.title}</strong> será
+              <strong className="text-texto">{event.title}</strong> será
               removido da agenda e não dá para desfazer.
             </>
           }

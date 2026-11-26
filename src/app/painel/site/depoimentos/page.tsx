@@ -32,7 +32,7 @@ export default async function TestimonialsPage() {
       cell: (item) => (
         <>
           <span className="block break-words">{item.authorName || "Sem nome"}</span>
-          <span className="text-cinza block text-[0.8125rem] font-normal">
+          <span className="text-texto-suave block text-[0.8125rem] font-normal">
             {[item.authorRole, item.content ? truncate(item.content, 80) : ""].filter(Boolean).join(" · ") || TESTIMONIAL_KIND_LABELS[item.kind]}
           </span>
         </>

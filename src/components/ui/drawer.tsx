@@ -41,21 +41,21 @@ export function Drawer({ trigger, title, description, children, footer, side = "
     <RadixDialog.Root open={isOpen} onOpenChange={setOpen}>
       {trigger ? <RadixDialog.Trigger asChild>{trigger}</RadixDialog.Trigger> : null}
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="sobreposicao-fundo bg-grafite/50 fixed inset-0 z-50" />
+        <RadixDialog.Overlay className="sobreposicao-fundo bg-veu fixed inset-0 z-50" />
         <RadixDialog.Content
           {...(description ? {} : { "aria-describedby": undefined })}
-          className={cn("shadow-flutuante fixed z-50 flex flex-col bg-white outline-none", SIDES[side], className)}
+          className={cn("shadow-flutuante fixed z-50 flex flex-col bg-superficie outline-none", SIDES[side], className)}
         >
           {hideHeader ? (
             <RadixDialog.Title className="sr-only">{title}</RadixDialog.Title>
           ) : (
-            <div className="border-areia flex items-start gap-3 border-b px-5 py-4">
+            <div className="border-borda flex items-start gap-3 border-b px-5 py-4">
               <div className="min-w-0 flex-1">
-                <RadixDialog.Title className="text-grafite text-lg leading-snug font-bold">{title}</RadixDialog.Title>
-                {description ? <RadixDialog.Description className="text-cinza mt-1 text-sm leading-relaxed">{description}</RadixDialog.Description> : null}
+                <RadixDialog.Title className="text-texto text-lg leading-snug font-bold">{title}</RadixDialog.Title>
+                {description ? <RadixDialog.Description className="text-texto-suave mt-1 text-sm leading-relaxed">{description}</RadixDialog.Description> : null}
               </div>
               <RadixDialog.Close asChild>
-                <button type="button" aria-label="Fechar" className="btn btn-ghost btn-icon text-cinza -my-1.5 -mr-2 shrink-0">
+                <button type="button" aria-label="Fechar" className="btn btn-ghost btn-icon text-texto-suave -my-1.5 -mr-2 shrink-0">
                   <X aria-hidden="true" className="size-5" />
                 </button>
               </RadixDialog.Close>
@@ -69,7 +69,7 @@ export function Drawer({ trigger, title, description, children, footer, side = "
               <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5", !footer && "pb-[calc(1.25rem+env(safe-area-inset-bottom))]")}>{children}</div>
             )}
             {footer ? (
-              <div className="border-areia flex flex-col-reverse gap-2 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end">{footer}</div>
+              <div className="border-borda flex flex-col-reverse gap-2 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end">{footer}</div>
             ) : null}
           </DialogCloseContext>
         </RadixDialog.Content>

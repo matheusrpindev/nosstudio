@@ -81,7 +81,7 @@ export function Notices({ issues, gaps, today }: { issues: DashboardIssues; gaps
 
   return (
     <section aria-labelledby="avisos-titulo" className="space-y-3">
-      <h2 id="avisos-titulo" className="text-cinza text-xs font-bold tracking-[0.14em] uppercase">
+      <h2 id="avisos-titulo" className="text-texto-suave text-xs font-bold tracking-[0.14em] uppercase">
         Avisos
       </h2>
       {notices.map((notice) => (
@@ -101,21 +101,21 @@ export function Notices({ issues, gaps, today }: { issues: DashboardIssues; gaps
                 <Link href={item.href} className="link break-words">
                   {item.label}
                 </Link>
-                {item.detail ? <span className="text-cinza"> — {item.detail}</span> : null}
+                {item.detail ? <span className="text-texto-suave"> — {item.detail}</span> : null}
               </li>
             ))}
           </ul>
-          {notice.more ? <p className="text-cinza mt-1">{notice.more}</p> : null}
+          {notice.more ? <p className="text-texto-suave mt-1">{notice.more}</p> : null}
         </Alert>
       ))}
       {setup.length > 0 ? (
         <Card flush as="div">
           <CardHeader as="h3" title="Pendências de configuração" description="Coisas simples que deixam o site e o painel completos." />
           <div className="card-secao">
-            <ul className="divide-areia divide-y">
+            <ul className="divide-borda divide-y">
               {setup.map((gap) => (
                 <li key={gap.key} className="flex flex-col gap-2 py-2.5 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <span className="text-grafite text-sm leading-snug">{gap.text}</span>
+                  <span className="text-texto text-sm leading-snug">{gap.text}</span>
                   <ButtonLink href={gap.href} variant="secondary" size="sm" className="shrink-0 self-start sm:self-auto">
                     {gap.cta}
                   </ButtonLink>

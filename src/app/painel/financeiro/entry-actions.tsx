@@ -90,7 +90,7 @@ export function EntryActions({ entry, today, variant = "row" }: { entry: EntryAc
         title={payLabel}
         description={
           <>
-            <strong className="text-grafite">{entry.description}</strong> · {entry.amountLabel}
+            <strong className="text-texto">{entry.description}</strong> · {entry.amountLabel}
           </>
         }
       >
@@ -141,7 +141,7 @@ export function EntryActions({ entry, today, variant = "row" }: { entry: EntryAc
         title="Excluir este lançamento?"
         description={
           <>
-            <strong className="text-grafite">{entry.description}</strong> ({entry.amountLabel}) será apagado e não dá para desfazer.
+            <strong className="text-texto">{entry.description}</strong> ({entry.amountLabel}) será apagado e não dá para desfazer.
           </>
         }
         confirmLabel="Excluir lançamento"

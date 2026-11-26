@@ -53,18 +53,18 @@ export default async function ContractTemplatesPage() {
         <div className="space-y-8">
           {groups.map((group) => (
             <section key={group.kind} aria-labelledby={`tipo-${group.kind}`}>
-              <h2 id={`tipo-${group.kind}`} className="text-grafite mb-3 text-base font-bold">
+              <h2 id={`tipo-${group.kind}`} className="text-texto mb-3 text-base font-bold">
                 {CONTRACT_KIND_LABELS[group.kind]}
               </h2>
               <ul className="grid gap-4 md:grid-cols-2">
                 {group.items.map((template) => (
                   <Card as="li" key={template.id} className="flex flex-col">
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h3 className="text-grafite min-w-0 text-base leading-snug font-bold break-words">{template.title}</h3>
+                      <h3 className="text-texto min-w-0 text-base leading-snug font-bold break-words">{template.title}</h3>
                       {template.versionLabel ? <Badge tone="roxo">{template.versionLabel}</Badge> : null}
                     </div>
-                    <p className="text-cinza mt-2 flex-1 text-sm leading-relaxed break-words">{truncate(plain(template.body), 160) || "Sem texto."}</p>
-                    <p className="text-cinza mt-3 text-[0.8125rem]">
+                    <p className="text-texto-suave mt-2 flex-1 text-sm leading-relaxed break-words">{truncate(plain(template.body), 160) || "Sem texto."}</p>
+                    <p className="text-texto-suave mt-3 text-[0.8125rem]">
                       Atualizado em <DateText value={template.updatedAt} format="datetime" />
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -83,7 +83,7 @@ export default async function ContractTemplatesPage() {
                         title="Excluir este modelo?"
                         description={
                           <>
-                            O modelo <strong className="text-grafite">{template.title}</strong> será apagado. Contratos já criados a partir dele não mudam.
+                            O modelo <strong className="text-texto">{template.title}</strong> será apagado. Contratos já criados a partir dele não mudam.
                           </>
                         }
                         confirmLabel="Excluir modelo"

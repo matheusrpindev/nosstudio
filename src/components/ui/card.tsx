@@ -37,10 +37,10 @@ export function CardHeader({ title, description, action, as: Heading = "h2", id,
   return (
     <div className={cn("card-cabecalho flex items-start justify-between gap-3", className)}>
       <div className="min-w-0">
-        <Heading id={id} className="text-grafite text-base leading-snug font-bold">
+        <Heading id={id} className="text-texto text-base leading-snug font-bold">
           {title}
         </Heading>
-        {description ? <p className="text-cinza mt-0.5 text-sm leading-relaxed">{description}</p> : null}
+        {description ? <p className="text-texto-suave mt-0.5 text-sm leading-relaxed">{description}</p> : null}
       </div>
       {action ? <div className="-my-1 shrink-0">{action}</div> : null}
     </div>
@@ -74,11 +74,11 @@ export function StatCard({ label, value, caption, href, icon, size = "lg", tone 
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <p className={cn("text-sm font-semibold", highlight ? "text-lavanda" : "text-cinza")}>{label}</p>
+        <p className={cn("text-sm font-semibold", highlight ? "text-lavanda" : "text-texto-suave")}>{label}</p>
         {href ? (
-          <ArrowUpRight aria-hidden="true" className={cn("size-4 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5", highlight ? "text-lima" : "text-areia-escuro group-hover:text-roxo")} />
+          <ArrowUpRight aria-hidden="true" className={cn("size-4 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5", highlight ? "text-lima" : "text-borda-forte group-hover:text-detalhe")} />
         ) : icon ? (
-          <span aria-hidden="true" className={cn("[&>svg]:size-[1.125rem]", highlight ? "text-lima" : "text-roxo/60")}>
+          <span aria-hidden="true" className={cn("[&>svg]:size-[1.125rem]", highlight ? "text-lima" : "text-detalhe/60")}>
             {icon}
           </span>
         ) : null}
@@ -87,18 +87,18 @@ export function StatCard({ label, value, caption, href, icon, size = "lg", tone 
         className={cn(
           "mt-2 leading-none font-extrabold tracking-tight tabular-nums",
           size === "lg" ? "text-[2rem] sm:text-4xl" : "pt-1 text-[clamp(1.125rem,10.5cqi,1.75rem)] sm:pt-1.5",
-          highlight ? "text-white" : "text-roxo",
+          highlight ? "text-white" : "text-detalhe",
         )}
       >
         {value}
       </p>
-      {caption ? <p className={cn("mt-2 text-[0.8125rem] leading-snug", highlight ? "text-lavanda" : "text-cinza")}>{caption}</p> : null}
+      {caption ? <p className={cn("mt-2 text-[0.8125rem] leading-snug", highlight ? "text-lavanda" : "text-texto-suave")}>{caption}</p> : null}
     </>
   );
   const classes = cn(
     "card group @container block min-w-0 p-4 sm:p-5",
-    highlight && "bg-roxo border-roxo",
-    href && (highlight ? "hover:bg-roxo-escuro transition-colors" : "hover:border-roxo/40 transition-colors"),
+    highlight && "bg-roxo border-detalhe",
+    href && (highlight ? "hover:bg-roxo-escuro transition-colors" : "hover:border-detalhe/40 transition-colors"),
     className,
   );
   return href ? (

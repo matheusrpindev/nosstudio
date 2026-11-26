@@ -147,7 +147,7 @@ function ProgressBar({ upload }: { upload: NonNullable<UploadState> }) {
   const prefix = upload.total && upload.total > 1 ? `Enviando ${upload.current} de ${upload.total}` : "Enviando";
   return (
     <div className="w-full">
-      <p className="text-grafite mb-1.5 flex justify-between gap-3 text-sm font-medium">
+      <p className="text-texto mb-1.5 flex justify-between gap-3 text-sm font-medium">
         <span className="min-w-0 truncate">
           {prefix}: {upload.name}
         </span>
@@ -159,7 +159,7 @@ function ProgressBar({ upload }: { upload: NonNullable<UploadState> }) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
-        className="bg-lavanda-claro h-2 overflow-hidden rounded-full"
+        className="bg-detalhe-suave h-2 overflow-hidden rounded-full"
       >
         <div className="bg-roxo h-full rounded-full transition-[width]" style={{ width: `${Math.max(percent, 4)}%` }} />
       </div>
@@ -241,7 +241,7 @@ function DropZone({
       style={style}
       className={cn(
         "rounded-campo flex flex-col items-center justify-center gap-2 border border-dashed px-4 py-5 text-center transition-colors",
-        over ? "border-roxo bg-lavanda-claro" : "border-areia-escuro bg-offwhite/50",
+        over ? "border-detalhe bg-detalhe-suave" : "border-borda-forte bg-superficie-alta/50",
         className,
       )}
     >
@@ -262,7 +262,7 @@ function DropZone({
         <ProgressBar upload={upload} />
       ) : (
         <>
-          <span aria-hidden="true" className="text-roxo">
+          <span aria-hidden="true" className="text-detalhe">
             {icon}
           </span>
           <button
@@ -276,7 +276,7 @@ function DropZone({
             <Upload aria-hidden="true" className="size-4" />
             {buttonLabel}
           </button>
-          <p className="text-cinza text-[0.8125rem] leading-snug">{description}</p>
+          <p className="text-texto-suave text-[0.8125rem] leading-snug">{description}</p>
         </>
       )}
     </div>
@@ -411,14 +411,14 @@ export function ImageField({ name, label, defaultValue = null, hint, error, aspe
       <UploadGuard active={upload !== null} onBlocked={() => setUploadError(WAIT_MESSAGE)} />
 
       {media && !showDropZone ? (
-        <div className="border-areia rounded-campo grid gap-3 border bg-white p-3 sm:grid-cols-[minmax(0,14rem)_1fr] sm:gap-4">
-          <div className="bg-lavanda-claro overflow-hidden rounded-md" style={{ aspectRatio: aspect }}>
+        <div className="border-borda rounded-campo grid gap-3 border bg-superficie p-3 sm:grid-cols-[minmax(0,14rem)_1fr] sm:gap-4">
+          <div className="bg-detalhe-suave overflow-hidden rounded-md" style={{ aspectRatio: aspect }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- prévia do painel; o arquivo já vem otimizado pelo upload */}
             <img src={media.url} alt={media.alt || `Prévia: ${media.originalName}`} className="size-full object-cover" />
           </div>
           <div className="min-w-0">
             <AltInput key={media.id} media={media} onSaved={change} />
-            <p className="text-cinza mt-2 truncate text-xs" title={media.originalName}>
+            <p className="text-texto-suave mt-2 truncate text-xs" title={media.originalName}>
               {media.originalName}
               {media.width && media.height ? ` · ${media.width}×${media.height}` : ""} · {formatBytes(media.size)}
             </p>
@@ -558,7 +558,7 @@ export function GalleryField({ name, label, defaultValue = [], max, hint, error,
         <span id={`${uid}-label`} className="label mb-0">
           {label}
         </span>
-        <span className="text-cinza text-xs tabular-nums">
+        <span className="text-texto-suave text-xs tabular-nums">
           {max !== undefined ? `${items.length}/${max}` : `${items.length} ${items.length === 1 ? "imagem" : "imagens"}`}
         </span>
       </div>
@@ -570,8 +570,8 @@ export function GalleryField({ name, label, defaultValue = [], max, hint, error,
           {items.map((item, index) => {
             const itemName = item.alt.trim() || `imagem ${index + 1}`;
             return (
-              <li key={item.id} data-media={item.id} className="border-areia rounded-campo flex flex-col border bg-white p-2">
-                <div className="bg-lavanda-claro relative aspect-[4/3] overflow-hidden rounded-md">
+              <li key={item.id} data-media={item.id} className="border-borda rounded-campo flex flex-col border bg-superficie p-2">
+                <div className="bg-detalhe-suave relative aspect-[4/3] overflow-hidden rounded-md">
                   {/* eslint-disable-next-line @next/next/no-img-element -- miniatura do painel */}
                   <img src={item.url} alt={item.alt || `Imagem ${index + 1}: ${item.originalName}`} loading="lazy" className="size-full object-cover" />
                   <span aria-hidden="true" className="bg-grafite/75 absolute top-1.5 left-1.5 rounded-full px-2 py-0.5 text-xs font-bold text-white tabular-nums">
@@ -701,9 +701,9 @@ export function FileField({ name, label, defaultValue = null, accept = FILE_ACCE
       <UploadGuard active={upload !== null} onBlocked={() => setUploadError(WAIT_MESSAGE)} />
 
       {media && !showDropZone ? (
-        <div className="border-areia rounded-campo flex flex-col gap-2 border bg-white p-3 sm:flex-row sm:items-center sm:gap-3">
+        <div className="border-borda rounded-campo flex flex-col gap-2 border bg-superficie p-3 sm:flex-row sm:items-center sm:gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <span aria-hidden="true" className="bg-lavanda-claro text-roxo flex size-11 shrink-0 items-center justify-center rounded-md">
+            <span aria-hidden="true" className="bg-detalhe-suave text-detalhe flex size-11 shrink-0 items-center justify-center rounded-md">
               <FileText className="size-5" />
             </span>
             <div className="min-w-0">
@@ -718,7 +718,7 @@ export function FileField({ name, label, defaultValue = null, accept = FILE_ACCE
                 <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" />
                 <span className="sr-only">({inline ? "abre em nova aba" : "baixa o arquivo"})</span>
               </a>
-              <p className="text-cinza text-xs">
+              <p className="text-texto-suave text-xs">
                 {formatBytes(media.size)} · arquivo privado (só com login no painel)
               </p>
             </div>

@@ -24,7 +24,7 @@ export function DropdownMenu({ trigger, children, align = "end", side = "bottom"
           side={side}
           sideOffset={6}
           collisionPadding={8}
-          className="flutuante-entrada border-areia shadow-flutuante z-[60] min-w-48 rounded-campo border bg-white p-1.5"
+          className="flutuante-entrada border-borda shadow-flutuante z-[60] min-w-48 rounded-campo border bg-superficie p-1.5"
         >
           {children}
         </RadixMenu.Content>
@@ -36,7 +36,7 @@ export function DropdownMenu({ trigger, children, align = "end", side = "bottom"
 const itemClasses = (tone: "default" | "danger") =>
   cn(
     "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md px-3 text-sm font-medium outline-none select-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 [&>svg]:size-[1.125rem] [&>svg]:shrink-0",
-    tone === "danger" ? "text-perigo data-[highlighted]:bg-perigo-claro" : "text-grafite data-[highlighted]:bg-lavanda-claro data-[highlighted]:text-roxo",
+    tone === "danger" ? "text-perigo data-[highlighted]:bg-perigo-claro" : "text-texto data-[highlighted]:bg-detalhe-suave data-[highlighted]:text-detalhe",
   );
 
 export type DropdownMenuItemProps = {
@@ -80,9 +80,9 @@ export function DropdownMenuItem({ children, icon, href, external, onSelect, ton
 }
 
 export function DropdownMenuSeparator() {
-  return <RadixMenu.Separator className="bg-areia -mx-1.5 my-1.5 h-px" />;
+  return <RadixMenu.Separator className="bg-borda -mx-1.5 my-1.5 h-px" />;
 }
 
 export function DropdownMenuLabel({ children }: { children: ReactNode }) {
-  return <RadixMenu.Label className="text-cinza px-3 pt-1.5 pb-1 text-xs font-semibold tracking-wide uppercase">{children}</RadixMenu.Label>;
+  return <RadixMenu.Label className="text-texto-suave px-3 pt-1.5 pb-1 text-xs font-semibold tracking-wide uppercase">{children}</RadixMenu.Label>;
 }

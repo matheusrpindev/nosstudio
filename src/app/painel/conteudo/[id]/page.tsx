@@ -102,7 +102,7 @@ export default async function ContentItemPage({ params }: { params: Promise<{ id
           title="Excluir este conteúdo?"
           description={
             <>
-              <strong className="text-grafite">{item.title}</strong> será removido e não dá para desfazer.
+              <strong className="text-texto">{item.title}</strong> será removido e não dá para desfazer.
             </>
           }
           confirmLabel="Excluir conteúdo"

@@ -33,7 +33,7 @@ export function ProjectForm({ action, defaults, clients, users, projectId, cance
       {notice}
 
       <section aria-labelledby="dados-titulo" className="card space-y-4 p-4 sm:p-6">
-        <h2 id="dados-titulo" className="text-grafite text-lg font-bold">
+        <h2 id="dados-titulo" className="text-texto text-lg font-bold">
           Dados do projeto
         </h2>
         <Field name="title" label="Nome do projeto" required>
@@ -78,10 +78,10 @@ export function ProjectForm({ action, defaults, clients, users, projectId, cance
 
       <section aria-labelledby="arquivos-titulo" className="card space-y-4 p-4 sm:p-6">
         <div>
-          <h2 id="arquivos-titulo" className="text-grafite text-lg font-bold">
+          <h2 id="arquivos-titulo" className="text-texto text-lg font-bold">
             Arquivos e entregas
           </h2>
-          <p className="text-cinza mt-1 text-sm">Não guardamos vídeos aqui: cole os links do Google Drive, da galeria, etc.</p>
+          <p className="text-texto-suave mt-1 text-sm">Não guardamos vídeos aqui: cole os links do Google Drive, da galeria, etc.</p>
         </div>
         <Field name="driveUrl" label="Pasta no Google Drive" optional>
           <Input type="url" inputMode="url" maxLength={500} defaultValue={defaults.driveUrl} placeholder="https://drive.google.com/…" />

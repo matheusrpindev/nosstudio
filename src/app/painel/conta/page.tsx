@@ -33,8 +33,8 @@ export default async function AccountPage() {
           <CardSection className="flex items-center gap-4">
             <Avatar name={user.name} size="lg" tone="roxo" />
             <div className="min-w-0">
-              <p className="text-grafite truncate text-lg leading-tight font-bold">{user.name}</p>
-              <p className="text-cinza truncate text-sm">{user.email}</p>
+              <p className="text-texto truncate text-lg leading-tight font-bold">{user.name}</p>
+              <p className="text-texto-suave truncate text-sm">{user.email}</p>
             </div>
           </CardSection>
           <CardSection>
@@ -53,8 +53,8 @@ export default async function AccountPage() {
           </CardSection>
           <CardSection className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-grafite text-sm font-bold">Senha</p>
-              <p className="text-cinza text-sm">Trocar a senha desconecta os outros aparelhos.</p>
+              <p className="text-texto text-sm font-bold">Senha</p>
+              <p className="text-texto-suave text-sm">Trocar a senha desconecta os outros aparelhos.</p>
             </div>
             <ButtonLink href="/painel/conta/senha" variant="secondary" icon={<KeyRound />}>
               Trocar senha
@@ -64,18 +64,18 @@ export default async function AccountPage() {
 
         <Card flush as="section" aria-labelledby="sessoes-titulo">
           <CardHeader id="sessoes-titulo" title="Sessões ativas" description="Aparelhos em que sua conta está conectada agora. Ficam no máximo 10: ao entrar em mais um, o que está há mais tempo sem uso é desconectado." />
-          <ul className="divide-areia divide-y">
+          <ul className="divide-borda divide-y">
             {sessions.map((item) => (
               <li key={item.id} className="flex items-start gap-3 px-4 py-3.5 sm:px-6">
-                <span aria-hidden="true" className="bg-lavanda-claro text-roxo mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-campo">
+                <span aria-hidden="true" className="bg-detalhe-suave text-detalhe mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-campo">
                   <MonitorSmartphone className="size-[1.125rem]" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-grafite flex flex-wrap items-center gap-2 text-sm font-semibold">
+                  <p className="text-texto flex flex-wrap items-center gap-2 text-sm font-semibold">
                     {item.device}
                     {item.current ? <Badge tone="sucesso">Este aparelho</Badge> : null}
                   </p>
-                  <p className="text-cinza mt-0.5 text-[0.8125rem] leading-snug">
+                  <p className="text-texto-suave mt-0.5 text-[0.8125rem] leading-snug">
                     Último acesso em <DateText value={item.lastSeenAt} format="datetime" />
                     {item.ip ? <> · IP {item.ip}</> : null}
                   </p>
@@ -83,7 +83,7 @@ export default async function AccountPage() {
               </li>
             ))}
           </ul>
-          <CardSection className="border-areia border-t">
+          <CardSection className="border-borda border-t">
             {others > 0 ? (
               <ConfirmDialog
                 trigger={<Button variant="danger-ghost">Encerrar outras sessões ({others})</Button>}
@@ -93,7 +93,7 @@ export default async function AccountPage() {
                 action={endOtherSessionsAction}
               />
             ) : (
-              <p className="text-cinza text-sm">Só este aparelho está conectado.</p>
+              <p className="text-texto-suave text-sm">Só este aparelho está conectado.</p>
             )}
           </CardSection>
         </Card>

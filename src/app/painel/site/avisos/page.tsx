@@ -70,7 +70,7 @@ export default async function AnnouncementsPage() {
       ) : (
         <>
           {!live ? (
-            <p className="text-cinza mb-3 text-sm" role="status">
+            <p className="text-texto-suave mb-3 text-sm" role="status">
               Nenhum aviso está no ar agora: o site está sem barra no topo.
             </p>
           ) : null}
@@ -85,7 +85,7 @@ export default async function AnnouncementsPage() {
                     <Badge tone={status.tone} dot>
                       {status.label}
                     </Badge>
-                    <span className="text-cinza text-[0.8125rem]">{period(row.startsAt, row.endsAt)}</span>
+                    <span className="text-texto-suave text-[0.8125rem]">{period(row.startsAt, row.endsAt)}</span>
                     <div className="ml-auto flex items-center gap-3">
                       <RowSwitch id={row.id} checked={row.enabled} label={`Aviso “${label}” ligado`} action={toggleAnnouncementAction} />
                       <MoveButtons id={row.id} name={label} isFirst={index === 0} isLast={index === rows.length - 1} action={moveAnnouncementAction} />

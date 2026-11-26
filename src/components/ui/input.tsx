@@ -144,7 +144,7 @@ export type SearchInputProps = Omit<InputProps, "type"> & {
 export function SearchInput({ label = "Buscar", name = "q", placeholder = "Buscar…", className, wrapperClassName, ...props }: SearchInputProps) {
   return (
     <div className={cn("relative", wrapperClassName)}>
-      <Search aria-hidden="true" className="text-cinza pointer-events-none absolute top-1/2 left-3 size-[1.125rem] -translate-y-1/2" />
+      <Search aria-hidden="true" className="text-texto-suave pointer-events-none absolute top-1/2 left-3 size-[1.125rem] -translate-y-1/2" />
       <input type="search" name={name} aria-label={label} placeholder={placeholder} enterKeyHint="search" {...props} className={cn("input pl-10", className)} />
     </div>
   );
@@ -173,8 +173,8 @@ export function Checkbox({ label, hint, className, defaultChecked, ...props }: C
           className="checkbox mt-px"
         />
         <span className="min-w-0 text-sm leading-snug">
-          <span className="text-grafite font-medium">{label}</span>
-          {hint ? <span className="text-cinza mt-0.5 block text-[0.8125rem]">{hint}</span> : null}
+          <span className="text-texto font-medium">{label}</span>
+          {hint ? <span className="text-texto-suave mt-0.5 block text-[0.8125rem]">{hint}</span> : null}
         </span>
       </label>
       {state.error ? <p className="field-error mt-0">{state.error}</p> : null}
@@ -213,7 +213,7 @@ export function RadioCards({ name, options, defaultValue, value, onValueChange, 
         <label
           key={option.value}
           className={cn(
-            "radio-card border-areia-escuro relative flex cursor-pointer items-start gap-3 rounded-campo border bg-white px-3.5 transition-colors",
+            "radio-card border-borda-forte relative flex cursor-pointer items-start gap-3 rounded-campo border bg-superficie px-3.5 transition-colors",
             compact ? "min-h-11 items-center py-2" : "py-3",
             option.disabled && "cursor-not-allowed opacity-55",
           )}
@@ -227,11 +227,11 @@ export function RadioCards({ name, options, defaultValue, value, onValueChange, 
             {...(value !== undefined
               ? { checked: value === option.value, onChange: () => onValueChange?.(option.value), "data-controlled": "" }
               : { defaultChecked: initial === option.value, onChange: () => onValueChange?.(option.value) })}
-            className="accent-roxo mt-0.5 size-[1.125rem] shrink-0 cursor-pointer"
+            className="accent-primaria mt-0.5 size-[1.125rem] shrink-0 cursor-pointer"
           />
           <span className="min-w-0 text-sm leading-snug">
-            <span className="text-grafite block font-semibold">{option.label}</span>
-            {option.description && !compact ? <span className="text-cinza mt-0.5 block text-[0.8125rem]">{option.description}</span> : null}
+            <span className="text-texto block font-semibold">{option.label}</span>
+            {option.description && !compact ? <span className="text-texto-suave mt-0.5 block text-[0.8125rem]">{option.description}</span> : null}
           </span>
         </label>
       ))}

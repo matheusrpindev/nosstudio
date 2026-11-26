@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 export type AlertTone = "info" | "sucesso" | "alerta" | "perigo";
 
 const TONES: Record<AlertTone, { box: string; icon: typeof Info; iconColor: string }> = {
-  info: { box: "border-lavanda bg-lavanda-claro", icon: Info, iconColor: "text-roxo" },
+  info: { box: "border-detalhe-medio bg-detalhe-suave", icon: Info, iconColor: "text-detalhe" },
   sucesso: { box: "border-sucesso/25 bg-sucesso-claro", icon: CircleCheck, iconColor: "text-sucesso" },
   alerta: { box: "border-alerta/25 bg-alerta-claro", icon: TriangleAlert, iconColor: "text-alerta" },
   perigo: { box: "border-perigo/25 bg-perigo-claro", icon: CircleAlert, iconColor: "text-perigo" },
@@ -31,7 +31,7 @@ export function Alert({ tone = "info", title, children, action, role, className,
   const style = TONES[tone];
   const Icon = style.icon;
   return (
-    <div id={id} role={role} className={cn("text-grafite flex items-start gap-3 rounded-campo border px-4 py-3 text-sm", style.box, className)}>
+    <div id={id} role={role} className={cn("text-texto flex items-start gap-3 rounded-campo border px-4 py-3 text-sm", style.box, className)}>
       <Icon aria-hidden="true" className={cn("mt-0.5 size-5 shrink-0", style.iconColor)} />
       <div className="min-w-0 flex-1 sm:flex sm:items-start sm:gap-4">
         <div className="min-w-0 flex-1 leading-relaxed">

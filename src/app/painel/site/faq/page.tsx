@@ -55,7 +55,7 @@ export default async function FaqPage() {
             {faq.showOnWeddings ? <Badge tone="roxo">Casamentos</Badge> : null}
           </span>
         ) : (
-          <span className="text-cinza">Nenhuma página (marque Início ou Casamentos)</span>
+          <span className="text-texto-suave">Nenhuma página (marque Início ou Casamentos)</span>
         ),
     },
     { key: "publicar", header: "No site", interactive: true, cell: (faq) => <RowSwitch id={faq.id} checked={faq.published} label={`Publicar a pergunta “${faq.question}”`} action={toggleFaqAction} /> },

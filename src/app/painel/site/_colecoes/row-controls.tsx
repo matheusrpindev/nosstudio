@@ -40,9 +40,9 @@ export function RowSwitch({ id, checked, label, action, disabled }: { id: number
       onCheckedChange={change}
       disabled={disabled || pending}
       aria-label={label}
-      className="bg-areia-escuro data-[state=checked]:bg-roxo relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-55"
+      className="bg-borda-forte data-[state=checked]:bg-roxo relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-55"
     >
-      <Switch.Thumb className="block size-5.5 translate-x-[3px] rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-[23px]" />
+      <Switch.Thumb className="block size-5.5 translate-x-[3px] rounded-full bg-superficie shadow-sm transition-transform data-[state=checked]:translate-x-[23px]" />
     </Switch.Root>
   );
 }

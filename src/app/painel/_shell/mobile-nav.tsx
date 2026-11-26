@@ -47,7 +47,7 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
 
       <nav
         aria-label="Atalhos"
-        className="border-areia fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgb(27_27_34/0.06)] backdrop-blur lg:hidden"
+        className="border-borda fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgb(27_27_34/0.06)] backdrop-blur lg:hidden"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-5">
           {shortcuts.map((item) => {
@@ -57,7 +57,7 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
             return (
               <li key={item.href}>
                 <Link href={item.href} aria-current={active ? "page" : undefined} className="group flex min-h-[3.75rem] flex-col items-center justify-center gap-0.5 px-1 pt-1.5 pb-1 outline-offset-[-3px]">
-                  <span className={cn("relative flex h-7 w-12 items-center justify-center rounded-full transition-colors", active ? "bg-lima text-grafite" : "text-cinza group-hover:text-roxo")}>
+                  <span className={cn("relative flex h-7 w-12 items-center justify-center rounded-full transition-colors", active ? "bg-lima text-texto" : "text-texto-suave group-hover:text-detalhe")}>
                     <Icon aria-hidden="true" className="size-5" strokeWidth={active ? 2.4 : 2} />
                     {count > 0 ? (
                       <span className="bg-roxo absolute -top-1 right-0 min-w-[1.125rem] rounded-full px-1 text-center text-[0.625rem] leading-[1.125rem] font-bold text-white tabular-nums ring-2 ring-white">
@@ -66,7 +66,7 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
                       </span>
                     ) : null}
                   </span>
-                  <span className={cn("text-[0.6875rem] leading-4", active ? "text-roxo font-bold" : "text-cinza font-semibold")}>{item.shortLabel ?? item.label}</span>
+                  <span className={cn("text-[0.6875rem] leading-4", active ? "text-detalhe font-bold" : "text-texto-suave font-semibold")}>{item.shortLabel ?? item.label}</span>
                 </Link>
               </li>
             );
@@ -78,10 +78,10 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
               aria-haspopup="dialog"
               className="group flex min-h-[3.75rem] w-full cursor-pointer flex-col items-center justify-center gap-0.5 px-1 pt-1.5 pb-1 outline-offset-[-3px]"
             >
-              <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !inShortcut ? "bg-lavanda-claro text-roxo" : "text-cinza group-hover:text-roxo")}>
+              <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", !inShortcut ? "bg-detalhe-suave text-detalhe" : "text-texto-suave group-hover:text-detalhe")}>
                 <MoreHorizontal aria-hidden="true" className="size-5" />
               </span>
-              <span className={cn("text-[0.6875rem] leading-4", !inShortcut ? "text-roxo font-bold" : "text-cinza font-semibold")}>Mais</span>
+              <span className={cn("text-[0.6875rem] leading-4", !inShortcut ? "text-detalhe font-bold" : "text-texto-suave font-semibold")}>Mais</span>
             </button>
           </li>
         </ul>

@@ -43,7 +43,7 @@ export default async function HelpPage() {
         <li key={section.id}>
           <a
             href={`#${section.id}`}
-            className="text-grafite hover:text-roxo hover:bg-offwhite focus-visible:bg-offwhite -mx-2 flex min-h-11 items-center rounded-md px-2 py-1.5 leading-snug font-semibold lg:min-h-9"
+            className="text-texto hover:text-detalhe hover:bg-superficie-alta focus-visible:bg-superficie-alta -mx-2 flex min-h-11 items-center rounded-md px-2 py-1.5 leading-snug font-semibold lg:min-h-9"
           >
             {section.title}
           </a>
@@ -59,8 +59,8 @@ export default async function HelpPage() {
       <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-10">
         <aside className="lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
           <details className="card card-pad group lg:hidden">
-            <summary className="text-grafite flex min-h-11 cursor-pointer items-center gap-2 text-sm font-bold">
-              <ListTree aria-hidden="true" className="text-roxo size-5" />
+            <summary className="text-texto flex min-h-11 cursor-pointer items-center gap-2 text-sm font-bold">
+              <ListTree aria-hidden="true" className="text-detalhe size-5" />
               Neste manual
             </summary>
             <nav aria-label="Sumário do manual" className="mt-2">
@@ -68,19 +68,19 @@ export default async function HelpPage() {
             </nav>
           </details>
           <nav aria-label="Sumário do manual" className="hidden lg:block">
-            <p className="text-cinza mb-2 text-xs font-bold tracking-wider uppercase">Neste manual</p>
+            <p className="text-texto-suave mb-2 text-xs font-bold tracking-wider uppercase">Neste manual</p>
             {toc}
           </nav>
         </aside>
 
         <article className="min-w-0 max-w-3xl">
-          {manual.intro ? <Markdown className="text-grafite">{manual.intro}</Markdown> : null}
+          {manual.intro ? <Markdown className="text-texto">{manual.intro}</Markdown> : null}
           {manual.sections.map((section) => (
             <section key={section.id} id={section.id} aria-labelledby={`${section.id}-titulo`} className="scroll-mt-20 pt-8 lg:scroll-mt-6">
-              <h2 id={`${section.id}-titulo`} className="text-grafite border-areia border-b pb-2 text-2xl leading-tight font-extrabold">
+              <h2 id={`${section.id}-titulo`} className="text-texto border-borda border-b pb-2 text-2xl leading-tight font-extrabold">
                 {section.title}
               </h2>
-              <Markdown className="text-grafite mt-4">{section.markdown}</Markdown>
+              <Markdown className="text-texto mt-4">{section.markdown}</Markdown>
             </section>
           ))}
         </article>

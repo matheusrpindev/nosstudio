@@ -28,7 +28,7 @@ export function Popover({ trigger, children, align = "start", side = "bottom", c
           collisionPadding={12}
           aria-label={rest["aria-label"]}
           className={cn(
-            "flutuante-entrada border-areia shadow-flutuante text-grafite z-[60] w-72 max-w-[calc(100vw-1.5rem)] rounded-cartao border bg-white p-4 text-sm outline-none",
+            "flutuante-entrada border-borda shadow-flutuante text-texto z-[60] w-72 max-w-[calc(100vw-1.5rem)] rounded-cartao border bg-superficie p-4 text-sm outline-none",
             className,
           )}
         >

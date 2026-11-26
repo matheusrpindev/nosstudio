@@ -30,7 +30,7 @@ export function AssetActions({ id, title, first, last }: { id: number; title: st
         title="Excluir este item?"
         description={
           <>
-            <strong className="text-grafite">{title}</strong> sai da biblioteca da marca (e o arquivo enviado, se houver, é apagado). Não dá para desfazer.
+            <strong className="text-texto">{title}</strong> sai da biblioteca da marca (e o arquivo enviado, se houver, é apagado). Não dá para desfazer.
           </>
         }
         confirmLabel="Excluir item"

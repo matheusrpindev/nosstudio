@@ -77,7 +77,7 @@ export function MoneyInput({
   return (
     <div className={cn("relative", wrapperClassName)}>
       {!hidePrefix && (
-        <span aria-hidden="true" className="text-cinza pointer-events-none absolute inset-y-0 left-3 flex items-center text-base">
+        <span aria-hidden="true" className="text-texto-suave pointer-events-none absolute inset-y-0 left-3 flex items-center text-base">
           R$
         </span>
       )}

@@ -48,13 +48,13 @@ export default async function NotificationsPage() {
           <CardHeader title="Hoje o aviso vai para" />
           <CardSection>
             {!settings.notifyOnLead ? (
-              <p className="text-cinza text-sm">Ninguém: o aviso está desligado.</p>
+              <p className="text-texto-suave text-sm">Ninguém: o aviso está desligado.</p>
             ) : recipients.length === 0 ? (
-              <p className="text-cinza text-sm">Ninguém: não há usuários ativos nem e-mails na lista.</p>
+              <p className="text-texto-suave text-sm">Ninguém: não há usuários ativos nem e-mails na lista.</p>
             ) : (
               <ul className="space-y-1.5 text-sm">
                 {recipients.map((email) => (
-                  <li key={email} className="text-grafite break-all">
+                  <li key={email} className="text-texto break-all">
                     {email}
                   </li>
                 ))}

@@ -68,7 +68,7 @@ export default async function LeadPage({ params }: Props) {
                 title="Converter em cliente?"
                 description={
                   <>
-                    Vamos criar o cadastro de <strong className="text-grafite">{lead.name}</strong> em Clientes com estes dados, registrar o pedido no histórico e marcar o
+                    Vamos criar o cadastro de <strong className="text-texto">{lead.name}</strong> em Clientes com estes dados, registrar o pedido no histórico e marcar o
                     lead como convertido. Você fica como responsável.
                   </>
                 }
@@ -94,9 +94,9 @@ export default async function LeadPage({ params }: Props) {
           <Card as="section" aria-labelledby="pedido-titulo" className="order-1">
             <CardHeader id="pedido-titulo" title="Pedido" />
             {lead.message.trim() ? (
-              <p className="border-lavanda text-grafite mb-5 border-l-4 pl-4 text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{lead.message}</p>
+              <p className="border-detalhe-medio text-texto mb-5 border-l-4 pl-4 text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{lead.message}</p>
             ) : (
-              <p className="text-cinza mb-5 text-sm">Sem mensagem.</p>
+              <p className="text-texto-suave mb-5 text-sm">Sem mensagem.</p>
             )}
             <DescriptionList
               hideEmpty
@@ -185,7 +185,7 @@ export default async function LeadPage({ params }: Props) {
               title="Excluir este lead?"
               description={
                 <>
-                  Os dados de <strong className="text-grafite">{lead.name}</strong> serão apagados e não dá para desfazer.
+                  Os dados de <strong className="text-texto">{lead.name}</strong> serão apagados e não dá para desfazer.
                   {lead.client ? " O cadastro do cliente criado a partir dele continua existindo." : ""}
                 </>
               }

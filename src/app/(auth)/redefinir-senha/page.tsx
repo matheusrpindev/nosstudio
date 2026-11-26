@@ -13,8 +13,8 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 export default function ResetPasswordPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
-      <h1 className="text-grafite text-[1.75rem] leading-tight font-extrabold tracking-tight">Criar nova senha</h1>
-      <p className="text-cinza mt-2 text-[0.9375rem] leading-relaxed">Escolha uma senha nova para o seu acesso ao painel.</p>
+      <h1 className="text-texto text-[1.75rem] leading-tight font-extrabold tracking-tight">Criar nova senha</h1>
+      <p className="text-texto-suave mt-2 text-[0.9375rem] leading-relaxed">Escolha uma senha nova para o seu acesso ao painel.</p>
       <Suspense
         fallback={
           <div className="mt-8 space-y-5" role="status">

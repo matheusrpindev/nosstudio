@@ -43,8 +43,8 @@ export function BoardDemo() {
       emptyLabel="Nada nesta etapa."
       renderCard={(card) => (
         <>
-          <p className="text-grafite text-sm leading-snug font-semibold">{card.title}</p>
-          <p className="text-cinza mt-0.5 text-[0.8125rem]">{card.note}</p>
+          <p className="text-texto text-sm leading-snug font-semibold">{card.title}</p>
+          <p className="text-texto-suave mt-0.5 text-[0.8125rem]">{card.note}</p>
           <span className="badge badge-roxo mt-2">{card.tag}</span>
         </>
       )}
@@ -168,7 +168,7 @@ export function FormDemo({ children }: { children?: React.ReactNode }) {
         {children}
       </div>
 
-      <div className="border-areia grid gap-8 border-t pt-8 lg:col-span-2 lg:grid-cols-2">
+      <div className="border-borda grid gap-8 border-t pt-8 lg:col-span-2 lg:grid-cols-2">
         <div className="space-y-8">
           <ImageField name="capa" label="Capa (ImageField)" aspect="16/9" hint="Imagens são públicas: vão para o site otimizadas (WebP)." />
           <FileField name="contrato" label="Contrato (FileField)" hint="Arquivo privado: só abre com login no painel." />
@@ -185,7 +185,7 @@ export function FormDemo({ children }: { children?: React.ReactNode }) {
             <p className={state.ok ? "text-sucesso text-sm font-semibold" : "field-error"}>{state.message}</p>
           ) : null}
           {state.data ? (
-            <pre data-demo-echo className="border-areia bg-offwhite rounded-campo text-grafite mt-2 overflow-x-auto border p-3 text-xs leading-relaxed">
+            <pre data-demo-echo className="border-borda bg-superficie-alta rounded-campo text-texto mt-2 overflow-x-auto border p-3 text-xs leading-relaxed">
               {JSON.stringify(state.data, null, 2)}
             </pre>
           ) : null}

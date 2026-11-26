@@ -52,7 +52,7 @@ const listColumns: DataListColumn<ContentListItem>[] = [
     cell: (item) => (
       <>
         <span className="block break-words">{item.title}</span>
-        <span className="text-cinza block text-[0.8125rem] font-normal">
+        <span className="text-texto-suave block text-[0.8125rem] font-normal">
           {accountLabel(item)} · {CONTENT_NETWORK_LABELS[item.network]} · {CONTENT_FORMAT_LABELS[item.format]}
         </span>
       </>
@@ -68,25 +68,25 @@ const listColumns: DataListColumn<ContentListItem>[] = [
   {
     key: "publicacao",
     header: "Publicação",
-    cell: (item) => (item.publishDate ? <DateText value={item.publishDate} format="date" /> : <span className="text-cinza">Sem data</span>),
+    cell: (item) => (item.publishDate ? <DateText value={item.publishDate} format="date" /> : <span className="text-texto-suave">Sem data</span>),
   },
-  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (item) => item.ownerName ?? <span className="text-cinza">—</span> },
+  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (item) => item.ownerName ?? <span className="text-texto-suave">—</span> },
 ];
 
 function BoardCardBody({ item }: { item: ContentListItem }) {
   return (
     <div className="min-w-0 space-y-1.5">
-      <Link href={`/painel/conteudo/${item.id}`} className="text-grafite hover:text-roxo block text-sm leading-snug font-semibold break-words">
+      <Link href={`/painel/conteudo/${item.id}`} className="text-texto hover:text-detalhe block text-sm leading-snug font-semibold break-words">
         {item.title}
       </Link>
-      <p className="text-cinza text-xs">
+      <p className="text-texto-suave text-xs">
         {accountLabel(item)} · {CONTENT_NETWORK_LABELS[item.network]} · {CONTENT_FORMAT_LABELS[item.format]}
       </p>
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
-        {item.publishDate ? <span className="text-grafite font-medium">Publica {formatDate(item.publishDate)}</span> : <span className="text-cinza">Sem data</span>}
+        {item.publishDate ? <span className="text-texto font-medium">Publica {formatDate(item.publishDate)}</span> : <span className="text-texto-suave">Sem data</span>}
         {item.status === "aprovacao" ? <StatusBadge value={item.approvalStatus} labels={APPROVAL_STATUS_LABELS} tones={APPROVAL_TONES} /> : null}
       </div>
-      {item.ownerName ? <p className="text-cinza text-xs">Responsável: {item.ownerName}</p> : null}
+      {item.ownerName ? <p className="text-texto-suave text-xs">Responsável: {item.ownerName}</p> : null}
     </div>
   );
 }
@@ -148,7 +148,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Page
               href={newHref({ data: date })}
               aria-label={`Novo conteúdo em ${formatDate(date)}`}
               title="Novo conteúdo neste dia"
-              className="text-roxo hover:bg-lavanda-claro pointer-coarse:opacity-100 inline-flex size-11 items-center justify-center rounded-full sm:size-7 sm:opacity-0 sm:group-hover/dia:opacity-100 sm:focus-visible:opacity-100"
+              className="text-detalhe hover:bg-detalhe-suave pointer-coarse:opacity-100 inline-flex size-11 items-center justify-center rounded-full sm:size-7 sm:opacity-0 sm:group-hover/dia:opacity-100 sm:focus-visible:opacity-100"
             >
               <Plus aria-hidden="true" className="size-5 sm:size-4" />
             </Link>
@@ -173,7 +173,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Page
             </Badge>
           </li>
         </ul>
-        <p className="text-cinza mt-2 text-[0.8125rem]">
+        <p className="text-texto-suave mt-2 text-[0.8125rem]">
           As cores mostram o status de cada publicação.{" "}
           {undatedCount > 0 ? (
             <>
@@ -185,7 +185,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Page
           ) : null}
         </p>
         {entries.length === 0 && !filtered ? (
-          <p className="text-cinza mt-2 text-[0.8125rem]">Nada marcado neste mês. Use o + de um dia para planejar uma publicação.</p>
+          <p className="text-texto-suave mt-2 text-[0.8125rem]">Nada marcado neste mês. Use o + de um dia para planejar uma publicação.</p>
         ) : null}
       </>
     );
@@ -208,7 +208,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Page
             onMove={moveContentAction}
             emptyLabel="Nada nesta etapa"
           />
-          <p className="text-cinza mt-3 text-[0.8125rem]">
+          <p className="text-texto-suave mt-3 text-[0.8125rem]">
             Mover um cartão muda a etapa; ao chegar em Publicado sem data, usamos a de hoje.
             {hiddenPublished > 0 ? ` Em Publicado aparecem só os ${rows.filter((r) => r.status === "publicado").length} mais recentes — o resto está na lista.` : ""}
           </p>

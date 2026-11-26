@@ -33,7 +33,7 @@ const columns: DataListColumn<ClientListItem>[] = [
     cell: (client) => (
       <>
         <span className="block break-words">{client.name}</span>
-        <span className="text-cinza block text-[0.8125rem] font-normal">
+        <span className="text-texto-suave block text-[0.8125rem] font-normal">
           {[client.contactName, client.whatsapp ? formatPhone(client.whatsapp) : "", client.city].filter(Boolean).join(" · ") || "Sem contato cadastrado"}
         </span>
       </>
@@ -42,7 +42,7 @@ const columns: DataListColumn<ClientListItem>[] = [
   { key: "status", header: "Status", hideLabelOnMobile: true, cell: (client) => <StatusBadge value={client.status} labels={CLIENT_STATUS_LABELS} tones={CLIENT_STATUS_TONES} /> },
   { key: "servico", header: "Serviço", hideOnMobile: true, cell: (client) => SERVICE_INTEREST_LABELS[client.serviceInterest] },
   { key: "origem", header: "Origem", hideOnMobile: true, cell: (client) => CONTACT_SOURCE_LABELS[client.source] },
-  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (client) => client.ownerName ?? <span className="text-cinza">—</span> },
+  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (client) => client.ownerName ?? <span className="text-texto-suave">—</span> },
   {
     key: "proximo",
     header: "Próximo passo",
@@ -50,13 +50,13 @@ const columns: DataListColumn<ClientListItem>[] = [
       client.nextStep || client.nextStepDate ? (
         <>
           <span className="block break-words">{client.nextStep || "Sem descrição"}</span>
-          {client.nextStepDate ? <DateText value={client.nextStepDate} format="relative" className="text-cinza text-[0.8125rem]" /> : null}
+          {client.nextStepDate ? <DateText value={client.nextStepDate} format="relative" className="text-texto-suave text-[0.8125rem]" /> : null}
         </>
       ) : (
-        <span className="text-cinza">—</span>
+        <span className="text-texto-suave">—</span>
       ),
   },
-  { key: "atualizado", header: "Atualizado", align: "right", hideOnMobile: true, cell: (client) => <DateText value={client.updatedAt} format="relative" className="text-cinza" /> },
+  { key: "atualizado", header: "Atualizado", align: "right", hideOnMobile: true, cell: (client) => <DateText value={client.updatedAt} format="relative" className="text-texto-suave" /> },
 ];
 
 export default async function ClientsPage({ searchParams }: { searchParams: PageSearchParams }) {
@@ -69,7 +69,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Page
   const query = clientFiltersToQuery(filters);
 
   const toggle = (
-    <div role="group" aria-label="Modo de visualização" className="mb-4 inline-flex gap-1 rounded-campo bg-white p-1 shadow-sm ring-1 ring-areia">
+    <div role="group" aria-label="Modo de visualização" className="mb-4 inline-flex gap-1 rounded-campo bg-superficie p-1 shadow-sm ring-1 ring-borda">
       {[
         { label: "Lista", href: `/painel/clientes${query}`, active: !funnel },
         { label: "Funil", href: `/painel/clientes${clientFiltersToQuery({ ...filters, status: undefined }, { vista: "funil" })}`, active: funnel },
@@ -132,7 +132,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Page
           <EmptyState icon={<UserRound />} title="Nenhum cliente no funil" description="Cadastre o primeiro cliente ou converta um lead em cliente." action={<ButtonLink href="/painel/clientes/novo" icon={<Plus />}>Novo cliente</ButtonLink>} />
         ) : (
           <>
-            <p className="text-cinza mb-3 text-sm">Arraste o cartão para outra etapa — ou use &ldquo;Mover para…&rdquo; no celular. Cada mudança fica registrada no histórico do cliente.</p>
+            <p className="text-texto-suave mb-3 text-sm">Arraste o cartão para outra etapa — ou use &ldquo;Mover para…&rdquo; no celular. Cada mudança fica registrada no histórico do cliente.</p>
             <Board
               label="Funil de clientes"
               columns={boardColumns}
@@ -185,12 +185,12 @@ export default async function ClientsPage({ searchParams }: { searchParams: Page
 function FunnelCard({ client }: { client: ClientListItem }) {
   return (
     <div className="min-w-0 space-y-1">
-      <Link href={`/painel/clientes/${client.id}`} className="text-grafite hover:text-roxo block text-[0.9375rem] leading-snug font-bold break-words">
+      <Link href={`/painel/clientes/${client.id}`} className="text-texto hover:text-detalhe block text-[0.9375rem] leading-snug font-bold break-words">
         {client.name}
       </Link>
-      <p className="text-cinza text-[0.8125rem]">{SERVICE_INTEREST_LABELS[client.serviceInterest]}</p>
+      <p className="text-texto-suave text-[0.8125rem]">{SERVICE_INTEREST_LABELS[client.serviceInterest]}</p>
       {client.nextStep || client.nextStepDate ? (
-        <p className="text-grafite text-[0.8125rem] break-words">
+        <p className="text-texto text-[0.8125rem] break-words">
           {client.nextStep}
           {client.nextStepDate ? (
             <>
@@ -200,7 +200,7 @@ function FunnelCard({ client }: { client: ClientListItem }) {
           ) : null}
         </p>
       ) : null}
-      {client.ownerName ? <p className="text-cinza text-xs">{client.ownerName}</p> : null}
+      {client.ownerName ? <p className="text-texto-suave text-xs">{client.ownerName}</p> : null}
     </div>
   );
 }

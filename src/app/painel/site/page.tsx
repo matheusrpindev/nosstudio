@@ -58,15 +58,15 @@ export default async function SiteOverviewPage() {
             </Alert>
           </div>
         ) : (
-          <ul className="divide-areia mt-3 divide-y">
+          <ul className="divide-borda mt-3 divide-y">
             {pending.map((item) => (
               <li key={item.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                 <div className="min-w-0">
-                  <p className="text-grafite flex flex-wrap items-center gap-2 text-sm font-bold">
+                  <p className="text-texto flex flex-wrap items-center gap-2 text-sm font-bold">
                     {item.title}
                     {item.tone === "info" ? <Badge tone="neutral">Lembrete</Badge> : null}
                   </p>
-                  <p className="text-cinza mt-1 text-sm leading-relaxed">{item.description}</p>
+                  <p className="text-texto-suave mt-1 text-sm leading-relaxed">{item.description}</p>
                 </div>
                 <ButtonLink href={item.href} variant="secondary" iconRight={<ArrowRight />} className="shrink-0 max-sm:w-full">
                   {item.actionLabel}
@@ -77,7 +77,7 @@ export default async function SiteOverviewPage() {
         )}
       </Card>
 
-      <h2 className="text-grafite mb-3 text-base font-bold">Situação de cada área</h2>
+      <h2 className="text-texto mb-3 text-base font-bold">Situação de cada área</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           label="Textos do site"
@@ -118,7 +118,7 @@ export default async function SiteOverviewPage() {
       </div>
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <p className="text-cinza text-sm">Quer ligar ou desligar uma página inteira (Portfólio, Casamentos…)?</p>
+        <p className="text-texto-suave text-sm">Quer ligar ou desligar uma página inteira (Portfólio, Casamentos…)?</p>
         <ButtonLink href="/painel/site/textos/visibility" variant="secondary">
           Abrir “Visibilidade das seções”
         </ButtonLink>

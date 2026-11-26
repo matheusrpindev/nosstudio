@@ -25,7 +25,7 @@ export function Tooltip({ content, children, side = "top" }: TooltipProps) {
             className="flutuante-entrada bg-grafite shadow-flutuante z-[70] max-w-64 rounded-md px-2.5 py-1.5 text-xs leading-snug font-medium text-white"
           >
             {content}
-            <RadixTooltip.Arrow className="fill-grafite" />
+            <RadixTooltip.Arrow className="fill-texto" />
           </RadixTooltip.Content>
         </RadixTooltip.Portal>
       </RadixTooltip.Root>

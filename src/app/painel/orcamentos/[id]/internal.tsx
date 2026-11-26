@@ -61,7 +61,7 @@ export function StepInterno({
     <SumRow
       label={
         <span className="inline-flex items-center gap-1.5">
-          <Target aria-hidden="true" className="text-roxo size-4" />
+          <Target aria-hidden="true" className="text-detalhe size-4" />
           Preço sugerido para a meta
         </span>
       }
@@ -74,7 +74,7 @@ export function StepInterno({
     <div className="space-y-4">
       <PrivateBanner isTemplate={isTemplate} />
 
-      <Card as="section" aria-labelledby="etapa-interno-custos" className="border-roxo/25 border-2 border-dashed">
+      <Card as="section" aria-labelledby="etapa-interno-custos" className="border-detalhe/25 border-2 border-dashed">
         <CardHeader
           id="etapa-interno-custos"
           title="Custos diretos"
@@ -113,7 +113,7 @@ export function StepInterno({
         />
         {errors.costs ? <p className="field-error">{errors.costs}</p> : null}
         {byCategory.length > 0 ? (
-          <dl className="bg-offwhite rounded-campo divide-areia mt-4 divide-y px-4 py-1">
+          <dl className="bg-superficie-alta rounded-campo divide-borda mt-4 divide-y px-4 py-1">
             {byCategory.map((entry) => (
               <SumRow key={entry.category} label={PROPOSAL_COST_CATEGORY_LABELS[entry.category]} value={formatBRL(entry.cents)} className="py-1.5" />
             ))}
@@ -122,7 +122,7 @@ export function StepInterno({
         ) : null}
       </Card>
 
-      <Card as="section" aria-labelledby="etapa-interno-premissas" className="border-roxo/25 border-2 border-dashed">
+      <Card as="section" aria-labelledby="etapa-interno-premissas" className="border-detalhe/25 border-2 border-dashed">
         <CardHeader
           id="etapa-interno-premissas"
           title="Rateio, tributos e meta"
@@ -146,7 +146,7 @@ export function StepInterno({
         </div>
       </Card>
 
-      <Card as="section" aria-labelledby="etapa-interno-resultado" className="border-roxo/25 border-2 border-dashed">
+      <Card as="section" aria-labelledby="etapa-interno-resultado" className="border-detalhe/25 border-2 border-dashed">
         <CardHeader id="etapa-interno-resultado" title="Resultado estimado" description="Atualiza enquanto você digita. Usa o preço ao cliente da etapa Preço." />
 
         {priceKnown ? (
@@ -170,7 +170,7 @@ export function StepInterno({
               </Alert>
             ) : null}
 
-            <dl className="divide-areia divide-y">
+            <dl className="divide-borda divide-y">
               <SumRow label="Preço ao cliente" value={formatBRL(client.totalCents)} />
               <SumRow label="Custo direto" value={formatBRL(internal.directCostCents)} />
               <SumRow label="Rateio de despesas" value={formatBRL(internal.overheadCents)} />
@@ -213,7 +213,7 @@ export function StepInterno({
                 : "Resultado, margem e markup dependem do preço ao cliente, que é a soma dos itens inclusos. Enquanto os itens estiverem sem valor, não há o que calcular."}
             </Alert>
             {internal.directCostCents + internal.overheadCents > 0 ? (
-              <dl className="divide-areia divide-y">
+              <dl className="divide-borda divide-y">
                 <SumRow label="Custo direto" value={formatBRL(internal.directCostCents)} />
                 <SumRow label="Rateio de despesas" value={formatBRL(internal.overheadCents)} />
                 {suggestedRow}
@@ -222,7 +222,7 @@ export function StepInterno({
           </>
         )}
 
-        <p className="bg-lavanda-claro rounded-campo text-grafite mt-4 px-4 py-3 text-sm leading-relaxed">
+        <p className="bg-detalhe-suave rounded-campo text-texto mt-4 px-4 py-3 text-sm leading-relaxed">
           <strong>Margem não é markup.</strong> A margem é o lucro dividido pelo <em>preço</em>; o markup é o lucro dividido pelo <em>custo</em>. Um markup de 50% equivale a
           uma margem de 33%. Para a meta de margem, olhe a margem líquida.
         </p>

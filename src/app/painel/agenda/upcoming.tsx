@@ -53,17 +53,17 @@ export function Upcoming({
         <ol className="space-y-4">
           {days.map((day) => (
             <li key={day.date}>
-              <h3 className="text-grafite mb-1 text-sm font-bold">
+              <h3 className="text-texto mb-1 text-sm font-bold">
                 {capitalize(formatWeekday(day.date))},{" "}
                 {formatDateShort(day.date)}
                 {day.date === today ||
                 formatRelativeDay(day.date, today) === "amanhã" ? (
-                  <span className="text-roxo ml-2 font-semibold">
+                  <span className="text-detalhe ml-2 font-semibold">
                     {formatRelativeDay(day.date, today)}
                   </span>
                 ) : null}
               </h3>
-              <ul className="divide-areia border-areia divide-y rounded-campo border">
+              <ul className="divide-borda border-borda divide-y rounded-campo border">
                 {day.entries.map((entry) => {
                   const tone: BadgeTone =
                     entry.source === "deadline"
@@ -73,13 +73,13 @@ export function Upcoming({
                     <li key={entry.key}>
                       <Link
                         href={entry.href}
-                        className="hover:bg-lavanda-claro/50 flex min-h-12 items-start gap-3 px-3 py-2.5 focus-visible:outline-offset-[-2px]"
+                        className="hover:bg-detalhe-suave/50 flex min-h-12 items-start gap-3 px-3 py-2.5 focus-visible:outline-offset-[-2px]"
                       >
-                        <span className="text-cinza w-[5.5rem] shrink-0 pt-px text-[0.8125rem] font-semibold tabular-nums">
+                        <span className="text-texto-suave w-[5.5rem] shrink-0 pt-px text-[0.8125rem] font-semibold tabular-nums">
                           {timeLabel(entry)}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="text-grafite block text-sm font-semibold break-words">
+                          <span className="text-texto block text-sm font-semibold break-words">
                             {entry.source === "deadline" ? (
                               <>
                                 <span aria-hidden="true">{DEADLINE_MARK} </span>
@@ -90,7 +90,7 @@ export function Upcoming({
                             ) : null}
                             {entry.title}
                           </span>
-                          <span className="text-cinza mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+                          <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
                             <Badge tone={tone}>
                               {entry.source === "deadline"
                                 ? entry.deadlineLabel

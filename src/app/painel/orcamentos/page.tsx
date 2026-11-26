@@ -28,16 +28,16 @@ const columns: DataListColumn<ProposalListItem>[] = [
       <>
         <span className="block tabular-nums">
           {row.number}
-          {row.version > 1 ? <span className="bg-lavanda-claro text-roxo ml-2 rounded-full px-2 py-0.5 text-xs font-bold">v{row.version}</span> : null}
+          {row.version > 1 ? <span className="bg-detalhe-suave text-detalhe ml-2 rounded-full px-2 py-0.5 text-xs font-bold">v{row.version}</span> : null}
         </span>
-        <span className="text-cinza block text-[0.8125rem] font-normal break-words">{row.title}</span>
+        <span className="text-texto-suave block text-[0.8125rem] font-normal break-words">{row.title}</span>
       </>
     ),
   },
   {
     key: "cliente",
     header: "Cliente",
-    cell: (row) => (row.clientLabel ? <span className="break-words">{row.clientLabel}</span> : <span className="text-cinza">Sem cliente</span>),
+    cell: (row) => (row.clientLabel ? <span className="break-words">{row.clientLabel}</span> : <span className="text-texto-suave">Sem cliente</span>),
   },
   { key: "modalidade", header: "Modalidade", hideOnMobile: true, cell: (row) => PROPOSAL_MODALITY_LABELS[row.modality] },
   { key: "total", header: "Total", align: "right", className: "whitespace-nowrap", cell: (row) => <Money cents={row.totalCents} /> },
@@ -51,11 +51,11 @@ const columns: DataListColumn<ProposalListItem>[] = [
           <DateText value={row.validUntil} /> <Badge tone="perigo">Vencida</Badge>
         </span>
       ) : (
-        <DateText value={row.validUntil} className="text-cinza" />
+        <DateText value={row.validUntil} className="text-texto-suave" />
       ),
   },
   { key: "status", header: "Status", cell: (row) => <StatusBadge value={row.status} labels={PROPOSAL_STATUS_LABELS} tones={PROPOSAL_STATUS_TONES} /> },
-  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (row) => row.ownerName?.split(" ")[0] ?? <span className="text-cinza">—</span> },
+  { key: "responsavel", header: "Responsável", hideOnMobile: true, cell: (row) => row.ownerName?.split(" ")[0] ?? <span className="text-texto-suave">—</span> },
 ];
 
 export default async function ProposalsPage({ searchParams }: { searchParams: PageSearchParams }) {
@@ -104,19 +104,19 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pa
         }
       />
 
-      <nav aria-label="Filtrar por status" className="border-areia -mx-4 mb-4 flex gap-1 overflow-x-auto border-b px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
+      <nav aria-label="Filtrar por status" className="border-borda -mx-4 mb-4 flex gap-1 overflow-x-auto border-b px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => (
           <Link
             key={tab.key}
             href={tab.href}
             aria-current={tab.active ? "page" : undefined}
             className={cn(
-              "hover:text-roxo relative inline-flex min-h-11 shrink-0 items-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full",
-              tab.active ? "text-roxo after:bg-roxo" : "text-cinza after:bg-transparent",
+              "hover:text-detalhe relative inline-flex min-h-11 shrink-0 items-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full",
+              tab.active ? "text-detalhe after:bg-roxo" : "text-texto-suave after:bg-transparent",
             )}
           >
             {tab.label}
-            <span className={cn("rounded-full px-1.5 text-xs leading-5 font-bold tabular-nums", tab.active ? "bg-roxo text-white" : "bg-lavanda-claro text-roxo")}>{tab.count}</span>
+            <span className={cn("rounded-full px-1.5 text-xs leading-5 font-bold tabular-nums", tab.active ? "bg-roxo text-white" : "bg-detalhe-suave text-detalhe")}>{tab.count}</span>
           </Link>
         ))}
       </nav>

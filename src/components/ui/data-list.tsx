@@ -46,27 +46,27 @@ export type DataListProps<T> = {
  */
 export function DataList<T>({ columns, rows, rowKey, href, highlight, highlightLabel = "Destaque", empty, caption, className }: DataListProps<T>) {
   if (rows.length === 0) {
-    return <div className={cn("card", className)}>{empty ?? <p className="text-cinza px-6 py-10 text-center text-sm">Nada por aqui ainda.</p>}</div>;
+    return <div className={cn("card", className)}>{empty ?? <p className="text-texto-suave px-6 py-10 text-center text-sm">Nada por aqui ainda.</p>}</div>;
   }
   return (
     <div className={cn("card overflow-hidden", className)}>
       <table role="table" className="w-full border-collapse text-left text-sm max-md:block">
         <caption className="sr-only">{caption}</caption>
         <thead role="rowgroup" className="max-md:sr-only">
-          <tr role="row" className="border-areia border-b">
+          <tr role="row" className="border-borda border-b">
             {columns.map((column) => (
               <th
                 key={column.key}
                 role="columnheader"
                 scope="col"
-                className={cn("text-cinza px-4 py-3 text-xs font-semibold tracking-wide whitespace-nowrap uppercase first:pl-5 last:pr-5", column.align === "right" && "text-right")}
+                className={cn("text-texto-suave px-4 py-3 text-xs font-semibold tracking-wide whitespace-nowrap uppercase first:pl-5 last:pr-5", column.align === "right" && "text-right")}
               >
                 {column.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody role="rowgroup" className="divide-areia divide-y max-md:block">
+        <tbody role="rowgroup" className="divide-borda divide-y max-md:block">
           {rows.map((row) => {
             const marked = highlight?.(row) ?? false;
             const link = href?.(row);
@@ -77,8 +77,8 @@ export function DataList<T>({ columns, rows, rowKey, href, highlight, highlightL
                 data-destaque={marked || undefined}
                 className={cn(
                   "relative max-md:flex max-md:flex-col max-md:gap-1 max-md:px-4 max-md:py-3.5",
-                  link && "hover:bg-lavanda-claro/50 has-[a.linha-link:focus-visible]:bg-lavanda-claro/60 transition-colors",
-                  marked && "bg-lavanda-claro/45",
+                  link && "hover:bg-detalhe-suave/50 has-[a.linha-link:focus-visible]:bg-detalhe-suave/60 transition-colors",
+                  marked && "bg-detalhe-suave/45",
                 )}
               >
                 {columns.map((column) => {
@@ -91,10 +91,10 @@ export function DataList<T>({ columns, rows, rowKey, href, highlight, highlightL
                       className={cn(
                         "align-middle md:px-4 md:py-3 md:first:pl-5 md:last:pr-5",
                         column.primary
-                          ? "text-grafite max-md:order-first max-md:pr-2 max-md:text-[0.9375rem]"
-                          : "text-grafite/90 max-md:flex max-md:items-baseline max-md:justify-between max-md:gap-4 max-md:text-right",
+                          ? "text-texto max-md:order-first max-md:pr-2 max-md:text-[0.9375rem]"
+                          : "text-texto/90 max-md:flex max-md:items-baseline max-md:justify-between max-md:gap-4 max-md:text-right",
                         !column.primary &&
-                          "max-md:before:text-cinza max-md:before:shrink-0 max-md:before:text-left max-md:before:text-[0.8125rem] max-md:before:font-medium max-md:before:content-[attr(data-label)]",
+                          "max-md:before:text-texto-suave max-md:before:shrink-0 max-md:before:text-left max-md:before:text-[0.8125rem] max-md:before:font-medium max-md:before:content-[attr(data-label)]",
                         column.primary && (marked ? "font-bold" : "font-semibold"),
                         column.align === "right" && "md:text-right",
                         column.hideOnMobile && "max-md:hidden",

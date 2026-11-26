@@ -14,10 +14,10 @@ export function ProjectCard({ project, today }: { project: ProjectListItem; toda
   return (
     <div className="space-y-2">
       <div>
-        <Link href={`/painel/projetos/${project.id}`} className="text-grafite hover:text-roxo block text-[0.9375rem] leading-snug font-semibold break-words">
+        <Link href={`/painel/projetos/${project.id}`} className="text-texto hover:text-detalhe block text-[0.9375rem] leading-snug font-semibold break-words">
           {project.title}
         </Link>
-        {project.clientName ? <span className="text-cinza block text-[0.8125rem] break-words">{project.clientName}</span> : null}
+        {project.clientName ? <span className="text-texto-suave block text-[0.8125rem] break-words">{project.clientName}</span> : null}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone="neutral">
@@ -25,7 +25,7 @@ export function ProjectCard({ project, today }: { project: ProjectListItem; toda
         </Badge>
         <DeadlineBadge deadline={project.deliveryDeadline} stage={project.stage} today={today} />
       </div>
-      <dl className="text-cinza flex flex-wrap gap-x-3 gap-y-1 text-xs">
+      <dl className="text-texto-suave flex flex-wrap gap-x-3 gap-y-1 text-xs">
         {project.deliveryDeadline ? (
           <div className="flex items-center gap-1">
             <dt className="sr-only">Prazo de entrega</dt>

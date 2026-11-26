@@ -156,7 +156,7 @@ export function ProposalEditor({ id, isTemplate, number, version, serverKey, ini
       {/* Barra de salvar: sempre visível; no celular fica acima do menu de atalhos. */}
       <div
         className={cn(
-          "border-areia shadow-flutuante sticky z-20 mt-6 rounded-cartao border bg-white/95 px-3 py-2.5 backdrop-blur sm:px-4",
+          "border-borda shadow-flutuante sticky z-20 mt-6 rounded-cartao border bg-white/95 px-3 py-2.5 backdrop-blur sm:px-4",
           "bottom-[calc(3.75rem+env(safe-area-inset-bottom)+0.5rem)] lg:bottom-4",
         )}
       >
@@ -166,8 +166,8 @@ export function ProposalEditor({ id, isTemplate, number, version, serverKey, ini
               <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", dirty ? "bg-alerta" : "bg-sucesso")} />
               {dirty ? "Alterações não salvas" : "Tudo salvo"}
             </p>
-            <p className="text-cinza truncate text-xs">
-              {isTemplate ? "Modelo" : "Total ao cliente"}: <strong className="text-grafite tabular-nums">{formatBRL(numbers.client.totalCents)}</strong>
+            <p className="text-texto-suave truncate text-xs">
+              {isTemplate ? "Modelo" : "Total ao cliente"}: <strong className="text-texto tabular-nums">{formatBRL(numbers.client.totalCents)}</strong>
               {numbers.client.totalCents > 0 ? (
                 <>
                   {" "}

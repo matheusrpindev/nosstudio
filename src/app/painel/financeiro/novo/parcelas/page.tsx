@@ -57,7 +57,7 @@ export default async function InstallmentsPage({ searchParams }: { searchParams:
           <ActionForm action={generateInstallmentsAction} hidden={{ proposalId: proposal.id }}>
             <fieldset className="min-w-0">
               <legend className="label">Parcelas a criar</legend>
-              <ul className="divide-areia mt-1 divide-y">
+              <ul className="divide-borda mt-1 divide-y">
                 {usable.map((item) => (
                   <li key={item.id}>
                     <Checkbox
@@ -87,8 +87,8 @@ export default async function InstallmentsPage({ searchParams }: { searchParams:
             {usable.some((item) => item.alreadyCreated) ? (
               <Alert tone="alerta">Parcelas já lançadas para esta proposta vêm desmarcadas para não duplicar. Marque de novo só se quiser criar outra cópia.</Alert>
             ) : null}
-            <p className="text-cinza text-sm">
-              Valores e datas vêm da proposta. A categoria será &quot;Serviço / projeto&quot; e o cliente da proposta fica vinculado. Total das parcelas ainda não lançadas: <strong className="text-grafite">{formatBRL(total)}</strong>.
+            <p className="text-texto-suave text-sm">
+              Valores e datas vêm da proposta. A categoria será &quot;Serviço / projeto&quot; e o cliente da proposta fica vinculado. Total das parcelas ainda não lançadas: <strong className="text-texto">{formatBRL(total)}</strong>.
             </p>
             <FormActions>
               <SubmitButton icon={<ListChecks />} pendingLabel="Criando…">Criar lançamentos</SubmitButton>

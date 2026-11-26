@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 export function DateFilter({ name, label }: { name: "de" | "ate"; label: string }) {
   const params = useSearchParams();
   return (
-    <label className="flex items-center gap-2 text-sm font-semibold text-cinza max-md:grid max-md:gap-1">
+    <label className="flex items-center gap-2 text-sm font-semibold text-texto-suave max-md:grid max-md:gap-1">
       <span className="whitespace-nowrap">{label}</span>
       <input
         type="date"

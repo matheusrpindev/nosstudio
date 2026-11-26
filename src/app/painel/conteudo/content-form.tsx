@@ -40,7 +40,7 @@ type Props = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-5">
-      <h2 className="text-grafite border-areia border-b pb-2 text-base font-bold">{title}</h2>
+      <h2 className="text-texto border-borda border-b pb-2 text-base font-bold">{title}</h2>
       {children}
     </section>
   );
@@ -117,7 +117,7 @@ export function ContentForm({ action, id, values, clients, users, submitLabel, c
         </Field>
       </Section>
 
-      <p className="text-cinza text-[0.8125rem]">Este espaço é só para organização interna: nada é publicado nas redes sociais a partir do painel.</p>
+      <p className="text-texto-suave text-[0.8125rem]">Este espaço é só para organização interna: nada é publicado nas redes sociais a partir do painel.</p>
 
       <FormActions>
         <SubmitButton pendingLabel="Salvando…">{submitLabel}</SubmitButton>

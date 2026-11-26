@@ -151,29 +151,29 @@ export function MarkdownField({
   const tabClass = (active: boolean) =>
     cn(
       "min-h-11 sm:min-h-9 cursor-pointer rounded-md px-3 text-[0.8125rem] font-semibold transition-colors",
-      active ? "text-roxo bg-white shadow-sm" : "text-cinza hover:text-grafite",
+      active ? "text-detalhe bg-superficie shadow-sm" : "text-texto-suave hover:text-texto",
     );
 
   return (
     <div className={className}>
       <label htmlFor={fieldId} className="label">
         {label}
-        {optional ? <span className="text-cinza font-normal"> (opcional)</span> : null}
+        {optional ? <span className="text-texto-suave font-normal"> (opcional)</span> : null}
       </label>
 
       <div
         className={cn(
-          "rounded-campo focus-within:border-roxo focus-within:ring-roxo/20 overflow-hidden border bg-white transition-colors focus-within:ring-4",
-          error ? "border-perigo" : "border-areia-escuro",
+          "rounded-campo focus-within:border-foco focus-within:ring-foco/20 overflow-hidden border bg-superficie transition-colors focus-within:ring-4",
+          error ? "border-perigo" : "border-borda-forte",
         )}
       >
-        <div className="border-areia bg-offwhite flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-1.5 py-1">
+        <div className="border-borda bg-superficie-alta flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-1.5 py-1">
           <div role="toolbar" aria-label={`Formatação de ${label}`} className="flex items-center">
             {TOOLS.map((tool) => (
               <button
                 key={tool.label}
                 type="button"
-                className="btn btn-ghost btn-icon text-grafite hover:text-roxo"
+                className="btn btn-ghost btn-icon text-texto hover:text-detalhe"
                 disabled={mode === "preview"}
                 onClick={() => run(tool.id)}
                 aria-label={tool.label}
@@ -183,7 +183,7 @@ export function MarkdownField({
               </button>
             ))}
           </div>
-          <div role="group" aria-label="Modo de edição" className="bg-areia/70 flex gap-0.5 rounded-lg p-0.5">
+          <div role="group" aria-label="Modo de edição" className="bg-borda/70 flex gap-0.5 rounded-lg p-0.5">
             <button type="button" className={tabClass(mode === "write")} aria-pressed={mode === "write"} onClick={() => setMode("write")}>
               Escrever
             </button>
@@ -212,7 +212,7 @@ export function MarkdownField({
           value={value}
           aria-invalid={error ? true : undefined}
           aria-describedby={`${hintId}${error ? ` ${errorId}` : ""}`}
-          className="text-grafite placeholder:text-cinza/70 block min-h-24 w-full resize-y border-0 bg-white px-3 py-2.5 text-base leading-relaxed outline-none"
+          className="text-texto placeholder:text-texto-suave/70 block min-h-24 w-full resize-y border-0 bg-superficie px-3 py-2.5 text-base leading-relaxed outline-none"
           onChange={(event) => update(event.target.value)}
           onKeyDown={(event) => {
             if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
@@ -232,7 +232,7 @@ export function MarkdownField({
             className="px-3 py-2.5"
             style={{ minHeight: `${rows * 1.625 + 1.25}rem` }}
           >
-            {value.trim() ? <Markdown>{value}</Markdown> : <p className="text-cinza text-sm">Nada para pré-visualizar ainda.</p>}
+            {value.trim() ? <Markdown>{value}</Markdown> : <p className="text-texto-suave text-sm">Nada para pré-visualizar ainda.</p>}
           </div>
         ) : null}
       </div>
@@ -245,8 +245,8 @@ export function MarkdownField({
       <div id={hintId}>
         {hint ? <p className="hint">{hint}</p> : null}
         <p className="hint">
-          Formatação: <code className="text-grafite">**negrito**</code>, <code className="text-grafite">*itálico*</code>,{" "}
-          <code className="text-grafite">- item de lista</code>, <code className="text-grafite">[texto](https://link)</code>. Linha em
+          Formatação: <code className="text-texto">**negrito**</code>, <code className="text-texto">*itálico*</code>,{" "}
+          <code className="text-texto">- item de lista</code>, <code className="text-texto">[texto](https://link)</code>. Linha em
           branco separa parágrafos.
         </p>
       </div>

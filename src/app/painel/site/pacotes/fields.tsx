@@ -61,8 +61,8 @@ export function PriceFields({ mode: initialMode, priceCents, suffix }: { mode: P
           </Field>
         ) : null}
       </FieldRow>
-      <p className="text-cinza text-sm" aria-live="polite">
-        No site aparece: <strong className="text-grafite">{preview}</strong>
+      <p className="text-texto-suave text-sm" aria-live="polite">
+        No site aparece: <strong className="text-texto">{preview}</strong>
       </p>
     </div>
   );

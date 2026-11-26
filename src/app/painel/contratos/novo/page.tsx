@@ -54,7 +54,7 @@ export default async function NewContractPage({ searchParams }: { searchParams: 
 
       <Card className="mb-4">
         {templates.length === 0 ? (
-          <p className="text-cinza text-sm">
+          <p className="text-texto-suave text-sm">
             Ainda não há modelos de texto. <Link className="link" href="/painel/contratos/modelos/novo">Crie o primeiro modelo</Link> ou escreva o contrato direto abaixo.
           </p>
         ) : (
@@ -82,12 +82,12 @@ export default async function NewContractPage({ searchParams }: { searchParams: 
             </Button>
           </form>
         )}
-        {template ? <p className="text-cinza mt-3 text-sm">Texto copiado do modelo “{template.title}”. Trocar o modelo recarrega o formulário com o texto dele.</p> : null}
+        {template ? <p className="text-texto-suave mt-3 text-sm">Texto copiado do modelo “{template.title}”. Trocar o modelo recarrega o formulário com o texto dele.</p> : null}
         {template && templateHasFields ? (
-          <div className="text-cinza mt-2 space-y-1.5 text-sm">
+          <div className="text-texto-suave mt-2 space-y-1.5 text-sm">
             {linkedTo.length > 0 ? (
               <p>
-                Campos automáticos preenchidos com os dados de: <span className="text-grafite font-semibold">{linkedTo.join(" · ")}</span>. Se mudar os vínculos abaixo, confira o texto.
+                Campos automáticos preenchidos com os dados de: <span className="text-texto font-semibold">{linkedTo.join(" · ")}</span>. Se mudar os vínculos abaixo, confira o texto.
               </p>
             ) : (
               <p>Este modelo tem campos automáticos. Escolha o cliente (e a proposta ou o projeto) em Vínculos: os campos são preenchidos quando você cadastrar o contrato.</p>

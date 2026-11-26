@@ -40,8 +40,8 @@ function ColorSwatches({ name, label, value, onChange }: { name: string; label: 
             <label
               key={color}
               className={cn(
-                "flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-campo border-2 px-1 py-2 text-xs font-semibold has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-roxo/30",
-                selected ? "border-roxo bg-lavanda-claro" : "border-areia hover:border-areia-escuro bg-white",
+                "flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-campo border-2 px-1 py-2 text-xs font-semibold has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-foco/30",
+                selected ? "border-detalhe bg-detalhe-suave" : "border-borda hover:border-borda-forte bg-superficie",
               )}
             >
               <input type="radio" name={name} value={color} checked={selected} onChange={() => onChange(color)} data-controlled="" className="sr-only" />

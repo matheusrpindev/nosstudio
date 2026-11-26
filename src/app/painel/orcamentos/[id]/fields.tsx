@@ -61,7 +61,7 @@ export function DecimalInput({ value, onValueChange, max, decimals = 2, suffix, 
         }}
       />
       {suffix ? (
-        <span aria-hidden="true" className="text-cinza pointer-events-none absolute inset-y-0 right-3 flex items-center text-base">
+        <span aria-hidden="true" className="text-texto-suave pointer-events-none absolute inset-y-0 right-3 flex items-center text-base">
           {suffix}
         </span>
       ) : null}
@@ -73,7 +73,7 @@ export function DecimalInput({ value, onValueChange, max, decimals = 2, suffix, 
 export function Mini({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
     <label className={cn("block min-w-0", className)}>
-      <span className="text-cinza mb-1 block text-xs font-semibold">{label}</span>
+      <span className="text-texto-suave mb-1 block text-xs font-semibold">{label}</span>
       {children}
     </label>
   );
@@ -83,11 +83,11 @@ export function Mini({ label, children, className }: { label: string; children: 
 export function SumRow({ label, value, hint, strong, className }: { label: ReactNode; value: ReactNode; hint?: ReactNode; strong?: boolean; className?: string }) {
   return (
     <div className={cn("flex items-baseline justify-between gap-4 py-2", className)}>
-      <dt className={cn("min-w-0 text-sm", strong ? "text-grafite font-bold" : "text-cinza")}>
+      <dt className={cn("min-w-0 text-sm", strong ? "text-texto font-bold" : "text-texto-suave")}>
         {label}
-        {hint ? <span className="text-cinza block text-xs font-normal">{hint}</span> : null}
+        {hint ? <span className="text-texto-suave block text-xs font-normal">{hint}</span> : null}
       </dt>
-      <dd className={cn("shrink-0 text-right tabular-nums", strong ? "text-grafite text-lg font-extrabold" : "text-grafite text-[0.9375rem] font-semibold")}>{value}</dd>
+      <dd className={cn("shrink-0 text-right tabular-nums", strong ? "text-texto text-lg font-extrabold" : "text-texto text-[0.9375rem] font-semibold")}>{value}</dd>
     </div>
   );
 }

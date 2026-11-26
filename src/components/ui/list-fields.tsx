@@ -154,7 +154,7 @@ function Header({ label, count, max, labelId }: { label: string; count: number; 
         {label}
       </span>
       {max !== undefined && (
-        <span className="text-cinza text-xs tabular-nums" aria-label={`${count} de ${max} itens`}>
+        <span className="text-texto-suave text-xs tabular-nums" aria-label={`${count} de ${max} itens`}>
           {count}/{max}
         </span>
       )}
@@ -213,14 +213,14 @@ export function StringListField({
       <input type="hidden" name={name} value={JSON.stringify(values)} />
 
       {list.rows.length === 0 ? (
-        <p className="text-cinza border-areia-escuro rounded-campo mb-2 border border-dashed px-3 py-2.5 text-sm">{emptyLabel}</p>
+        <p className="text-texto-suave border-borda-forte rounded-campo mb-2 border border-dashed px-3 py-2.5 text-sm">{emptyLabel}</p>
       ) : null}
       <ul className={cn("space-y-2", list.rows.length > 0 && "mb-2")}>
         {list.rows.map((row, index) => {
           const itemName = row.value.trim() || `item ${index + 1}`;
           return (
             <li key={row.key} data-row={row.key} className="flex items-center gap-1">
-              <span aria-hidden="true" className="text-cinza w-5 shrink-0 text-right text-xs tabular-nums">
+              <span aria-hidden="true" className="text-texto-suave w-5 shrink-0 text-right text-xs tabular-nums">
                 {index + 1}
               </span>
               <input
@@ -328,7 +328,7 @@ export function ObjectListField<T>({
       <input type="hidden" name={name} value={JSON.stringify(list.rows.map((row) => row.value))} />
 
       {list.rows.length === 0 ? (
-        <p className="text-cinza border-areia-escuro rounded-campo mb-2 border border-dashed px-3 py-2.5 text-sm">{emptyLabel}</p>
+        <p className="text-texto-suave border-borda-forte rounded-campo mb-2 border border-dashed px-3 py-2.5 text-sm">{emptyLabel}</p>
       ) : null}
       <ul className={cn("space-y-2", list.rows.length > 0 && "mb-2")}>
         {list.rows.map((row, index) => {
@@ -337,7 +337,7 @@ export function ObjectListField<T>({
             <li
               key={row.key}
               data-row={row.key}
-              className="border-areia rounded-campo flex flex-col gap-1 border bg-white p-2 sm:flex-row sm:items-start sm:gap-2 sm:p-3"
+              className="border-borda rounded-campo flex flex-col gap-1 border bg-superficie p-2 sm:flex-row sm:items-start sm:gap-2 sm:p-3"
             >
               <div className="min-w-0 flex-1" role="group" aria-label={`${label}: ${itemName}`}>
                 {renderItem(row.value, (patch) => list.set(row.key, { ...row.value, ...patch }), index)}

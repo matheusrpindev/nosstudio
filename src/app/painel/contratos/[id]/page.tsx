@@ -111,9 +111,9 @@ export default async function ContractPage({ params }: { params: Promise<{ id: s
               (salvar preenche de novo), ou escreva o texto direto no lugar do campo. Não envie nem imprima antes disso.
             </UnfilledFieldsAlert>
             {hasBody ? (
-              <article id="contrato-folha" aria-label="Texto do contrato" className="border-areia rounded-campo border bg-white p-5 sm:p-8">
-                <h2 className="text-grafite text-xl leading-snug font-extrabold">{contract.title}</h2>
-                <p className="text-cinza mt-1 mb-5 text-sm">
+              <article id="contrato-folha" aria-label="Texto do contrato" className="border-borda rounded-campo border bg-superficie p-5 sm:p-8">
+                <h2 className="text-texto text-xl leading-snug font-extrabold">{contract.title}</h2>
+                <p className="text-texto-suave mt-1 mb-5 text-sm">
                   {CONTRACT_KIND_LABELS[contract.kind]}
                   {contract.versionLabel ? ` · ${contract.versionLabel}` : ""}
                   {contract.client ? ` · ${contract.client.name}` : ""}
@@ -121,7 +121,7 @@ export default async function ContractPage({ params }: { params: Promise<{ id: s
                 <Markdown>{contract.body}</Markdown>
               </article>
             ) : (
-              <p className="text-cinza text-sm">
+              <p className="text-texto-suave text-sm">
                 Este contrato não tem texto cadastrado. <Link className="link" href={`/painel/contratos/${contract.id}/editar`}>Editar</Link> para colar um modelo ou escrever o texto.
               </p>
             )}
@@ -142,7 +142,7 @@ export default async function ContractPage({ params }: { params: Promise<{ id: s
                 Salvar status
               </SubmitButton>
             </ActionForm>
-            <p className="text-cinza mt-4 text-[0.8125rem] leading-relaxed">A assinatura eletrônica ainda não está disponível nesta fase: anexe o documento assinado (PDF) ou cole o link dele.</p>
+            <p className="text-texto-suave mt-4 text-[0.8125rem] leading-relaxed">A assinatura eletrônica ainda não está disponível nesta fase: anexe o documento assinado (PDF) ou cole o link dele.</p>
           </Card>
 
           <Card as="section" aria-labelledby="vinculos-titulo" className="order-3">
@@ -172,7 +172,7 @@ export default async function ContractPage({ params }: { params: Promise<{ id: s
                 ) : null}
               </div>
             ) : (
-              <p className="text-cinza text-sm">Nenhum arquivo ou link ainda. Use “Editar” para anexar o PDF assinado.</p>
+              <p className="text-texto-suave text-sm">Nenhum arquivo ou link ainda. Use “Editar” para anexar o PDF assinado.</p>
             )}
           </Card>
 
@@ -187,7 +187,7 @@ export default async function ContractPage({ params }: { params: Promise<{ id: s
               title="Excluir este contrato?"
               description={
                 <>
-                  O contrato <strong className="text-grafite">{contract.title}</strong> e o arquivo anexado serão apagados e não dá para desfazer.
+                  O contrato <strong className="text-texto">{contract.title}</strong> e o arquivo anexado serão apagados e não dá para desfazer.
                 </>
               }
               confirmLabel="Excluir contrato"

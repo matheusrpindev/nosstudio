@@ -193,7 +193,7 @@ export function Field({ name, label, hint, error, required, optional, group, hid
   const labelContent = (
     <>
       {label}
-      {optional ? <span className="text-cinza font-normal"> (opcional)</span> : null}
+      {optional ? <span className="text-texto-suave font-normal"> (opcional)</span> : null}
     </>
   );
   const body = (

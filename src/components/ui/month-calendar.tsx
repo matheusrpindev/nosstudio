@@ -65,15 +65,15 @@ export function parseMonthParam(value: string | string[] | undefined, today: ISO
 }
 
 const TONE_CHIP: Record<CalendarTone, string> = {
-  neutral: "bg-areia/70 text-grafite",
-  roxo: "bg-lavanda-claro text-roxo",
-  lima: "bg-lima text-grafite",
+  neutral: "bg-borda/70 text-texto",
+  roxo: "bg-detalhe-suave text-detalhe",
+  lima: "bg-lima text-texto",
   sucesso: "bg-sucesso-claro text-sucesso",
   alerta: "bg-alerta-claro text-alerta",
   perigo: "bg-perigo-claro text-perigo",
 };
 const TONE_DOT: Record<CalendarTone, string> = {
-  neutral: "bg-cinza",
+  neutral: "bg-texto-suave",
   roxo: "bg-roxo",
   lima: "bg-lima-escuro",
   sucesso: "bg-sucesso",
@@ -151,7 +151,7 @@ export function MonthCalendar({
   return (
     <section aria-label={`${label}: ${title}`} className={className}>
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-grafite text-xl font-bold tracking-tight sm:text-2xl" aria-live="polite">
+        <h2 className="text-texto text-xl font-bold tracking-tight sm:text-2xl" aria-live="polite">
           {title}
         </h2>
         <nav aria-label="Navegação do calendário" className="flex items-center gap-2">
@@ -189,7 +189,7 @@ export function MonthCalendar({
                   key={name}
                   scope="col"
                   abbr={formatWeekday(weeks[0][index])}
-                  className="border-areia text-cinza bg-offwhite/60 border-b px-2 py-2 text-left text-xs font-semibold tracking-wide uppercase"
+                  className="border-borda text-texto-suave bg-superficie-alta/60 border-b px-2 py-2 text-left text-xs font-semibold tracking-wide uppercase"
                 >
                   {name}
                 </th>
@@ -211,10 +211,10 @@ export function MonthCalendar({
                       key={date}
                       aria-current={isToday ? "date" : undefined}
                       className={cn(
-                        "group/dia border-areia h-28 border-t p-1.5 align-top lg:h-32",
+                        "group/dia border-borda h-28 border-t p-1.5 align-top lg:h-32",
                         column > 0 && "border-l",
-                        outside && "bg-offwhite/60",
-                        isToday && "bg-lavanda-claro/60",
+                        outside && "bg-superficie-alta/60",
+                        isToday && "bg-detalhe-suave/60",
                       )}
                     >
                       <div className="mb-1 flex min-h-7 items-center justify-between gap-1">
@@ -222,7 +222,7 @@ export function MonthCalendar({
                           dateTime={date}
                           className={cn(
                             "inline-flex size-7 items-center justify-center rounded-full text-sm tabular-nums",
-                            isToday ? "bg-roxo font-bold text-white" : outside ? "text-cinza/80 font-medium" : "text-grafite font-semibold",
+                            isToday ? "bg-roxo font-bold text-white" : outside ? "text-texto-suave/80 font-medium" : "text-texto font-semibold",
                           )}
                         >
                           <span className="sr-only">{`${formatWeekday(date)}, ${formatDateLong(date)}${isToday ? " (hoje)" : ""}: `}</span>
@@ -241,7 +241,7 @@ export function MonthCalendar({
                             <li>
                               {/* aberto: o resumo ("Mostrar menos") vai para depois dos itens */}
                               <details className="group/mais open:flex open:flex-col-reverse open:gap-1">
-                                <summary className="text-roxo hover:bg-lavanda-claro cursor-pointer list-none rounded-md px-1.5 py-0.5 text-xs leading-5 font-semibold [&::-webkit-details-marker]:hidden">
+                                <summary className="text-detalhe hover:bg-detalhe-suave cursor-pointer list-none rounded-md px-1.5 py-0.5 text-xs leading-5 font-semibold [&::-webkit-details-marker]:hidden">
                                   <span className="group-open/mais:hidden">
                                     +{hidden.length} <span className="sr-only">itens neste dia — mostrar</span>
                                   </span>
@@ -271,7 +271,7 @@ export function MonthCalendar({
       {/* ---------- lista por dia (< 640px) */}
       <div className="sm:hidden">
         {listDays.length === 0 ? (
-          <p className="card text-cinza px-4 py-6 text-center text-sm">Nada marcado neste mês.</p>
+          <p className="card text-texto-suave px-4 py-6 text-center text-sm">Nada marcado neste mês.</p>
         ) : (
           <ol className="space-y-3">
             {listDays.map((date) => {
@@ -279,34 +279,34 @@ export function MonthCalendar({
               const dayItems = byDay.get(date) ?? [];
               const slot = daySlot?.(date);
               return (
-                <li key={date} aria-current={isToday ? "date" : undefined} className={cn("card relative overflow-hidden", isToday && "border-roxo/40")}>
-                  <div className={cn("flex min-h-12 items-center justify-between gap-2 px-3 py-1.5", isToday ? "bg-lavanda-claro" : "bg-offwhite/60")}>
+                <li key={date} aria-current={isToday ? "date" : undefined} className={cn("card relative overflow-hidden", isToday && "border-detalhe/40")}>
+                  <div className={cn("flex min-h-12 items-center justify-between gap-2 px-3 py-1.5", isToday ? "bg-detalhe-suave" : "bg-superficie-alta/60")}>
                     <h3 className="flex items-center gap-2.5">
                       <time
                         dateTime={date}
                         className={cn(
                           "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-base font-bold tabular-nums",
-                          isToday ? "bg-roxo text-white" : "text-grafite border-areia border bg-white",
+                          isToday ? "bg-roxo text-white" : "text-texto border-borda border bg-superficie",
                         )}
                       >
                         {Number(date.slice(8))}
                       </time>
-                      <span className="text-grafite text-sm font-semibold">
+                      <span className="text-texto text-sm font-semibold">
                         {capitalize(formatWeekday(date))}
-                        {isToday ? <span className="badge badge-roxo ml-2 bg-white">Hoje</span> : null}
+                        {isToday ? <span className="badge badge-roxo ml-2 bg-superficie">Hoje</span> : null}
                       </span>
                     </h3>
                     {slot ? <div className="flex items-center">{slot}</div> : null}
                   </div>
                   {dayItems.length === 0 ? (
-                    <p className="text-cinza border-areia border-t px-3 py-3 text-sm">Nada marcado para hoje.</p>
+                    <p className="text-texto-suave border-borda border-t px-3 py-3 text-sm">Nada marcado para hoje.</p>
                   ) : (
-                    <ul className="divide-areia border-areia divide-y border-t">
+                    <ul className="divide-borda border-borda divide-y border-t">
                       {dayItems.map((item) => {
                         const row = (
                           <>
                             <span aria-hidden="true" className={cn("size-2.5 shrink-0 rounded-full", TONE_DOT[item.tone ?? "roxo"])} />
-                            <span className="text-cinza w-11 shrink-0 text-sm font-semibold tabular-nums">
+                            <span className="text-texto-suave w-11 shrink-0 text-sm font-semibold tabular-nums">
                               {item.time ?? (
                                 <>
                                   <span aria-hidden="true">—</span>
@@ -314,14 +314,14 @@ export function MonthCalendar({
                                 </>
                               )}
                             </span>
-                            <span className="text-grafite min-w-0 flex-1 text-sm font-medium">{item.title}</span>
-                            {item.href ? <ChevronRight aria-hidden="true" className="text-cinza size-4 shrink-0" /> : null}
+                            <span className="text-texto min-w-0 flex-1 text-sm font-medium">{item.title}</span>
+                            {item.href ? <ChevronRight aria-hidden="true" className="text-texto-suave size-4 shrink-0" /> : null}
                           </>
                         );
                         return (
                           <li key={item.id}>
                             {item.href ? (
-                              <Link href={item.href} className="hover:bg-lavanda-claro/50 flex min-h-12 items-center gap-2.5 px-3 py-2 focus-visible:outline-offset-[-2px]">
+                              <Link href={item.href} className="hover:bg-detalhe-suave/50 flex min-h-12 items-center gap-2.5 px-3 py-2 focus-visible:outline-offset-[-2px]">
                                 {row}
                               </Link>
                             ) : (

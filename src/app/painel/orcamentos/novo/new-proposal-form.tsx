@@ -111,12 +111,12 @@ export function NewProposalForm({ clients, templates, defaultClientId, defaultTe
         <Input maxLength={160} autoComplete="off" placeholder={template?.title ?? DEFAULT_TITLES[modality]} />
       </Field>
 
-      <p className="text-cinza border-areia rounded-campo border bg-white px-3 py-2.5 text-sm leading-relaxed">
-        Padrões aplicados: validade até <strong className="text-grafite">{defaults.validUntil}</strong>
+      <p className="text-texto-suave border-borda rounded-campo border bg-superficie px-3 py-2.5 text-sm leading-relaxed">
+        Padrões aplicados: validade até <strong className="text-texto">{defaults.validUntil}</strong>
         {template ? null : (
           <>
             {" "}
-            e sinal de <strong className="text-grafite">{formatPercent(defaults.entryPercent)}</strong>
+            e sinal de <strong className="text-texto">{formatPercent(defaults.entryPercent)}</strong>
           </>
         )}
         . Dá para mudar tudo no editor (os padrões ficam em Configurações › Propostas).

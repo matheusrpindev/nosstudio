@@ -34,7 +34,7 @@ export function TasksCard({ tasks, total, today }: { tasks: DashboardTask[]; tot
           />
         ) : (
           <>
-            <ul className="divide-areia divide-y">
+            <ul className="divide-borda divide-y">
               {tasks.map((task) => {
                 const state = taskState(task.dueDate, today);
                 const context = task.projectTitle ?? task.clientName;
@@ -42,13 +42,13 @@ export function TasksCard({ tasks, total, today }: { tasks: DashboardTask[]; tot
                   <li key={task.id}>
                     <Link
                       href={task.projectId ? `/painel/tarefas?projeto=${task.projectId}` : "/painel/tarefas"}
-                      className="hover:bg-lavanda-claro/60 focus-visible:bg-lavanda-claro/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors"
+                      className="hover:bg-detalhe-suave/60 focus-visible:bg-detalhe-suave/60 -mx-2 flex min-h-11 items-start gap-3 rounded-campo px-2 py-2 transition-colors"
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="text-grafite block text-[0.9375rem] leading-snug font-semibold break-words">{task.title}</span>
-                        <span className="text-cinza mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+                        <span className="text-texto block text-[0.9375rem] leading-snug font-semibold break-words">{task.title}</span>
+                        <span className="text-texto-suave mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
                           {task.dueDate ? (
-                            <span className={state === "atrasada" ? "text-perigo font-bold" : state === "hoje" ? "text-grafite font-bold" : undefined}>
+                            <span className={state === "atrasada" ? "text-perigo font-bold" : state === "hoje" ? "text-texto font-bold" : undefined}>
                               {state === "hoje" ? "Para hoje" : capitalize(describeDeadline(task.dueDate, today, "prazo"))}
                             </span>
                           ) : (
@@ -64,7 +64,7 @@ export function TasksCard({ tasks, total, today }: { tasks: DashboardTask[]; tot
               })}
             </ul>
             {total > tasks.length ? (
-              <p className="text-cinza mt-3 text-sm">
+              <p className="text-texto-suave mt-3 text-sm">
                 E mais {total - tasks.length} {total - tasks.length === 1 ? "tarefa" : "tarefas"} em{" "}
                 <Link href="/painel/tarefas" className="link">
                   Tarefas

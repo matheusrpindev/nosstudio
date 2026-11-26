@@ -68,14 +68,14 @@ export default async function ConfigPage() {
           .filter((area) => isAdmin || !area.adminOnly)
           .map((area) => (
             <li key={area.href}>
-              <Link href={area.href} className="card card-pad hover:border-roxo/40 focus-visible:outline-roxo flex h-full min-h-11 items-start gap-4 transition-colors">
-                <span aria-hidden="true" className="bg-lavanda-claro text-roxo rounded-campo flex size-11 shrink-0 items-center justify-center">
+              <Link href={area.href} className="card card-pad hover:border-detalhe/40 focus-visible:outline-foco flex h-full min-h-11 items-start gap-4 transition-colors">
+                <span aria-hidden="true" className="bg-detalhe-suave text-detalhe rounded-campo flex size-11 shrink-0 items-center justify-center">
                   <area.icon className="size-5" />
                 </span>
                 <span className="min-w-0">
-                  <span className="text-grafite block text-base font-bold">{area.title}</span>
-                  <span className="text-cinza mt-0.5 block text-sm leading-relaxed">{area.description}</span>
-                  <span className="text-roxo mt-2 block text-[0.8125rem] font-semibold">{area.status}</span>
+                  <span className="text-texto block text-base font-bold">{area.title}</span>
+                  <span className="text-texto-suave mt-0.5 block text-sm leading-relaxed">{area.description}</span>
+                  <span className="text-detalhe mt-2 block text-[0.8125rem] font-semibold">{area.status}</span>
                 </span>
               </Link>
             </li>

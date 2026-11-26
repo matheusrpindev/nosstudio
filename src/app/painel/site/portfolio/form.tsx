@@ -46,8 +46,8 @@ export function PortfolioForm({ action, project, cover, gallery }: { action: For
         <Switch name="published" label="Publicado no site" hint="Desligado, o projeto fica como rascunho e não aparece para os visitantes." defaultChecked={project?.published ?? false} />
       </div>
 
-      <details className="border-areia rounded-campo border px-4 py-3">
-        <summary className="text-grafite min-h-11 cursor-pointer py-2.5 text-sm font-semibold">Avançado</summary>
+      <details className="border-borda rounded-campo border px-4 py-3">
+        <summary className="text-texto min-h-11 cursor-pointer py-2.5 text-sm font-semibold">Avançado</summary>
         <div className="pt-2 pb-1">
           <Field name="slug" label="Endereço do projeto" optional hint="Deixe em branco para gerar a partir do título.">
             <Input maxLength={80} autoCapitalize="none" autoComplete="off" defaultValue={project?.slug} placeholder="gerado automaticamente" />

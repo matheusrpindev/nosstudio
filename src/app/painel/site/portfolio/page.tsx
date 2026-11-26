@@ -51,7 +51,7 @@ export default async function PortfolioAdminPage({ searchParams }: { searchParam
             ) : null}
           </span>
           {project.clientName ? (
-            <span className="text-cinza block text-[0.8125rem] font-normal">
+            <span className="text-texto-suave block text-[0.8125rem] font-normal">
               {project.clientName}
               {project.showClient ? "" : " · nome não aparece no site"}
             </span>
@@ -60,7 +60,7 @@ export default async function PortfolioAdminPage({ searchParams }: { searchParam
       ),
     },
     { key: "categoria", header: "Categoria", cell: (project) => PORTFOLIO_CATEGORY_LABELS[project.category] },
-    { key: "data", header: "Data", hideOnMobile: true, cell: (project) => <DateText value={project.projectDate} className="text-cinza" /> },
+    { key: "data", header: "Data", hideOnMobile: true, cell: (project) => <DateText value={project.projectDate} className="text-texto-suave" /> },
     {
       key: "situacao",
       header: "Situação",

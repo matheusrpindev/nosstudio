@@ -13,6 +13,7 @@
   --color-lavanda: #cfc6ff;
   --color-offwhite: #f6f4ef;
   --color-grafite: #1b1b22;
+  --color-preto: #101014; /* preto oficial: fundo dos ambientes internos */
 
   /* derivados */
   --color-roxo-escuro: #2c1670; /* hover de roxo */
@@ -23,11 +24,38 @@
   --color-areia-escuro: #cdc7b9; /* bordas fortes / foco neutro */
   --color-cinza: #5e5c66; /* texto secundário (AA sobre offwhite e branco) */
 
-  /* estados (painel) */
+  /* ------------------------------------------------------------------------
+     Tokens SEMÂNTICOS (papéis). Os valores abaixo são os do tema claro (site público);
+     o tema escuro do painel e das telas de acesso os redefine em `:root:has(.tema-painel)`,
+     mais abaixo. As cores da paleta acima NÃO mudam de valor em nenhum tema.
+     ------------------------------------------------------------------------ */
+  --color-fundo: #f6f4ef; /* fundo da página */
+  --color-superficie: #ffffff; /* cartões, menus, diálogos */
+  --color-superficie-alta: #f6f4ef; /* hover, linha zebrada, bloco dentro de cartão */
+  --color-campo: #ffffff; /* fundo de inputs */
+  --color-borda: #e6e2d8; /* divisórias e bordas de cartão */
+  --color-borda-forte: #cdc7b9; /* contorno de controles (inputs, botão secundário) */
+  --color-texto: #1b1b22; /* texto principal */
+  --color-texto-suave: #5e5c66; /* texto secundário */
+  --color-detalhe: #3b1f8e; /* roxo como texto, ícone, link e contorno */
+  --color-detalhe-suave: #efecff; /* fundo de chip, seleção e hover */
+  --color-detalhe-medio: #cfc6ff; /* borda suave / preenchimento claro de detalhe */
+  --color-primaria: #3b1f8e; /* ação principal e indicador ativo */
+  --color-primaria-hover: #2c1670;
+  --color-sobre-primaria: #ffffff; /* texto sobre `primaria` */
+  --color-foco: #3b1f8e; /* contorno de foco */
+  --color-menu: #3b1f8e; /* fundo da barra lateral e da barra superior do painel */
+  --color-menu-borda: #3b1f8e;
+  --color-inverso: #1b1b22; /* bloco de contraste máximo (tooltip) */
+  --color-sobre-inverso: #ffffff;
+  --color-veu: rgb(27 27 34 / 0.5); /* véu atrás de diálogos e gavetas */
+
+  /* estados: cor de texto/ícone, fundo suave e preenchimento sólido (texto branco por cima) */
   --color-sucesso: #1f7a4d;
   --color-sucesso-claro: #e2f3e9;
   --color-perigo: #b3261e;
   --color-perigo-claro: #fbe9e7;
+  --color-perigo-solido: #b3261e;
   --color-alerta: #8a5a00;
   --color-alerta-claro: #fff1cc;
 
@@ -44,8 +72,8 @@
     scroll-behavior: smooth;
   }
   body {
-    background: var(--color-offwhite);
-    color: var(--color-grafite);
+    background: var(--color-fundo);
+    color: var(--color-texto);
     font-family: var(--font-sans);
     font-feature-settings: "ss01";
   }
@@ -54,7 +82,7 @@
     color: var(--color-grafite);
   }
   :focus-visible {
-    outline: 2px solid var(--color-roxo);
+    outline: 2px solid var(--color-foco);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -72,6 +100,103 @@
 }
 
 /* ==========================================================================
+   TEMA ESCURO — painel (/painel/**) e telas de acesso (/login, /recuperar-senha, /redefinir-senha).
+   Escopo: os layouts dessas rotas põem a classe `tema-painel` no seu elemento raiz; como o <html>/<body>
+   são do layout raiz (compartilhado com o site), o seletor `:root:has(.tema-painel)` sobe a troca para o
+   documento inteiro — assim o fundo do <body>, o overscroll, os controles nativos e os portais do Radix
+   (diálogos, menus, toasts, que nascem direto no <body>) também ficam escuros. O site público nunca tem
+   `.tema-painel`, então continua com os valores claros do @theme.
+   `[hidden]`/`display:none`: ao navegar, o Next pode manter o layout anterior montado e escondido — por isso
+   só conta um `.tema-painel` que não esteja escondido.
+   Só em tela: na impressão (contratos) valem os valores claros.
+   ========================================================================== */
+:root {
+  --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e5c66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+@media screen {
+  :root:has(.tema-painel:not([hidden], [style*="display: none"], [style*="display:none"])) {
+    color-scheme: dark;
+    background: var(--color-fundo);
+    scrollbar-color: var(--color-borda-forte) var(--color-fundo);
+
+    --color-fundo: #101014; /* preto oficial */
+    --color-superficie: #1b1b22; /* grafite */
+    --color-superficie-alta: #26262f;
+    --color-campo: #131318;
+    --color-borda: #30303c;
+    --color-borda-forte: #727084; /* ≥ 3:1 sobre fundo, superfícies e campo */
+    --color-texto: #f6f4ef;
+    --color-texto-suave: #a7a4b3;
+    --color-detalhe: #b9a8ff; /* roxo clareado: o roxo oficial não tem contraste sobre preto */
+    --color-detalhe-suave: #2b2056; /* roxo oficial a ~50% sobre grafite */
+    --color-detalhe-medio: #4a3a9c;
+    --color-primaria: #c6f432; /* lima */
+    --color-primaria-hover: #b2dc1f;
+    --color-sobre-primaria: #1b1b22;
+    --color-foco: #c6f432;
+    --color-menu: #17112c; /* preto arroxeado */
+    --color-menu-borda: #3b1f8e;
+    --color-inverso: #f6f4ef;
+    --color-sobre-inverso: #1b1b22;
+    --color-veu: rgb(0 0 0 / 0.68);
+
+    --color-sucesso: #5fd69a;
+    --color-sucesso-claro: #1d3a2d;
+    --color-perigo: #ff8f85;
+    --color-perigo-claro: #45262a;
+    --color-perigo-solido: #c9372c;
+    --color-alerta: #f2c14e;
+    --color-alerta-claro: #3f3519;
+
+    /* a separação vem de borda e de diferença de superfície, não de sombra */
+    --shadow-cartao: 0 0 #0000;
+    --shadow-flutuante: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 48px rgb(0 0 0 / 0.6);
+
+    --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a7a4b3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* preenchimento automático do navegador: mantém o campo escuro e o texto claro */
+  :root:has(.tema-painel) .input:-webkit-autofill,
+  :root:has(.tema-painel) .input:-webkit-autofill:hover,
+  :root:has(.tema-painel) .input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-texto);
+    caret-color: var(--color-texto);
+    box-shadow: inset 0 0 0 100px var(--color-campo);
+  }
+}
+
+/* Ilha clara dentro do tema escuro: pré-visualizações do SITE e amostras da MARCA mostram as cores reais.
+   Devolve os tokens semânticos aos valores do tema claro (mantenha igual ao @theme). */
+.tema-claro {
+  color-scheme: light;
+  color: var(--color-texto);
+  --color-fundo: #f6f4ef;
+  --color-superficie: #ffffff;
+  --color-superficie-alta: #f6f4ef;
+  --color-campo: #ffffff;
+  --color-borda: #e6e2d8;
+  --color-borda-forte: #cdc7b9;
+  --color-texto: #1b1b22;
+  --color-texto-suave: #5e5c66;
+  --color-detalhe: #3b1f8e;
+  --color-detalhe-suave: #efecff;
+  --color-detalhe-medio: #cfc6ff;
+  --color-primaria: #3b1f8e;
+  --color-primaria-hover: #2c1670;
+  --color-sobre-primaria: #ffffff;
+  --color-foco: #3b1f8e;
+  --color-inverso: #1b1b22;
+  --color-sobre-inverso: #ffffff;
+  --color-sucesso: #1f7a4d;
+  --color-sucesso-claro: #e2f3e9;
+  --color-perigo: #b3261e;
+  --color-perigo-claro: #fbe9e7;
+  --color-perigo-solido: #b3261e;
+  --color-alerta: #8a5a00;
+  --color-alerta-claro: #fff1cc;
+}
+
+/* ==========================================================================
    Classes de componente compartilhadas (vocabulário visual do painel).
    Os componentes de src/components/ui embrulham estas classes; use-as direto
    quando precisar de um elemento nativo com a mesma aparência.
@@ -82,19 +207,19 @@
     @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-campo border border-transparent px-4 py-2 text-sm leading-tight font-semibold whitespace-nowrap transition-colors select-none disabled:cursor-not-allowed disabled:opacity-55;
   }
   .btn-primary {
-    @apply bg-roxo hover:bg-roxo-escuro text-white;
+    @apply bg-primaria hover:bg-primaria-hover text-sobre-primaria;
   }
   .btn-accent {
     @apply bg-lima text-grafite hover:bg-lima-escuro;
   }
   .btn-secondary {
-    @apply border-areia-escuro text-grafite hover:border-roxo hover:text-roxo bg-white;
+    @apply border-borda-forte text-texto hover:border-detalhe hover:text-detalhe bg-superficie;
   }
   .btn-ghost {
-    @apply text-roxo hover:bg-lavanda-claro;
+    @apply text-detalhe hover:bg-detalhe-suave;
   }
   .btn-danger {
-    @apply bg-perigo text-white hover:brightness-90;
+    @apply bg-perigo-solido text-white hover:brightness-90;
   }
   .btn-danger-ghost {
     @apply text-perigo hover:bg-perigo-claro;
@@ -114,16 +239,16 @@
 
   /* ---- formulários (fonte ≥ 16px evita zoom no iOS) */
   .label {
-    @apply text-grafite mb-1.5 block text-sm font-semibold;
+    @apply text-texto mb-1.5 block text-sm font-semibold;
   }
   .hint {
-    @apply text-cinza mt-1.5 text-[0.8125rem] leading-snug;
+    @apply text-texto-suave mt-1.5 text-[0.8125rem] leading-snug;
   }
   .field-error {
     @apply text-perigo mt-1.5 text-[0.8125rem] leading-snug font-medium;
   }
   .input {
-    @apply border-areia-escuro text-grafite placeholder:text-cinza/70 focus:border-roxo focus:ring-roxo/20 block min-h-11 w-full rounded-campo border bg-white px-3 py-2 text-base transition-colors outline-none focus:ring-4 disabled:cursor-not-allowed disabled:bg-offwhite disabled:opacity-70;
+    @apply border-borda-forte text-texto placeholder:text-texto-suave/70 focus:border-foco focus:ring-foco/20 block min-h-11 w-full rounded-campo border bg-campo px-3 py-2 text-base transition-colors outline-none focus:ring-4 disabled:cursor-not-allowed disabled:bg-superficie-alta disabled:opacity-70;
   }
   .input[aria-invalid="true"] {
     @apply border-perigo focus:border-perigo focus:ring-perigo/20;
@@ -133,15 +258,15 @@
   }
   select.input {
     @apply cursor-pointer appearance-none bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-10;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e5c66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: var(--seta-select);
   }
   .checkbox {
-    @apply border-areia-escuro accent-roxo size-5 shrink-0 cursor-pointer rounded border;
+    @apply border-borda-forte accent-primaria size-5 shrink-0 cursor-pointer rounded border;
   }
 
   /* ---- superfícies */
   .card {
-    @apply border-areia rounded-cartao shadow-cartao border bg-white;
+    @apply border-borda rounded-cartao shadow-cartao border bg-superficie;
   }
   .card-pad {
     @apply p-4 sm:p-6;
@@ -152,10 +277,10 @@
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs leading-5 font-semibold whitespace-nowrap;
   }
   .badge-neutral {
-    @apply bg-areia/70 text-grafite;
+    @apply bg-borda/70 text-texto;
   }
   .badge-roxo {
-    @apply bg-lavanda-claro text-roxo;
+    @apply bg-detalhe-suave text-detalhe;
   }
   .badge-lima {
     @apply bg-lima text-grafite;
@@ -171,7 +296,7 @@
   }
 
   .link {
-    @apply text-roxo decoration-roxo/40 hover:decoration-roxo font-semibold underline underline-offset-4;
+    @apply text-detalhe decoration-detalhe/40 hover:decoration-detalhe font-semibold underline underline-offset-4;
   }
 }
 
@@ -200,13 +325,13 @@
     @apply mt-1.5;
   }
   .prosa a {
-    @apply text-roxo font-semibold underline underline-offset-4;
+    @apply text-detalhe font-semibold underline underline-offset-4;
   }
   .prosa strong {
     @apply font-bold;
   }
   .prosa blockquote {
-    @apply border-lavanda border-l-4 pl-4 italic;
+    @apply border-detalhe-medio border-l-4 pl-4 italic;
   }
 }
 
@@ -232,25 +357,25 @@
     @apply mb-4;
   }
   .card:not(.card-pad) > .card-cabecalho {
-    @apply border-areia mb-0 border-b px-4 py-4 sm:px-6;
+    @apply border-borda mb-0 border-b px-4 py-4 sm:px-6;
   }
   .card-secao {
     @apply px-4 py-4 sm:px-6 sm:py-5;
   }
   .card-secao + .card-secao {
-    @apply border-areia border-t;
+    @apply border-borda border-t;
   }
 
   /* RadioCards: o cartão marcado ganha a cor da marca */
   .radio-card:hover {
-    @apply border-roxo/60;
+    @apply border-detalhe/60;
   }
   .radio-card:has(input:checked) {
-    @apply border-roxo bg-lavanda-claro;
-    box-shadow: inset 0 0 0 1px var(--color-roxo);
+    @apply border-detalhe bg-detalhe-suave;
+    box-shadow: inset 0 0 0 1px var(--color-detalhe);
   }
   .radio-card:has(input:focus-visible) {
-    outline: 2px solid var(--color-roxo);
+    outline: 2px solid var(--color-foco);
     outline-offset: 2px;
   }
   .radio-card input:focus-visible {
