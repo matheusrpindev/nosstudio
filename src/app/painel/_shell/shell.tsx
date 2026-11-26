@@ -5,10 +5,10 @@ import { Logo } from "@/components/brand/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/toast";
-import { requireUser, type CurrentUser } from "@/lib/auth";
+import { canUsePanelModule, requirePanelUser, type CurrentUser } from "@/lib/auth";
 import { logoutAction } from "@/lib/auth/actions";
 import { countNewLeads } from "@/server/leads/admin";
-import type { NavBadges } from "../nav";
+import { visibleNavHrefs, type NavBadges } from "../nav";
 import { MobileNav } from "./mobile-nav";
 import { NavList } from "./nav-list";
 
@@ -16,11 +16,14 @@ import { NavList } from "./nav-list";
  * Moldura do painel: barra lateral (desktop) ou barras superior/inferior (celular) + área de conteúdo.
  * A classe `tema-painel` na raiz liga o tema escuro para o documento inteiro (ver "TEMA ESCURO" em globals.css).
  * Roda dentro do <Suspense> do layout. `allowPasswordChange` evita laço de redirecionamento: a tela de troca
- * obrigatória de senha também vive dentro deste layout — cada PÁGINA continua chamando `requireUser()` sozinha.
+ * obrigatória de senha também vive dentro deste layout. A casca aceita QUALQUER conta do painel e mostra no menu
+ * só os módulos que a pessoa pode ver; cada PÁGINA confere a própria permissão (`requirePermission`…) sozinha.
  */
 export async function Shell({ children }: { children: ReactNode }) {
-  const user = await requireUser({ allowPasswordChange: true });
-  const badges: NavBadges = { newLeads: await countNewLeads() };
+  const user = await requirePanelUser({ allowPasswordChange: true });
+  const allowed = visibleNavHrefs(user);
+  // contadores só de módulos que a pessoa pode ver (um número também é informação)
+  const badges: NavBadges = canUsePanelModule(user, "leads", "ver") ? { newLeads: await countNewLeads() } : {};
 
   return (
     <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:pl-64">
@@ -36,13 +39,14 @@ export async function Shell({ children }: { children: ReactNode }) {
           </span>
         </Link>
         <nav aria-label="Menu do painel" className="menu-rolagem min-h-0 flex-1 overflow-y-auto px-3 pb-4">
-          <NavList badges={badges} />
+          <NavList allowed={allowed} badges={badges} />
         </nav>
         <AccountBlock user={user} />
       </aside>
 
       <MobileNav
         logo={<Logo variant="wordmark" tone="branco" label="" className="h-5" />}
+        allowed={allowed}
         badges={badges}
         account={<AccountBlock user={user} />}
       />

@@ -7,3 +7,4 @@
 export * from "./environments";
 export * from "./matrix";
 export * from "./landing";
+export * from "./panel";

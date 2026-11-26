@@ -1,11 +1,12 @@
 /**
  * Vínculos de acesso: membros de projeto (`project_members`) e usuários vinculados a um cliente (`client_users`).
- * Só fala com o banco e audita. QUEM AUTORIZA é a Server Action que chamar (ainda não há tela):
- * - membros de projeto → `requirePermission("equipe", "editar")`;
- * - usuários de um cliente → `requirePermission("usuarios", "editar")` (é gestão de acesso de conta).
+ * Só fala com o banco e audita. QUEM AUTORIZA é a Server Action que chamar:
+ * - membros de projeto → `requirePermission("equipe", "editar")` (`painel/projetos/actions.ts`);
+ * - usuários de um cliente → `requirePermission("usuarios", "editar")` (é gestão de acesso de conta:
+ *   `painel/config/usuarios/actions.ts`).
  */
 import "server-only";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, type DbOrTx } from "@/db";
 import { clients, clientUsers, projectMembers, projects, users, type ClientUser, type ProjectMember } from "@/db/schema";
@@ -94,6 +95,24 @@ export async function listProjectMembers(projectId: number): Promise<ProjectMemb
     .orderBy(asc(users.name), asc(users.id));
 }
 
+/**
+ * Perfis que entram na "Equipe do projeto" pelo painel: quem trabalha por projeto (funcionário, freelancer) e o
+ * gestor (que já vê todos os projetos — para ele é só o registro do papel). Admin, sócio e técnico não precisam.
+ */
+export const PROJECT_MEMBER_ROLES: readonly UserRole[] = ["funcionario", "freelancer", "gestor"];
+
+export type MemberCandidate = { id: number; name: string; role: UserRole };
+
+/** Contas ativas que podem ser incluídas neste projeto (dos perfis acima e que ainda não são membros). */
+export async function listProjectMemberCandidates(projectId: number): Promise<MemberCandidate[]> {
+  const current = db.select({ userId: projectMembers.userId }).from(projectMembers).where(eq(projectMembers.projectId, projectId));
+  return db
+    .select({ id: users.id, name: users.name, role: users.role })
+    .from(users)
+    .where(and(eq(users.active, true), inArray(users.role, [...PROJECT_MEMBER_ROLES]), notInArray(users.id, current)))
+    .orderBy(asc(users.name), asc(users.id));
+}
+
 // ------------------------------------------------ usuários vinculados a cliente
 export type ClientLinkResult = { ok: true; link: ClientUser } | { ok: false; error: "client_not_found" | "user_not_found" | "role_not_allowed" };
 
@@ -131,6 +150,16 @@ export async function listClientUsers(clientId: number): Promise<ClientUserRow[]
     .from(clientUsers)
     .innerJoin(users, eq(users.id, clientUsers.userId))
     .where(eq(clientUsers.clientId, clientId))
+    .orderBy(asc(users.name), asc(users.id));
+}
+
+/** Contas ativas de perfil `cliente` que ainda NÃO estão vinculadas a esta ficha (para "vincular conta existente"). */
+export async function listClientUserCandidates(clientId: number): Promise<{ id: number; name: string; email: string }[]> {
+  const linked = db.select({ userId: clientUsers.userId }).from(clientUsers).where(eq(clientUsers.clientId, clientId));
+  return db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(and(eq(users.active, true), eq(users.role, "cliente"), notInArray(users.id, linked)))
     .orderBy(asc(users.name), asc(users.id));
 }
 

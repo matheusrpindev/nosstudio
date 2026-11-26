@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { DataList, type DataListColumn } from "@/components/ui/data-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import type { Faq } from "@/db/schema";
 import { listFaqs } from "@/server/site/admin/faqs";
 import { getSiteContentForEdit } from "@/server/site/content";
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "FAQ do site" };
 export const instant = false;
 
 export default async function FaqPage() {
-  await requireUser();
+  await requirePermission("site", "ver");
   const [rows, visibility] = await Promise.all([listFaqs(), getSiteContentForEdit("visibility")]);
   const suggestedDrafts = rows.filter((row) => !row.published && row.answer.trim()).length;
 

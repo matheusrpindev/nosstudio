@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getFaq } from "@/server/site/admin/faqs";
 import { deleteFaqAction, saveFaqAction } from "../actions";
 import { FaqForm } from "../form";
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Editar pergunta" };
 export const instant = false;
 
 export default async function EditFaqPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("site", "editar");
   const id = paramId((await params).id);
   const faq = id ? await getFaq(id) : null;
   if (!faq) notFound();

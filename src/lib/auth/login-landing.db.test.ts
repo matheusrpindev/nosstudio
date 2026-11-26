@@ -1,7 +1,8 @@
 /**
  * A action de login de ponta a ponta no banco de teste (cookies e navegação simulados): cada perfil é mandado
- * ao ambiente dele; perfil cujo ambiente ainda não tem telas recebe uma resposta clara e NENHUMA sessão — nunca
- * cai no painel.
+ * ao ambiente dele; perfil cujo ambiente ainda não tem telas (freelancer, cliente) recebe uma resposta clara e
+ * NENHUMA sessão — nunca cai no painel. Única exceção: quem ainda está com a senha provisória entra só para
+ * trocá-la (tela neutra) e a sessão acaba em seguida.
  */
 import { and, eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -26,7 +27,8 @@ import { db } from "@/db";
 import { auditLog, rateLimits, sessions, users } from "@/db/schema";
 import { initialActionState } from "@/lib/action-state";
 import { USER_ROLES, type UserRole } from "@/lib/domain";
-import { loginAction } from "./actions";
+import { changePasswordAction, loginAction } from "./actions";
+import { requireEnvironment, requirePanelUser, requirePermission, requireSessionUser } from "./index";
 import { hashPassword } from "./password";
 import { SESSION_COOKIE } from "./session";
 
@@ -86,8 +88,17 @@ describe("login: destino por perfil", () => {
     }
   });
 
-  it("gestor, funcionário, freelancer e cliente: senha certa, resposta clara, NENHUMA sessão — e nada de painel", async () => {
-    for (const role of ["gestor", "funcionario", "freelancer", "cliente"] as const) {
+  it("gestor e funcionário entram no painel restrito (quem decide o que eles veem são os guardas de cada página)", async () => {
+    for (const role of ["gestor", "funcionario"] as const) {
+      jar.clear();
+      expect(await login(emails[role]), role).toEqual({ redirect: "/painel", message: "" });
+      expect(await sessionsOf(ids[role]), role).toHaveLength(1);
+      expect(jar.has(SESSION_COOKIE)).toBe(true);
+    }
+  });
+
+  it("freelancer e cliente: senha certa, resposta clara, NENHUMA sessão — e nada de painel", async () => {
+    for (const role of ["freelancer", "cliente"] as const) {
       jar.clear();
       const result = await login(emails[role], PASSWORD, "/painel/financeiro");
       expect(result.redirect, role).toBeNull();
@@ -101,6 +112,38 @@ describe("login: destino por perfil", () => {
     expect((await login(emails.cliente)).message).toContain("Área do Cliente");
   });
 
+  it("freelancer e cliente com senha PROVISÓRIA: entram só para trocá-la, na tela neutra — nunca no painel", async () => {
+    for (const role of ["freelancer", "cliente"] as const) {
+      jar.clear();
+      const pending = await addUser(role, { mustChangePassword: true });
+      // o `next` pedido é ignorado: o único destino é a troca de senha fora do painel
+      expect(await login(pending.email, PASSWORD, "/painel/financeiro"), role).toEqual({ redirect: "/conta/senha?obrigatoria=1", message: "" });
+      expect(await sessionsOf(pending.id), role).toHaveLength(1);
+      // a sessão não abre NADA de ambiente algum (os guardas recusam) — só a própria conta
+      await expect(requirePanelUser({ allowPasswordChange: true })).rejects.toThrow("REDIRECT:/login?aviso=sem-acesso");
+      await expect(requirePermission("leads", "ver")).rejects.toThrow("REDIRECT:/login?aviso=sem-acesso");
+      await expect(requireEnvironment(role === "cliente" ? "cliente" : "equipe")).rejects.toThrow("REDIRECT:/conta/senha?obrigatoria=1");
+      expect((await requireSessionUser({ allowPasswordChange: true })).id).toBe(pending.id);
+
+      // trocou a senha: a sessão é encerrada (não há ambiente para onde ir) e o aviso aparece no login
+      const form = new FormData();
+      form.set("currentPassword", PASSWORD);
+      form.set("password", "outra-senha-forte-2026");
+      form.set("confirm", "outra-senha-forte-2026");
+      await expect(changePasswordAction(initialActionState, form)).rejects.toThrow("REDIRECT:/login?aviso=senha-criada");
+      expect(await sessionsOf(pending.id), role).toHaveLength(0);
+      expect(jar.has(SESSION_COOKIE)).toBe(false);
+      const [row] = await db.select({ must: users.mustChangePassword }).from(users).where(eq(users.id, pending.id));
+      expect(row.must).toBe(false);
+      // …e o login seguinte volta a ser a resposta clara, sem sessão
+      await db.delete(rateLimits).where(like(rateLimits.key, "login:%"));
+      const again = await login(pending.email, "outra-senha-forte-2026");
+      expect(again.redirect).toBeNull();
+      expect(again.message).toMatch(/ainda não foi liberado/);
+      expect(await sessionsOf(pending.id)).toHaveLength(0);
+    }
+  });
+
   it("a mensagem do ambiente só aparece com a senha CERTA (não revela quais e-mails são de clientes)", async () => {
     for (const role of ["freelancer", "cliente", "admin"] as const) {
       expect(await login(emails[role], "senha-errada-123")).toEqual({ redirect: null, message: "E-mail ou senha incorretos." });
@@ -110,12 +153,12 @@ describe("login: destino por perfil", () => {
     expect(await login(off.email)).toEqual({ redirect: null, message: "E-mail ou senha incorretos." });
   });
 
-  it("técnico com um módulo negado fica restrito: também não entra enquanto o painel restrito não abrir", async () => {
+  it("técnico com um módulo negado fica restrito: entra no painel (e os guardas barram o módulo negado)", async () => {
     const limited = await addUser("tecnico", { permissions: { grant: [], deny: ["financeiro:ver"] } });
-    const result = await login(limited.email);
-    expect(result.redirect).toBeNull();
-    expect(result.message).toContain("Painel Administrativo");
-    expect(await sessionsOf(limited.id)).toHaveLength(0);
+    expect(await login(limited.email)).toEqual({ redirect: "/painel", message: "" });
+    expect(await sessionsOf(limited.id)).toHaveLength(1);
+    await expect(requirePermission("financeiro", "ver")).rejects.toThrow("REDIRECT:/login?aviso=sem-acesso");
+    expect((await requirePermission("leads", "ver")).id).toBe(limited.id);
   });
 
   it("`next` só vale dentro do painel; troca de senha obrigatória vem antes", async () => {
@@ -127,5 +170,11 @@ describe("login: destino por perfil", () => {
     const pending = await addUser("admin", { mustChangePassword: true });
     jar.clear();
     expect((await login(pending.email, PASSWORD, "/painel/clientes")).redirect).toBe("/painel/conta/senha?obrigatoria=1");
+    // gestor e funcionário também trocam a senha DENTRO do painel (eles entram nele)
+    for (const role of ["gestor", "funcionario"] as const) {
+      jar.clear();
+      const restricted = await addUser(role, { mustChangePassword: true });
+      expect((await login(restricted.email)).redirect, role).toBe("/painel/conta/senha?obrigatoria=1");
+    }
   });
 });

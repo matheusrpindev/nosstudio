@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { paramId, paramOneOf, paramText, parsePage, type PageSearchParams } from "@/components/ui/search-params";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import {
   BACKUP_STATUS_LABELS,
@@ -22,6 +22,7 @@ import {
   SERVICE_INTEREST_LABELS,
   SERVICE_INTERESTS,
 } from "@/lib/domain";
+import { moduleScope, requireScopedPermission } from "@/server/access";
 import { getClientOptions, getUserOptions } from "@/server/options";
 import { listProjects, type ProjectFilters, type ProjectListItem } from "@/server/projects/admin";
 import { BOARD_STAGES, projectLinkEntries } from "@/server/projects/logic";
@@ -39,22 +40,33 @@ const VIEW_LABELS: Record<View, string> = { quadro: "Quadro", lista: "Lista", ar
 const SHARED_PARAMS = ["q", "responsavel", "cliente", "servico"] as const;
 
 export default async function ProjectsPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  // Quem vê o módulo inteiro (sócios, gestor) vê todos; o funcionário, só os projetos em que é membro.
+  const { user, scope } = await requireScopedPermission("projetos", "ver");
+  const restricted = scope !== "todos";
   const params = await searchParams;
-  const view: View = paramOneOf(VIEWS, params.vista) ?? "quadro";
+  // "Arquivos e entregas" mostra links de trabalho e backup de todos os projetos: só para quem vê o módulo inteiro.
+  const views = restricted ? VIEWS.filter((value) => value !== "arquivos") : VIEWS;
+  const view: View = paramOneOf(views, params.vista) ?? "quadro";
   const today = todayISO();
+  const canCreate = canEverywhere(user, "projetos", "editar");
+  const editScope = await moduleScope(user, "projetos", "editar");
 
-  const [clientOptions, userOptions] = await Promise.all([getClientOptions(), getUserOptions()]);
+  // Quem só vê os próprios projetos não recebe a lista de clientes nem a da equipe.
+  const [clientOptions, userOptions] = restricted ? [[], []] : await Promise.all([canEverywhere(user, "clientes", "ver") ? getClientOptions() : [], getUserOptions()]);
   const filters: ProjectFilters = {
     q: paramText(params.q),
-    ownerId: view === "arquivos" ? undefined : paramId(params.responsavel),
-    clientId: paramId(params.cliente),
+    ownerId: view === "arquivos" || restricted ? undefined : paramId(params.responsavel),
+    clientId: clientOptions.length > 0 ? paramId(params.cliente) : undefined,
     service: paramOneOf(SERVICE_INTERESTS, params.servico),
     stage: view === "quadro" ? undefined : paramOneOf(PROJECT_STAGES, params.etapa),
     backup: view === "arquivos" ? paramOneOf(BACKUP_STATUSES, params.backup) : undefined,
     page: view === "quadro" ? undefined : parsePage(params.pagina),
   };
-  const { rows, total, page, pageSize } = await listProjects(filters);
+  const listed = await listProjects(filters, scope);
+  const { total, page, pageSize } = listed;
+  // Para quem só vê os próprios projetos, as linhas saem daqui sem os campos internos (observações, links de
+  // trabalho, backup, proposta de origem): a lista não os mostra, e assim eles nem chegam aos componentes.
+  const rows = restricted ? listed.rows.map(withoutInternalFields) : listed.rows;
   const filtered = Boolean(filters.q || filters.ownerId || filters.clientId || filters.service || filters.stage || filters.backup);
 
   // visão = parâmetro `vista`; ao trocar, os filtros comuns acompanham
@@ -71,8 +83,8 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pag
   };
 
   const filterSelects: FilterSelect[] = [
-    ...(view === "arquivos" ? [] : [{ name: "responsavel", label: "Responsável", options: userOptions, allLabel: "Todos os responsáveis" }]),
-    { name: "cliente", label: "Cliente", options: clientOptions, allLabel: "Todos os clientes" },
+    ...(view === "arquivos" || userOptions.length === 0 ? [] : [{ name: "responsavel", label: "Responsável", options: userOptions, allLabel: "Todos os responsáveis" }]),
+    ...(clientOptions.length === 0 ? [] : [{ name: "cliente", label: "Cliente", options: clientOptions, allLabel: "Todos os clientes" }]),
     { name: "servico", label: "Tipo de serviço", options: SERVICE_INTEREST_LABELS, allLabel: "Todos os serviços" },
     ...(view === "quadro" ? [] : [{ name: "etapa", label: "Etapa", options: PROJECT_STAGE_LABELS, allLabel: "Todas as etapas" }]),
     ...(view === "arquivos" ? [{ name: "backup", label: "Situação do backup", options: BACKUP_STATUS_LABELS, allLabel: "Qualquer backup" }] : []),
@@ -94,12 +106,18 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pag
     <EmptyState
       variant="plain"
       icon={<Clapperboard />}
-      title="Nenhum projeto por enquanto"
-      description="Quando uma proposta for aceita, crie o projeto a partir dela (ou cadastre um à mão) para acompanhar prazos, arquivos e entregas."
+      title={restricted ? "Você ainda não está em nenhum projeto" : "Nenhum projeto por enquanto"}
+      description={
+        restricted
+          ? "Quando a NÓS incluir você na equipe de um projeto, ele aparece aqui."
+          : "Quando uma proposta for aceita, crie o projeto a partir dela (ou cadastre um à mão) para acompanhar prazos, arquivos e entregas."
+      }
       action={
-        <ButtonLink href="/painel/projetos/novo" icon={<Plus />}>
-          Novo projeto
-        </ButtonLink>
+        canCreate ? (
+          <ButtonLink href="/painel/projetos/novo" icon={<Plus />}>
+            Novo projeto
+          </ButtonLink>
+        ) : undefined
       }
     />
   );
@@ -108,15 +126,17 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pag
     <>
       <PageHeader
         title="Projetos"
-        description="Do briefing à entrega: etapas, prazos, arquivos e backup de cada trabalho."
+        description={restricted ? "Os projetos em que você está: etapas, prazos e tarefas de cada trabalho." : "Do briefing à entrega: etapas, prazos, arquivos e backup de cada trabalho."}
         actions={
-          <ButtonLink href="/painel/projetos/novo" icon={<Plus />}>
-            Novo projeto
-          </ButtonLink>
+          canCreate ? (
+            <ButtonLink href="/painel/projetos/novo" icon={<Plus />}>
+              Novo projeto
+            </ButtonLink>
+          ) : undefined
         }
       />
 
-      <ViewSwitch current={view} items={VIEWS.map((value) => ({ value, label: VIEW_LABELS[value], href: viewHref(value) }))} />
+      <ViewSwitch current={view} items={views.map((value) => ({ value, label: VIEW_LABELS[value], href: viewHref(value) }))} />
 
       <FilterBar
         key={view}
@@ -126,6 +146,9 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pag
       />
 
       {view === "quadro" ? <BoardView rows={rows} today={today} empty={emptyState} /> : null}
+      {view === "quadro" && editScope !== "todos" && rows.some((project) => !editScope.includes(project.id)) ? (
+        <p className="text-texto-suave mt-3 text-sm">Você só consegue mudar a etapa dos projetos em que tem permissão para editar.</p>
+      ) : null}
       {view === "lista" ? (
         <>
           <DataList
@@ -154,6 +177,11 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pag
       ) : null}
     </>
   );
+}
+
+/** O que a lista de um membro de projeto NÃO carrega (o detalhe decide, campo a campo, o que ele pode ver). */
+function withoutInternalFields(project: ProjectListItem): ProjectListItem {
+  return { ...project, notes: "", driveUrl: "", galleryUrl: "", referencesUrl: "", finalFilesUrl: "", links: [], backupNote: "", proposalId: null };
 }
 
 // ---------------------------------------------------------------------- quadro

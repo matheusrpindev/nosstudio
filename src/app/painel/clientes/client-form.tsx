@@ -18,6 +18,7 @@ export function ClientForm({
   defaultOwnerId,
   cancelHref,
   submitLabel,
+  showNotes,
 }: {
   action: FormAction;
   client?: ClientDetail;
@@ -25,6 +26,8 @@ export function ClientForm({
   defaultOwnerId?: number;
   cancelHref: string;
   submitLabel: string;
+  /** Mostra as "Observações internas" (só para quem tem acesso integral — `seesInternalNotes`). */
+  showNotes: boolean;
 }) {
   // um responsável que foi desativado continua aparecendo na própria ficha (senão salvar apagaria o vínculo sem querer)
   const ownerOptions = client?.ownerId && !owners.some((o) => o.value === client.ownerId) ? [...owners, { value: client.ownerId, label: `${client.ownerName ?? "Usuário removido"} (inativo)` }] : owners;
@@ -100,11 +103,14 @@ export function ClientForm({
       </Card>
 
       <Card as="section" aria-labelledby="extra-titulo" className="space-y-5">
-        <CardHeader id="extra-titulo" title="Datas e observações" />
+        <CardHeader id="extra-titulo" title={showNotes ? "Datas e observações" : "Datas importantes"} />
         <ImportantDatesField defaultValue={client?.importantDates ?? []} />
-        <Field name="notes" label="Observações internas" hint="Só os sócios veem isto — nunca vai para o orçamento nem para o site." optional>
-          <Textarea rows={4} maxLength={5000} defaultValue={client?.notes} />
-        </Field>
+        {/* sem o campo, a action mantém as observações que já existem (clientes/actions.ts) */}
+        {showNotes ? (
+          <Field name="notes" label="Observações internas" hint="Só os sócios veem isto — nunca vai para o orçamento nem para o site." optional>
+            <Textarea rows={4} maxLength={5000} defaultValue={client?.notes} />
+          </Field>
+        ) : null}
       </Card>
 
       <FormActions>

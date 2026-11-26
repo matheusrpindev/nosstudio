@@ -7,6 +7,7 @@ import { and, desc, eq, gte, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { clients, projects, tasks, users, type Task } from "@/db/schema";
 import type { TaskPriority } from "@/lib/domain";
+import { inScope, type IdScope } from "@/server/access/scope";
 import type { TaskView } from "./logic";
 
 export type TaskFilters = {
@@ -59,9 +60,15 @@ function filterConditions(filters: TaskFilters): (SQL | undefined)[] {
   ];
 }
 
-/** Tarefas em aberto (todas) e as concluídas há pouco (mais recentes primeiro). */
+/**
+ * Tarefas em aberto (todas) e as concluídas há pouco (mais recentes primeiro).
+ * `scope` = em quais projetos esta pessoa vê tarefas (`moduleScope(user, "tarefas", "ver")`): `"todos"` não
+ * filtra; uma lista de projetos mostra só as tarefas DELES (tarefa sem projeto fica de fora). É obrigatório de
+ * propósito: quem chama precisa decidir o escopo.
+ */
 export async function listTasks(
-  filters: TaskFilters = {},
+  filters: TaskFilters,
+  scope: IdScope,
 ): Promise<{ open: TaskView[]; recentDone: TaskView[] }> {
   const base = () =>
     db
@@ -73,12 +80,13 @@ export async function listTasks(
       .$dynamic();
   const since = new Date(Date.now() - RECENT_DONE_DAYS * 86_400_000);
   const [open, recentDone] = await Promise.all([
-    base().where(and(eq(tasks.done, false), ...filterConditions(filters))),
+    base().where(and(eq(tasks.done, false), inScope(tasks.projectId, scope), ...filterConditions(filters))),
     base()
       .where(
         and(
           eq(tasks.done, true),
           gte(tasks.doneAt, since),
+          inScope(tasks.projectId, scope),
           ...filterConditions(filters),
         ),
       )
@@ -103,6 +111,15 @@ export async function getProjectInfo(
     .select({ title: projects.title, clientId: projects.clientId })
     .from(projects)
     .where(eq(projects.id, id));
+  return row ?? null;
+}
+
+/** O mínimo de uma tarefa para decidir o acesso: os vínculos LIDOS DO BANCO (nunca os do formulário). */
+export async function getTaskRefs(id: number): Promise<Pick<Task, "id" | "projectId" | "clientId" | "ownerId"> | null> {
+  const [row] = await db
+    .select({ id: tasks.id, projectId: tasks.projectId, clientId: tasks.clientId, ownerId: tasks.ownerId })
+    .from(tasks)
+    .where(eq(tasks.id, id));
   return row ?? null;
 }
 

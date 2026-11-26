@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, Copy, KeyRound, Pencil, Plus, UserCheck, UserX } from "lucide-react";
+import { Check, Copy, KeyRound, Pencil, Plus, SlidersHorizontal, UserCheck, UserX } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { ActionForm, Field, FormActions, SubmitButton } from "@/components/ui/form";
 import { Input, RadioCards } from "@/components/ui/input";
@@ -18,6 +18,9 @@ const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
 };
 
 const roleOptions = (disabled?: boolean) => USER_ROLES.map((role) => ({ value: role, label: USER_ROLE_LABELS[role], description: ROLE_DESCRIPTIONS[role], disabled }));
+/** Perfis que nascem com senha temporária ("Nova conta"); os demais nascem por convite (o servidor também recusa). */
+const DIRECT_ROLES: readonly UserRole[] = ["admin", "socio", "tecnico"];
+const directRoleOptions = DIRECT_ROLES.map((role) => ({ value: role, label: USER_ROLE_LABELS[role], description: ROLE_DESCRIPTIONS[role] }));
 
 /** A senha temporária, mostrada uma única vez, com botão de copiar. */
 function TemporaryPasswordPanel({ credentials, intro, onDone }: { credentials: TemporaryCredentials; intro: string; onDone: () => void }) {
@@ -77,14 +80,21 @@ export function CreateUserDialog() {
     <Dialog
       open={open}
       onOpenChange={change}
-      trigger={<Button icon={<Plus />}>Nova conta</Button>}
-      title={credentials ? "Conta criada" : "Nova conta"}
-      description={credentials ? undefined : "A pessoa recebe uma senha temporária e define a própria senha no primeiro acesso."}
+      trigger={
+        <Button variant="secondary" icon={<Plus />}>
+          Nova conta
+        </Button>
+      }
+      title={credentials ? "Conta criada" : "Nova conta com senha temporária"}
+      description={credentials ? undefined : "Para sócios, administradores e suporte técnico: você entrega a senha temporária e a pessoa cria a própria no primeiro acesso."}
     >
       {credentials ? (
         <TemporaryPasswordPanel credentials={credentials} intro="A conta já pode entrar no painel." onDone={() => change(false)} />
       ) : (
         <ActionForm action={createUserAction} onSuccess={(state) => setCredentials(state.data ?? null)} success="none">
+          <Alert tone="info" title="Gestor, funcionário, freelancer ou cliente?">
+            Essas contas nascem por convite: feche esta janela e use <strong>Convidar pessoa</strong>. A pessoa recebe um link, cria a própria senha e já entra ligada ao projeto ou ao cliente certo.
+          </Alert>
           <Field name="name" label="Nome" required>
             <Input maxLength={120} autoComplete="off" />
           </Field>
@@ -92,7 +102,7 @@ export function CreateUserDialog() {
             <Input type="email" maxLength={160} autoComplete="off" inputMode="email" />
           </Field>
           <Field name="role" label="Perfil" group required>
-            <RadioCards name="role" cols={1} defaultValue="admin" options={roleOptions()} />
+            <RadioCards name="role" cols={1} defaultValue="admin" options={directRoleOptions} />
           </Field>
           <FormActions>
             <SubmitButton pendingLabel="Criando…">Criar conta</SubmitButton>
@@ -123,7 +133,13 @@ function EditDialog({ user, isSelf }: UserActionsProps) {
         <Field name="email" label="E-mail" required hint="Mudar o e-mail encerra as sessões abertas desta conta.">
           <Input type="email" defaultValue={user.email} maxLength={160} inputMode="email" />
         </Field>
-        <Field name="role" label="Perfil" group required hint={isSelf ? "Você não pode mudar o seu próprio perfil." : "Mudar o perfil encerra as sessões abertas desta conta."}>
+        <Field
+          name="role"
+          label="Perfil"
+          group
+          required
+          hint={isSelf ? "Você não pode mudar o seu próprio perfil." : "Mudar o perfil encerra as sessões abertas desta conta, volta as permissões ao padrão do perfil novo e tira os vínculos que não combinam com ele."}
+        >
           <RadioCards name="role" cols={1} defaultValue={user.role} options={roleOptions(isSelf)} />
         </Field>
         {isSelf ? <input type="hidden" name="role" value={user.role} /> : null}
@@ -194,10 +210,17 @@ function ToggleActiveDialog({ user }: UserActionsProps) {
   );
 }
 
-export function UserActions({ user, isSelf }: UserActionsProps) {
+export function UserActions({ user, isSelf, canEdit }: UserActionsProps & { /** Pode gerenciar contas (`usuarios:editar`); senão só consulta as permissões. */ canEdit: boolean }) {
+  const permissions = (
+    <ButtonLink href={`/painel/config/usuarios/${user.id}`} variant="secondary" icon={<SlidersHorizontal />} aria-label={`Permissões de ${user.name}`}>
+      Permissões
+    </ButtonLink>
+  );
+  if (!canEdit) return <div className="flex flex-wrap gap-2">{permissions}</div>;
   return (
     <div className="flex flex-wrap gap-2">
       <EditDialog user={user} isSelf={isSelf} />
+      {permissions}
       {isSelf ? null : (
         <>
           <ResetPasswordDialog user={user} isSelf={isSelf} />

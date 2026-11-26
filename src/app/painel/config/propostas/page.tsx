@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getSetting } from "@/server/settings";
 import { ProposalDefaultsForm } from "./form";
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Padrões de proposta" };
 export const instant = false;
 
 export default async function ProposalDefaultsPage() {
-  await requireUser();
+  await requirePermission("config", "ver");
   const defaults = await getSetting("proposal");
   return (
     <>

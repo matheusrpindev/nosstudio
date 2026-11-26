@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getAnnouncement } from "@/server/site/admin/announcements";
 import { deleteAnnouncementAction, saveAnnouncementAction } from "../actions";
 import { AnnouncementForm } from "../form";
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Editar aviso" };
 export const instant = false;
 
 export default async function EditAnnouncementPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("site", "editar");
   const id = paramId((await params).id);
   const row = id ? await getAnnouncement(id) : null;
   if (!row) notFound();

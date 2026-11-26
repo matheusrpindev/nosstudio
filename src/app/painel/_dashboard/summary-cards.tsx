@@ -1,4 +1,5 @@
 import { Inbox } from "lucide-react";
+import type { ReactNode } from "react";
 import { StatCard } from "@/components/ui/card";
 import { formatDateShort, type ISODate } from "@/lib/dates";
 import { formatBRL } from "@/lib/format";
@@ -7,14 +8,28 @@ import { plural } from "@/server/dashboard/logic";
 
 const urgent = "text-perigo font-bold";
 
-/** Cartões-resumo do topo. Primeiros da tela no celular (uma coluna); no desktop, 3 + 2 em grade de 6. */
+/** Largura de cada cartão (grade de 6 colunas no desktop) conforme quantos a pessoa pode ver: 5 = 3 + 2. */
+const SPANS: Record<number, string[]> = {
+  1: ["lg:col-span-6"],
+  2: ["lg:col-span-3", "lg:col-span-3"],
+  3: ["lg:col-span-2", "lg:col-span-2", "lg:col-span-2"],
+  4: ["lg:col-span-3", "lg:col-span-3", "lg:col-span-3", "lg:col-span-3"],
+  5: ["lg:col-span-2", "lg:col-span-2", "lg:col-span-2", "lg:col-span-3", "lg:col-span-3"],
+};
+
+/**
+ * Cartões-resumo do topo. Primeiros da tela no celular (uma coluna); no desktop, grade de 6 (3 + 2 com os cinco).
+ * Cada cartão só existe para quem pode ver o módulo dele: o servidor manda `null` (e nem consulta) para os demais.
+ */
 export function SummaryCards({ summary, today }: { summary: DashboardSummary; today: ISODate }) {
   const { newLeads, proposals, activeClients, deliveries, receivables } = summary;
+  const cards: ((className: string) => ReactNode)[] = [];
 
-  return (
-    <section aria-label="Resumo da situação" className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-6">
+  if (newLeads !== null) {
+    cards.push((className) => (
       <StatCard
-        className="lg:col-span-2"
+        key="leads"
+        className={className}
         label="Leads novos"
         icon={<Inbox />}
         value={String(newLeads).padStart(2, "0")}
@@ -22,9 +37,14 @@ export function SummaryCards({ summary, today }: { summary: DashboardSummary; to
         href="/painel/leads?status=novo"
         tone={newLeads > 0 ? "destaque" : "padrao"}
       />
+    ));
+  }
 
+  if (proposals) {
+    cards.push((className) => (
       <StatCard
-        className="lg:col-span-2"
+        key="orcamentos"
+        className={className}
         label="Orçamentos aguardando resposta"
         value={String(proposals.waiting).padStart(2, "0")}
         href="/painel/orcamentos?status=enviada"
@@ -42,17 +62,27 @@ export function SummaryCards({ summary, today }: { summary: DashboardSummary; to
           )
         }
       />
+    ));
+  }
 
+  if (activeClients !== null) {
+    cards.push((className) => (
       <StatCard
-        className="lg:col-span-2"
+        key="clientes"
+        className={className}
         label="Clientes ativos"
         value={String(activeClients).padStart(2, "0")}
         caption={activeClients === 0 ? "Nenhum cliente fechado ou em produção." : "Fechados ou em produção."}
         href="/painel/clientes"
       />
+    ));
+  }
 
+  if (deliveries) {
+    cards.push((className) => (
       <StatCard
-        className="lg:col-span-3"
+        key="entregas"
+        className={className}
         label="Entregas pendentes"
         value={String(deliveries.pending).padStart(2, "0")}
         href="/painel/projetos"
@@ -71,9 +101,14 @@ export function SummaryCards({ summary, today }: { summary: DashboardSummary; to
           )
         }
       />
+    ));
+  }
 
+  if (receivables) {
+    cards.push((className) => (
       <StatCard
-        className="lg:col-span-3"
+        key="receber"
+        className={className}
         size="md"
         label="Pagamentos a receber"
         value={formatBRL(receivables.totalCents)}
@@ -96,7 +131,14 @@ export function SummaryCards({ summary, today }: { summary: DashboardSummary; to
           )
         }
       />
+    ));
+  }
+
+  if (cards.length === 0) return null;
+  const spans = SPANS[cards.length] ?? [];
+  return (
+    <section aria-label="Resumo da situação" className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-6">
+      {cards.map((render, index) => render(spans[index] ?? "lg:col-span-2"))}
     </section>
   );
 }
-

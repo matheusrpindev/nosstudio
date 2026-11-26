@@ -8,7 +8,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { ActionForm, SubmitButton } from "@/components/ui/form";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { APPROVAL_STATUS_LABELS, CONTENT_STATUS_LABELS } from "@/lib/domain";
 import { safeHref } from "@/lib/format";
 import { getContentItem } from "@/server/content/admin";
@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: "Conteúdo" };
 export const instant = false;
 
 export default async function ContentItemPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("conteudo", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const item = await getContentItem(id);

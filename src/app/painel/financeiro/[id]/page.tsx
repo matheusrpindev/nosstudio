@@ -6,7 +6,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { DescriptionList } from "@/components/ui/description-list";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText, Money } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { FINANCE_CATEGORY_LABELS, FINANCE_TYPE_LABELS } from "@/lib/domain";
 import { formatBRL } from "@/lib/format";
@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: "Lançamento" };
 export const instant = false;
 
 export default async function EntryPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("financeiro", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const entry = await getFinanceEntry(id);

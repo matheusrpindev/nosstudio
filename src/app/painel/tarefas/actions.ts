@@ -1,20 +1,55 @@
 "use server";
 
-/** Server Actions das Tarefas: adicionar rápido, editar, concluir/reabrir e excluir. */
+/**
+ * Server Actions das Tarefas: adicionar rápido, editar, concluir/reabrir e excluir.
+ *
+ * ACESSO: `requireScopedPermission("tarefas", "editar")` deixa passar quem edita o módulo inteiro (sócios,
+ * gestor) e quem edita só "nos projetos em que está" (funcionário), e devolve o ESCOPO. Para o escopo restrito,
+ * cada ação confere o projeto da tarefa LIDO DO BANCO (`getTaskRefs`) — e o projeto de destino, quando muda —
+ * antes de gravar. Tarefa de projeto alheio, inexistente ou sem projeto: mesma resposta ("sem permissão").
+ * Excluir exige o módulo inteiro.
+ */
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
 import { requirePermission } from "@/lib/auth";
 import { TASK_PRIORITIES } from "@/lib/domain";
+import { requireScopedPermission, scopeAllows, type IdScope } from "@/server/access";
 import { f, formToObject, parseForm, parseInput } from "@/server/action";
 import {
   checkTaskRefs,
   createTask,
   deleteTask,
+  getProjectInfo,
+  getTaskRefs,
   setTaskDone,
   updateTask,
 } from "@/server/tasks/admin";
+
+const DENIED = "Você não tem permissão para alterar tarefas deste projeto.";
+
+/**
+ * Regras de quem edita só nos próprios projetos (escopo ≠ "todos"), aplicadas ao que veio do formulário:
+ * - a tarefa precisa estar num projeto em que a pessoa pode editar;
+ * - o cliente não vem do formulário: é o do projeto (ela não escolhe clientes);
+ * - o responsável só pode ser ela mesma, ninguém, ou quem já era (`keepOwnerId`).
+ * Devolve os vínculos corrigidos ou a mensagem de erro.
+ */
+async function restrictedRefs(
+  scope: IdScope,
+  userId: number,
+  input: { projectId: number | null; ownerId: number | null },
+  keepOwnerId: number | null = null,
+): Promise<{ ok: true; projectId: number; clientId: number | null; ownerId: number | null } | { ok: false; message: string }> {
+  if (!scopeAllows(scope, input.projectId) || input.projectId === null) return { ok: false, message: DENIED };
+  if (input.ownerId !== null && input.ownerId !== userId && input.ownerId !== keepOwnerId) {
+    return { ok: false, message: "Você só pode deixar a tarefa com você mesmo(a) ou sem responsável." };
+  }
+  const project = await getProjectInfo(input.projectId);
+  if (!project) return { ok: false, message: DENIED };
+  return { ok: true, projectId: input.projectId, clientId: project.clientId, ownerId: input.ownerId };
+}
 
 /** O que a pessoa digitou, para repopular o formulário quando o erro não vem da validação do zod. */
 function typedValues(formData: FormData): Record<string, string> {
@@ -38,7 +73,7 @@ export async function createTaskAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requirePermission("tarefas", "editar");
+  const { user, scope } = await requireScopedPermission("tarefas", "editar");
   const parsed = parseForm(quickSchema, formData);
   if (!parsed.ok) return parsed.state;
   const input = {
@@ -46,6 +81,11 @@ export async function createTaskAction(
     description: "",
     priority: "normal" as const,
   };
+  if (scope !== "todos") {
+    const refs = await restrictedRefs(scope, user.id, input);
+    if (!refs.ok) return actionError(refs.message, { values: typedValues(formData) });
+    Object.assign(input, { projectId: refs.projectId, clientId: refs.clientId, ownerId: refs.ownerId });
+  }
   const refsError = await checkTaskRefs(input);
   if (refsError)
     return actionError(refsError, { values: typedValues(formData) });
@@ -78,10 +118,18 @@ export async function updateTaskAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requirePermission("tarefas", "editar");
+  const { user, scope } = await requireScopedPermission("tarefas", "editar");
   const parsed = parseForm(editSchema, formData);
   if (!parsed.ok) return parsed.state;
   const { id, ...input } = parsed.data;
+  if (scope !== "todos") {
+    // a tarefa como está no banco precisa ser de um projeto da pessoa — e o projeto de destino também
+    const current = await getTaskRefs(id);
+    if (!current || !scopeAllows(scope, current.projectId)) return actionError(DENIED);
+    const refs = await restrictedRefs(scope, user.id, input, current.ownerId);
+    if (!refs.ok) return actionError(refs.message, { values: typedValues(formData) });
+    Object.assign(input, { projectId: refs.projectId, clientId: refs.clientId, ownerId: refs.ownerId });
+  }
   const refsError = await checkTaskRefs(input);
   if (refsError)
     return actionError(refsError, { values: typedValues(formData) });
@@ -105,12 +153,16 @@ export async function setTaskDoneAction(
   taskId: number,
   done: boolean,
 ): Promise<ActionState> {
-  const user = await requirePermission("tarefas", "editar");
+  const { user, scope } = await requireScopedPermission("tarefas", "editar");
   const parsed = parseInput(
     z.object({ id: f.id("Tarefa inválida."), done: z.boolean() }),
     { id: taskId, done },
   );
   if (!parsed.ok) return parsed.state;
+  if (scope !== "todos") {
+    const current = await getTaskRefs(parsed.data.id);
+    if (!current || !scopeAllows(scope, current.projectId)) return actionError(DENIED);
+  }
   const task = await setTaskDone(parsed.data.id, parsed.data.done);
   if (!task) return actionError("Esta tarefa não existe mais.");
   await logAudit({

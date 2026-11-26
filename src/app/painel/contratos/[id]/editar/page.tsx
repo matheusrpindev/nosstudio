@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getContract } from "@/server/contracts/admin";
 import { getMediaValue } from "@/server/media";
 import { getClientOptions, getProjectOptions, getProposalOptions } from "@/server/options";
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Editar contrato" };
 export const instant = false;
 
 export default async function EditContractPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("contratos", "editar");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const contract = await getContract(id);

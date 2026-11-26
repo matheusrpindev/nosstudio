@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramOneOf, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { BRAND_ASSET_CATEGORIES } from "@/lib/domain";
 import { createBrandAssetAction } from "../actions";
 import { AssetForm } from "../asset-form";
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Novo item da marca" };
 export const instant = false;
 
 export default async function NewBrandAssetPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("marca", "editar");
   const category = paramOneOf(BRAND_ASSET_CATEGORIES, (await searchParams).categoria);
   return (
     <div className="max-w-2xl">

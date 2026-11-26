@@ -65,7 +65,7 @@ async function byRole(run: () => Promise<{ id: number } | null>): Promise<Record
 }
 
 describe("guardas do painel, por perfil", () => {
-  it("requireUser (todas as páginas e ações atuais): só quem tem acesso integral — freelancer e cliente BARRADOS", async () => {
+  it("requireUser (demonstração do kit e base do requireAdmin): só quem tem acesso integral — freelancer e cliente BARRADOS", async () => {
     expect(await byRole(() => requireUser())).toEqual({
       admin: "ok",
       socio: "ok",
@@ -77,7 +77,7 @@ describe("guardas do painel, por perfil", () => {
     });
   });
 
-  it("getCurrentUser (rotas e telas atuais): os mesmos; para os demais é como não estar logado", async () => {
+  it("getCurrentUser (rotas de leitura): os mesmos; para os demais é como não estar logado", async () => {
     expect(await byRole(() => getCurrentUser())).toEqual({
       admin: "ok",
       socio: "ok",
@@ -120,7 +120,7 @@ describe("guardas dos outros ambientes", () => {
       admin: PANEL,
       socio: PANEL,
       tecnico: PANEL,
-      gestor: NO_ACCESS, // o painel restrito ainda não abriu: não há para onde mandá-lo
+      gestor: PANEL, // é do painel (restrito): volta para ele
       cliente: NO_ACCESS,
     });
   });
@@ -131,8 +131,8 @@ describe("guardas dos outros ambientes", () => {
       admin: PANEL,
       socio: PANEL,
       tecnico: PANEL,
-      gestor: NO_ACCESS,
-      funcionario: NO_ACCESS,
+      gestor: PANEL,
+      funcionario: PANEL, // enquanto a Área da Equipe não abre, o ambiente dele é o painel restrito
       freelancer: NO_ACCESS,
     });
   });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getTemplate } from "@/server/contracts/admin";
 import { updateTemplateAction } from "../../actions";
 import { LEGAL_REVIEW_NOTICE } from "../../ui";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Editar modelo de contrato" };
 export const instant = false;
 
 export default async function EditTemplatePage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("contratos", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const template = await getTemplate(id);

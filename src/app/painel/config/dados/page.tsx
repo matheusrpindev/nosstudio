@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader, CardSection } from "@/components/ui/card";
 import { DataList, type DataListColumn } from "@/components/ui/data-list";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatNumber } from "@/lib/format";
 import { countRecords } from "@/server/config/data";
 import { TABLE_LABELS } from "./labels";
@@ -27,7 +27,7 @@ const columns: DataListColumn<Row>[] = [
 ];
 
 export default async function DataPage() {
-  await requireAdmin();
+  await requirePermission("dados", "baixar");
   const counts = await countRecords();
   const total = counts.reduce((sum, row) => sum + row.total, 0);
 

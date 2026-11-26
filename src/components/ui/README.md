@@ -61,12 +61,12 @@ Impressão (contratos): os tokens escuros valem só em `@media screen`; no papel
 | Peça | Arquivo de exemplo | O que faz |
 | --- | --- | --- |
 | Consultas e mutações | `src/server/leads/admin.ts` | Só fala com o banco. Recebe dados já validados, devolve linhas tipadas. `import "server-only"`. |
-| Server Actions | `src/app/painel/leads/actions.ts` | `requireUser()` → `parseForm(schema, formData)` → mutação → `logAudit()` → `refresh()`+`actionOk()` **ou** `flashToast()`+`redirect()`. |
+| Server Actions | `src/app/painel/leads/actions.ts` | `requirePermission("leads", "editar")` → `parseForm(schema, formData)` → mutação → `logAudit()` → `refresh()`+`actionOk()` **ou** `flashToast()`+`redirect()`. |
 | Lista | `src/app/painel/leads/page.tsx` | `PageHeader` + `FilterBar` + `DataList` + `Pagination`; filtros lidos de `searchParams`. |
 | Formulário de criação | `src/app/painel/leads/novo/page.tsx` | `ActionForm` + `Field` + controles; a página inteira é Server Component. |
 | Detalhe | `src/app/painel/leads/[id]/page.tsx` | `PageHeader` com ações, `Card` + `DescriptionList`, `ConfirmDialog`, `notFound()`. |
 | Tons de status | `src/app/painel/leads/ui.ts` | Mapa `status → tom` do módulo (os rótulos vêm de `src/lib/domain.ts`). |
-| Menu | `src/app/painel/nav.ts` | Fonte única da navegação. Contadores: `NavBadgeKey` + cálculo em `_shell/shell.tsx`. |
+| Menu | `src/app/painel/nav.ts` | Fonte única da navegação. Cada item leva `module`: só aparece para quem pode ver o módulo. Contadores: `NavBadgeKey` + cálculo em `_shell/shell.tsx`. |
 
 ### Página (Server Component)
 
@@ -75,7 +75,7 @@ export const metadata: Metadata = { title: "Leads" };   // vira "Leads · Painel
 export const instant = false;                            // OBRIGATÓRIO em toda página do painel (ver abaixo)
 
 export default async function LeadsPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();                                   // sempre a primeira linha
+  await requirePermission("leads", "ver");               // o guarda do módulo: sempre a primeira linha (docs/permissoes.md)
   const sp = await searchParams;
   const { rows, total, page, pageSize } = await listLeads({
     status: paramOneOf(LEAD_STATUSES, sp.status),        // a URL é entrada do usuário: valide
@@ -104,7 +104,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: PageSe
 const schema = z.object({ id: f.id(), status: z.enum(LEAD_STATUSES, { error: "Selecione um status." }) });
 
 export async function updateLeadStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();                      // 1. autorização
+  const user = await requirePermission("leads", "editar"); // 1. autorização (módulo + ação)
   const parsed = parseForm(schema, formData);            // 2. validação (devolve fieldErrors + values prontos)
   if (!parsed.ok) return parsed.state;
   const lead = await setLeadStatus(parsed.data.id, parsed.data.status);   // 3. mutação (src/server/…)

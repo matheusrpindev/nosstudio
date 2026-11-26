@@ -25,6 +25,13 @@ export type TaskOptions = {
   clients: Option[];
   projects: Option[];
   users: Option[];
+  /** Quem só vê os projetos em que está (funcionário): sem campo de cliente, projeto obrigatório. */
+  restricted: boolean;
+  /** Projetos em que a pessoa pode editar tarefas (`"todos"` = qualquer tarefa). O servidor confere de novo. */
+  editableProjects: "todos" | number[];
+  canDelete: boolean;
+  /** Pode abrir a ficha do cliente (senão o nome aparece sem link). */
+  linkClients: boolean;
 };
 
 type Props = {
@@ -48,6 +55,12 @@ export function TaskRow({
   completedList,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  const editable = options.editableProjects === "todos" || (task.projectId !== null && options.editableProjects.includes(task.projectId));
+  // o responsável atual continua na lista mesmo quando a pessoa só pode escolher a si mesma
+  const ownerOptions =
+    task.ownerId && task.ownerName && !options.users.some((option) => option.value === task.ownerId)
+      ? [...options.users, { value: task.ownerId, label: task.ownerName }]
+      : options.users;
   const late = overdueDays({ dueDate: task.dueDate, done }, today);
   const high = task.priority === "alta" && !done;
 
@@ -63,6 +76,7 @@ export function TaskRow({
         <input
           type="checkbox"
           checked={done}
+          disabled={!editable}
           onChange={(event) => onToggle(task, event.currentTarget.checked)}
           aria-label={
             done
@@ -108,12 +122,16 @@ export function TaskRow({
           ) : null}
           {task.ownerName ? <span>{task.ownerName}</span> : null}
           {task.clientId && task.clientName ? (
-            <Link
-              href={`/painel/clientes/${task.clientId}`}
-              className="link text-[0.8125rem]"
-            >
-              {task.clientName}
-            </Link>
+            options.linkClients ? (
+              <Link
+                href={`/painel/clientes/${task.clientId}`}
+                className="link text-[0.8125rem]"
+              >
+                {task.clientName}
+              </Link>
+            ) : (
+              <span>{task.clientName}</span>
+            )
           ) : null}
           {task.projectId && task.projectTitle ? (
             <Link
@@ -131,7 +149,7 @@ export function TaskRow({
         ) : null}
       </div>
       <div className="flex shrink-0 items-center">
-        {completedList ? (
+        {!editable ? null : completedList ? (
           <IconButton
             aria-label={`Desfazer: reabrir a tarefa ${task.title}`}
             onClick={() => onToggle(task, false)}
@@ -181,27 +199,36 @@ export function TaskRow({
               </FieldRow>
               <Field name="ownerId" label="Responsável" optional>
                 <Select
-                  options={options.users}
+                  options={ownerOptions}
                   placeholder="Ninguém"
                   defaultValue={task.ownerId ?? ""}
                 />
               </Field>
-              <FieldRow>
-                <Field name="clientId" label="Cliente" optional>
-                  <Select
-                    options={options.clients}
-                    placeholder="Nenhum"
-                    defaultValue={task.clientId ?? ""}
-                  />
-                </Field>
-                <Field name="projectId" label="Projeto" optional>
+              {options.restricted ? (
+                <Field name="projectId" label="Projeto" required>
                   <Select
                     options={options.projects}
-                    placeholder="Nenhum"
                     defaultValue={task.projectId ?? ""}
                   />
                 </Field>
-              </FieldRow>
+              ) : (
+                <FieldRow>
+                  <Field name="clientId" label="Cliente" optional>
+                    <Select
+                      options={options.clients}
+                      placeholder="Nenhum"
+                      defaultValue={task.clientId ?? ""}
+                    />
+                  </Field>
+                  <Field name="projectId" label="Projeto" optional>
+                    <Select
+                      options={options.projects}
+                      placeholder="Nenhum"
+                      defaultValue={task.projectId ?? ""}
+                    />
+                  </Field>
+                </FieldRow>
+              )}
               <FormActions>
                 <SubmitButton pendingLabel="Salvando…">
                   Salvar tarefa
@@ -210,26 +237,28 @@ export function TaskRow({
             </ActionForm>
           </Dialog>
         )}
-        <ConfirmDialog
-          trigger={
-            <IconButton
-              aria-label={`Excluir a tarefa: ${task.title}`}
-              className="text-perigo hover:bg-perigo-claro"
-            >
-              <Trash2 />
-            </IconButton>
-          }
-          title="Excluir esta tarefa?"
-          description={
-            <>
-              <strong className="text-texto">{task.title}</strong> será
-              apagada e não dá para desfazer.
-            </>
-          }
-          confirmLabel="Excluir tarefa"
-          action={deleteTaskAction}
-          hidden={{ id: task.id }}
-        />
+        {options.canDelete ? (
+          <ConfirmDialog
+            trigger={
+              <IconButton
+                aria-label={`Excluir a tarefa: ${task.title}`}
+                className="text-perigo hover:bg-perigo-claro"
+              >
+                <Trash2 />
+              </IconButton>
+            }
+            title="Excluir esta tarefa?"
+            description={
+              <>
+                <strong className="text-texto">{task.title}</strong> será
+                apagada e não dá para desfazer.
+              </>
+            }
+            confirmLabel="Excluir tarefa"
+            action={deleteTaskAction}
+            hidden={{ id: task.id }}
+          />
+        ) : null}
       </div>
     </li>
   );

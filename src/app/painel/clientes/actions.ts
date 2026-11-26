@@ -14,11 +14,12 @@ import { users } from "@/db/schema";
 import { actionError, actionOk, type ActionState } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
 import { requirePermission } from "@/lib/auth";
+import { seesInternalNotes } from "@/lib/permissions";
 import { CLIENT_KINDS, CLIENT_STATUS_LABELS, CLIENT_STATUSES, CONTACT_SOURCES, INTERACTION_KINDS, SERVICE_INTERESTS } from "@/lib/domain";
 import { isISODate } from "@/lib/dates";
 import { isValidPhone, onlyDigits } from "@/lib/format";
 import { f, formToObject, jsonField, parseForm, parseInput } from "@/server/action";
-import { addInteraction, createClient, deleteClient, setClientStatus, updateClient, type ClientInput } from "@/server/clients/admin";
+import { addInteraction, createClient, deleteClient, getClient, setClientStatus, updateClient, type ClientInput } from "@/server/clients/admin";
 import { localDateTimeToDate } from "@/server/clients/local-time";
 
 const idSchema = z.object({ id: f.id("Cliente inválido.") });
@@ -93,7 +94,9 @@ export async function createClientAction(_prev: ActionState, formData: FormData)
   if (!parsed.ok) return parsed.state;
   if (!(await ownerExists(parsed.data.ownerId))) return actionError("Selecione um responsável válido.", { fieldErrors: { ownerId: "Responsável inválido." }, values: formToValues(formData) });
 
-  const client = await createClient(parsed.data satisfies ClientInput, user.id);
+  // "Observações internas" são de quem tem acesso integral: os demais perfis não gravam nesse campo
+  const input: ClientInput = seesInternalNotes(user) ? parsed.data : { ...parsed.data, notes: "" };
+  const client = await createClient(input, user.id);
   await logAudit({ user, action: "create", entity: "client", entityId: client.id, summary: "Cadastrou um cliente" });
   await flashToast("Cliente cadastrado.");
   redirect(`/painel/clientes/${client.id}`);
@@ -107,7 +110,15 @@ export async function updateClientAction(_prev: ActionState, formData: FormData)
   if (!parsed.ok) return parsed.state;
   if (!(await ownerExists(parsed.data.ownerId))) return actionError("Selecione um responsável válido.", { fieldErrors: { ownerId: "Responsável inválido." }, values: formToValues(formData) });
 
-  const result = await updateClient(id.data.id, parsed.data satisfies ClientInput, user.id);
+  // Quem não vê as "Observações internas" (gestor) não as altera: o que está no banco é mantido, venha o que
+  // vier no formulário.
+  let input: ClientInput = parsed.data;
+  if (!seesInternalNotes(user)) {
+    const current = await getClient(id.data.id);
+    if (!current) return actionError("Este cliente não existe mais.");
+    input = { ...parsed.data, notes: current.notes };
+  }
+  const result = await updateClient(id.data.id, input, user.id);
   if (!result) return actionError("Este cliente não existe mais.");
   await logAudit({ user, action: "update", entity: "client", entityId: id.data.id, summary: "Editou o cadastro do cliente" });
   if (result.statusChanged) {

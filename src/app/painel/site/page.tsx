@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader, StatCard } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getSiteOverview } from "./overview";
 
 export const metadata: Metadata = { title: "Editar site" };
@@ -14,7 +14,7 @@ export const instant = false;
 const plural = (value: number, one: string, many: string) => `${value} ${value === 1 ? one : many}`;
 
 export default async function SiteOverviewPage() {
-  await requireUser();
+  await requirePermission("site", "ver");
   const { counts, visibility, pending, sectionsEdited, sectionsTotal } = await getSiteOverview();
 
   const portfolioCaption = !visibility.portfolio

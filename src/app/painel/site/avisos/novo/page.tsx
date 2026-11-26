@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { saveAnnouncementAction } from "../actions";
 import { AnnouncementForm } from "../form";
 
@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Novo aviso" };
 export const instant = false;
 
 export default async function NewAnnouncementPage() {
-  await requireUser();
+  await requirePermission("site", "editar");
   return (
     <div className="max-w-3xl">
       <PageHeader title="Novo aviso" description="Ele nasce desligado: confira a prévia e ligue quando quiser que apareça no site." back={{ href: "/painel/site/avisos", label: "Avisos do site" }} />

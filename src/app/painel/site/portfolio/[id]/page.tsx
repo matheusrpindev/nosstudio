@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getMediaValue, getMediaValues } from "@/server/media";
 import { getPortfolioProject } from "@/server/site/admin/portfolio";
 import { getSiteContentForEdit } from "@/server/site/content";
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Editar projeto" };
 export const instant = false;
 
 export default async function EditPortfolioPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("site", "editar");
   const id = paramId((await params).id);
   const project = id ? await getPortfolioProject(id) : null;
   if (!project) notFound();

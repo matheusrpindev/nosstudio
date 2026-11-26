@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getBrandAsset } from "@/server/brand/admin";
 import { getMediaValue } from "@/server/media";
 import { updateBrandAssetAction } from "../actions";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Editar item da marca" };
 export const instant = false;
 
 export default async function EditBrandAssetPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("marca", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const asset = await getBrandAsset(id);

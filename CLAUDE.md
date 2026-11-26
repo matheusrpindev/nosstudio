@@ -21,7 +21,7 @@ react-markdown · sharp · nodemailer · @node-rs/argon2. Idioma da interface, d
 
 ```
 src/app/(site)/…            páginas públicas: /, /sobre, /servicos, /pacotes, /casamentos, /portfolio, /contato, /privacidade
-src/app/(auth)/…            /login, /recuperar-senha, /redefinir-senha
+src/app/(auth)/…            /login, /recuperar-senha, /redefinir-senha, /convite (aceite), /conta/senha (troca fora do painel)
 src/app/painel/…            painel (protegido). Um diretório por módulo.
 src/app/media/[...key]/     entrega de uploads
 src/components/brand/       <Logo /> e motivos da marca
@@ -30,7 +30,9 @@ src/components/site/        componentes do site público
 src/db/schema.ts            schema (fonte da verdade do banco)        src/db/index.ts   → `db`
 src/lib/domain.ts           enums + rótulos pt-BR (fonte única)       src/lib/format.ts, dates.ts → formatação
 src/lib/site/content.ts     modelo + padrões do conteúdo editável     src/lib/settings.ts → configs internas
-src/lib/auth/               sessão, senha, limitador de tentativas, actions de login
+src/lib/auth/               sessão, senha, limitador de tentativas, actions de login, GUARDAS (`require…`)
+src/lib/permissions/        perfis, ambientes e matriz módulo × ação (puro; serve no cliente e no servidor)
+src/server/access/          escopo por projeto/cliente, membros, convites (a parte de permissões com banco)
 src/server/…                código só-servidor: site/queries.ts (leitura pública com cache), action.ts (helpers de
                             Server Action), settings.ts, e um arquivo/pasta por módulo do painel
 scripts/                    migrate.ts, seed.ts, create-user.ts
@@ -49,10 +51,11 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
     (todas `"use cache"` + tag `site`). As páginas ficam estáticas e o painel as atualiza com `invalidateSite()`.
   - **Painel**: `src/app/painel/layout.tsx` já envolve tudo em `<Suspense>`. **Toda página do painel exporta
     `export const instant = false`** (o do layout não cobre segmentos filhos; sem isso o Next acusa "uncached data
-    outside of <Suspense>" nas navegações), é `async`, começa com `await requireUser()` e lê o banco direto
-    (sem cache). `requireUser()`
+    outside of <Suspense>" nas navegações), é `async`, começa pelo GUARDA dela (ver Segurança) e lê o banco direto
+    (sem cache). Todo guarda (`requirePermission`, `requirePanelUser`…)
     já chama `connection()` por dentro (a sessão depende do horário), então depois dele `todayISO()`/`new Date()`
     são seguros. Ler só `cookies()` NÃO basta: o Next pré-renderiza a "casca" por sessão e acusa `new Date()`.
+    Página pública que depende do horário (ex.: `/convite`, validade do convite) chama `await connection()`.
   - Não use `export const dynamic/revalidate/fetchCache` (não existem com Cache Components) nem `unstable_cache`.
 - Depois de uma mutação numa Server Action: `refresh()` (de `next/cache`) para atualizar a tela atual, ou
   `redirect()`. Se a mudança aparece no site público: `invalidateSite()` (de `@/server/site/cache`).
@@ -69,11 +72,37 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
 
 ## Segurança (inegociável)
 
-- **Toda** página, Server Action e Route Handler do painel começa com `await requireUser()` (ou `requireAdmin()`),
-  de `@/lib/auth`. O proxy não é barreira de segurança. Actions revalidam tudo que vem do cliente com zod.
-- Route Handlers do painel ficam em `src/app/painel/api/**` e começam com `authorize(request)` de
-  `src/app/painel/api/media/guard.ts` (sessão + mesma origem; responde 401/403 em JSON — `requireUser` redireciona
-  e não serve para APIs). Os de leitura (ex.: PDF) usam `getCurrentUser()` e respondem 401/404 sem sessão.
+- **Perfis e ambientes** (fonte: `src/lib/permissions`, documentação e tabelas em `docs/permissoes.md`): sete
+  perfis (admin, sócio, gestor, funcionário, freelancer, cliente, técnico) e três ambientes privados — Painel
+  (`/painel`), Área da Equipe (`/equipe`) e Área do Cliente (`/cliente`; as duas últimas ainda sem telas). Cada
+  perfil só entra no(s) seu(s) ambiente(s); freelancer e cliente NUNCA entram no painel. Sem cadastro público:
+  conta nova nasce por convite (`/convite`) ou em Configurações › Usuários.
+- **Toda** página, Server Action e Route Handler do painel começa (primeiro `await`) por um guarda de
+  `@/lib/auth` ou `@/server/access`. O proxy não é barreira de segurança; esconder botão/menu é só cortesia.
+  Actions revalidam tudo que vem do cliente com zod. Qual guarda usar:
+  - `requirePermission("módulo", "ação")` — o padrão: página ou action de UM módulo, para quem tem a permissão no
+    módulo inteiro. Ações: `ver`, `editar`, `excluir`, `baixar`, `compartilhar` (páginas de lista/detalhe = `ver`;
+    formulários de criar/editar e actions = `editar`; `delete…` = `excluir`).
+  - `requireScopedPermission(mod, ação)` (`@/server/access`) — só nos módulos que filtram por projeto
+    (`PROJECT_SCOPED_PANEL_MODULES`: projetos, tarefas). Passa também quem tem a permissão "nos projetos em que
+    está" (funcionário) e devolve o ESCOPO, que é obrigatório usar: listas com `inScope(coluna, scope)`, registros
+    com `scopeAllows(scope, projectId LIDO DO BANCO)`.
+  - `requireProjectPermission(mod, ação, projectId)` — página de detalhe de um registro de projeto.
+  - `requirePanelUser()` — páginas comuns a qualquer conta do painel (visão geral, Minha conta, Ajuda, casca); o
+    que elas mostram de cada módulo é condicionado a `canEverywhere`/`canUsePanelModule` e NEM É CONSULTADO para
+    quem não pode ver.
+  - `requireAdmin()` — só admin e sócio (notificações). `requireUser()` (acesso integral) ficou só para o kit.
+  - `requireSessionUser()` — só o que é da PRÓPRIA conta (trocar senha, sessões), de qualquer ambiente.
+  - Futuras `/equipe/**` e `/cliente/**`: `requireTeamUser()` / `requireClientUser()` +
+    `requireProjectAccess(ambiente, id)`, lendo dados só pelas visões de `src/server/access/projects.ts`.
+- Nunca compare `user.role === "admin"`: use `isAdminRole(role)` ou `can…(user, módulo, ação)` (a conta `socio`
+  vê o mesmo que `admin`). Uma página que junta módulos (ficha do cliente, projeto, proposta, visão geral) mostra
+  cada bloco só a quem vê o módulo dele — inclusive nas props passadas a Client Components (vão para o navegador).
+- Página nova do painel: declare o guarda na tabela de `src/app/painel/pages-access.db.test.ts` e em
+  `docs/permissoes.md` (o teste falha sem isso); item de menu novo leva `module` em `painel/nav.ts`.
+- Route Handlers do painel ficam em `src/app/painel/api/**` e começam com `authorize(request, ação)` de
+  `src/app/painel/api/media/guard.ts` (sessão + permissão + mesma origem; responde 401/403 em JSON — os `require…`
+  redirecionam e não servem para APIs). Os demais usam `authorizePermission(módulo, ação)`.
 - **Custos internos, margens, notas internas e descontos não aprovados de propostas nunca saem do painel** — o PDF
   e qualquer página pública recebem apenas um objeto "público" montado por uma função única e testada.
 - Nada de `dangerouslySetInnerHTML` com conteúdo vindo do banco. Texto rico = markdown via `<Markdown>`.

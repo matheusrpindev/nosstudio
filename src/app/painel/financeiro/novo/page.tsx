@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId, paramOneOf, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { FINANCE_TYPES } from "@/lib/domain";
 import { getProposalInstallments } from "@/server/finance/admin";
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Novo lançamento" };
 export const instant = false;
 
 export default async function NewEntryPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("financeiro", "editar");
   const sp = await searchParams;
   const type = paramOneOf(FINANCE_TYPES, sp.tipo) ?? "receita";
   const proposalId = paramId(sp.proposta);

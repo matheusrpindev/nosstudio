@@ -62,9 +62,22 @@ function setupItems(gaps: SetupGaps): Gap[] {
   return items;
 }
 
-export function Notices({ issues, gaps, today }: { issues: DashboardIssues; gaps: SetupGaps; today: ISODate }) {
+/** O que esta pessoa acompanha (para o "Tudo em ordem" só citar o que ela de fato vê). */
+export type NoticeScope = { deliveries: boolean; proposals: boolean; finance: boolean; setup: boolean };
+
+function allClearText(scope: NoticeScope): string {
+  const watched = [scope.deliveries ? "entrega atrasada" : null, scope.proposals ? "orçamento vencido" : null, scope.finance ? "conta vencida" : null].filter((item) => item !== null);
+  const list = watched.length > 1 ? `${watched.slice(0, -1).join(", ")} ou ${watched.at(-1)}` : watched[0];
+  // "Nenhuma entrega…" / "Nenhum orçamento…": concorda com o primeiro item da lista
+  const none = watched[0]?.startsWith("orçamento") ? "Nenhum" : "Nenhuma";
+  return `${none} ${list}.${scope.setup ? " O site está com o essencial configurado." : ""}`;
+}
+
+export function Notices({ issues, gaps, today, scope }: { issues: DashboardIssues; gaps: SetupGaps; today: ISODate; scope: NoticeScope }) {
   const notices = buildNotices(issues, gaps, today);
   const setup = setupItems(gaps);
+  // quem não acompanha nenhum destes módulos não precisa de um "tudo em ordem" vazio
+  if (!scope.deliveries && !scope.proposals && !scope.finance && !scope.setup) return null;
 
   if (notices.length === 0 && setup.length === 0) {
     return (
@@ -73,7 +86,7 @@ export function Notices({ issues, gaps, today }: { issues: DashboardIssues; gaps
           Avisos
         </h2>
         <Alert tone="sucesso" title="Tudo em ordem">
-          Nenhuma entrega atrasada, orçamento vencido ou conta vencida. O site está com o essencial configurado.
+          {scope.deliveries || scope.proposals || scope.finance ? allClearText(scope) : "O site está com o essencial configurado."}
         </Alert>
       </section>
     );

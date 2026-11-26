@@ -10,7 +10,7 @@ import { ActionForm, FormActions, SubmitButton } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatDate, todayISO } from "@/lib/dates";
 import { formatBRL } from "@/lib/format";
 import { getProposalInstallments } from "@/server/finance/admin";
@@ -21,7 +21,7 @@ export const instant = false;
 
 /** Tela de conferência: mostra o que será criado a partir das parcelas da proposta, e só cria depois de confirmar. */
 export default async function InstallmentsPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("financeiro", "editar");
   const proposalId = paramId((await searchParams).proposta);
   if (!proposalId) notFound();
   const data = await getProposalInstallments(proposalId);

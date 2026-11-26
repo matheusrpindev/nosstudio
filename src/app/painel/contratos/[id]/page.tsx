@@ -13,7 +13,7 @@ import { Select } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText } from "@/components/ui/text";
 import { Markdown } from "@/components/markdown";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CONTRACT_KIND_LABELS, CONTRACT_STATUS_LABELS } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
 import { getContract } from "@/server/contracts/admin";
@@ -39,7 +39,7 @@ const PRINT_CSS = `
 `;
 
 export default async function ContractPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("contratos", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const contract = await getContract(id);

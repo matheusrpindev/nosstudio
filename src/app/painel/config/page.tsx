@@ -2,7 +2,7 @@ import { Bell, Database, FileText, History, Users, type LucideIcon } from "lucid
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere, isAdminRole, requirePermission, type CurrentUser } from "@/lib/auth";
 import { smtpConfigured } from "@/lib/env";
 import { formatPercent } from "@/lib/format";
 import { getAuditSummary } from "@/server/config/overview";
@@ -11,11 +11,11 @@ import { getSetting } from "@/server/settings";
 export const metadata: Metadata = { title: "Configurações" };
 export const instant = false;
 
-type Area = { href: string; title: string; icon: LucideIcon; description: string; status: string; adminOnly?: boolean };
+/** `allowed` = quem enxerga o cartão (a mesma regra do guarda da página de destino). */
+type Area = { href: string; title: string; icon: LucideIcon; description: string; status: string; allowed: (user: CurrentUser) => boolean };
 
 export default async function ConfigPage() {
-  const user = await requireUser();
-  const isAdmin = user.role === "admin";
+  const user = await requirePermission("config", "ver");
   const [notifications, proposal, summary] = await Promise.all([getSetting("notifications"), getSetting("proposal"), getAuditSummary()]);
 
   const areas: Area[] = [
@@ -23,9 +23,9 @@ export default async function ConfigPage() {
       href: "/painel/config/usuarios",
       title: "Usuários",
       icon: Users,
-      description: "Quem entra no painel: criar contas, redefinir senhas e revogar acessos.",
+      description: "Quem entra no sistema: convites, perfis, permissões, senhas e revogação de acessos.",
       status: `${summary.activeUsers} ${summary.activeUsers === 1 ? "conta ativa" : "contas ativas"}`,
-      adminOnly: true,
+      allowed: (who) => canEverywhere(who, "usuarios", "ver"),
     },
     {
       href: "/painel/config/notificacoes",
@@ -33,7 +33,7 @@ export default async function ConfigPage() {
       icon: Bell,
       description: "Avisos por e-mail quando chega um lead novo pelo site.",
       status: notifications.notifyOnLead ? (smtpConfigured() ? "Aviso ligado" : "Aviso ligado, mas o e-mail não está configurado") : "Aviso desligado",
-      adminOnly: true,
+      allowed: (who) => isAdminRole(who.role),
     },
     {
       href: "/painel/config/propostas",
@@ -41,6 +41,7 @@ export default async function ConfigPage() {
       icon: FileText,
       description: "Validade, entrada, textos e premissas que já vêm preenchidos em cada orçamento novo.",
       status: `Validade de ${proposal.validityDays} dias · entrada de ${formatPercent(proposal.entryPercent, 0)}`,
+      allowed: (who) => canEverywhere(who, "config", "ver"),
     },
     {
       href: "/painel/config/dados",
@@ -48,7 +49,7 @@ export default async function ConfigPage() {
       icon: Database,
       description: "Exporte tudo em JSON e CSV e saiba como fazer e restaurar backups.",
       status: `${summary.totalRecords.toLocaleString("pt-BR")} registros guardados`,
-      adminOnly: true,
+      allowed: (who) => canEverywhere(who, "dados", "baixar"),
     },
     {
       href: "/painel/config/auditoria",
@@ -56,16 +57,17 @@ export default async function ConfigPage() {
       icon: History,
       description: "O histórico de quem fez o quê no painel, com filtros por pessoa, ação e período.",
       status: `${summary.auditEntries.toLocaleString("pt-BR")} eventos registrados`,
-      adminOnly: true,
+      allowed: (who) => canEverywhere(who, "auditoria", "ver"),
     },
   ];
+
+  const visible = areas.filter((area) => area.allowed(user));
 
   return (
     <>
       <PageHeader title="Configurações" description="Contas, avisos, padrões dos orçamentos e a guarda dos dados da NÓS." />
       <ul className="grid gap-4 md:grid-cols-2">
-        {areas
-          .filter((area) => isAdmin || !area.adminOnly)
+        {visible
           .map((area) => (
             <li key={area.href}>
               <Link href={area.href} className="card card-pad hover:border-detalhe/40 focus-visible:outline-foco flex h-full min-h-11 items-start gap-4 transition-colors">
@@ -81,7 +83,7 @@ export default async function ConfigPage() {
             </li>
           ))}
       </ul>
-      {isAdmin ? null : <p className="hint mt-4">Contas, notificações, exportação de dados e auditoria são áreas só de administradores.</p>}
+      {visible.length === areas.length ? null : <p className="hint mt-4">Contas, notificações, exportação de dados e auditoria são áreas só de administradores e sócios.</p>}
     </>
   );
 }

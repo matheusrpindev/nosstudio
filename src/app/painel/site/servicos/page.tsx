@@ -5,7 +5,7 @@ import { DataList, type DataListColumn } from "@/components/ui/data-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { SERVICE_INTEREST_LABELS } from "@/lib/domain";
 import type { Service } from "@/db/schema";
 import { listServices } from "@/server/site/admin/services";
@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Serviços do site" };
 export const instant = false;
 
 export default async function ServicesPage() {
-  await requireUser();
+  await requirePermission("site", "ver");
   const rows = await listServices();
 
   const columns: DataListColumn<Service>[] = [

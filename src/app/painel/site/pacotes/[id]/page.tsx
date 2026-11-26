@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getPackage } from "@/server/site/admin/packages";
 import { deletePackageAction, savePackageAction } from "../actions";
 import { PackageForm } from "../form";
@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Editar pacote" };
 export const instant = false;
 
 export default async function EditPackagePage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("site", "editar");
   const id = paramId((await params).id);
   const pkg = id ? await getPackage(id) : null;
   if (!pkg) notFound();

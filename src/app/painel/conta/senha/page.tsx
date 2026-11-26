@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePanelUser } from "@/lib/auth";
 import { PASSWORD_MIN_LENGTH } from "@/lib/auth/password";
 import { ChangePasswordForm } from "./change-password-form";
 
@@ -14,7 +14,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 
 export default async function ChangePasswordPage({ searchParams }: Props) {
   // única página que aceita contas marcadas com "trocar a senha" (as outras redirecionam para cá)
-  const user = await requireUser({ allowPasswordChange: true });
+  const user = await requirePanelUser({ allowPasswordChange: true });
   const forced = user.mustChangePassword || (await searchParams).obrigatoria === "1";
 
   return (

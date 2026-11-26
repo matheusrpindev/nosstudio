@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { DataList, type DataListColumn } from "@/components/ui/data-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PRICE_MODE_LABELS, type PackageKind } from "@/lib/domain";
 import { formatBRL } from "@/lib/format";
 import type { Package } from "@/db/schema";
@@ -23,7 +23,7 @@ function priceText(pkg: Package): string {
 }
 
 export default async function PackagesPage() {
-  await requireUser();
+  await requirePermission("site", "ver");
   const all = await listPackages();
 
   function columnsFor(group: Package[]): DataListColumn<Package>[] {

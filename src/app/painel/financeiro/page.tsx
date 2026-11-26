@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import type { PageSearchParams } from "@/components/ui/search-params";
 import { DateText, Money } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere, requirePermission } from "@/lib/auth";
 import { addMonths, formatDate, formatMonth, formatRelativeDay, startOfMonth, todayISO } from "@/lib/dates";
 import { FINANCE_CATEGORIES_BY_TYPE, FINANCE_CATEGORY_LABELS, FINANCE_TYPE_LABELS, type FinanceCategory } from "@/lib/domain";
 import { formatBRL } from "@/lib/format";
@@ -33,7 +33,7 @@ export const instant = false;
 const navButton = `${buttonClasses({ variant: "secondary" })} !px-0 w-11`;
 
 export default async function FinancePage({ searchParams }: { searchParams: PageSearchParams }) {
-  const user = await requireUser();
+  const user = await requirePermission("financeiro", "ver");
   const today = todayISO();
   const filters = parseFinanceFilters(await searchParams, today);
   const month = filters.month;
@@ -164,8 +164,8 @@ export default async function FinancePage({ searchParams }: { searchParams: Page
         description="Receitas, despesas e a reserva de caixa: o que está previsto e o que já aconteceu."
         actions={
           <>
-            {/* exportação é só de administradores (a rota confere de novo) */}
-            {user.role === "admin" ? (
+            {/* exportação: só quem pode exportar dados (admin, sócio) — a rota confere de novo */}
+            {canEverywhere(user, "dados", "baixar") ? (
               <a href={exportHref} className={buttonClasses({ variant: "secondary" })}>
                 <span className="btn-icone" aria-hidden="true">
                   <Download />

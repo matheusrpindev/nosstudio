@@ -1,6 +1,13 @@
 "use server";
 
-/** Server Actions do módulo de Projetos (padrão do módulo de Leads: requirePermission → zod → mutação → logAudit → refresh/redirect). */
+/**
+ * Server Actions do módulo de Projetos (padrão do módulo de Leads: guarda → zod → mutação → logAudit → refresh/redirect).
+ *
+ * ACESSO: criar, editar o cadastro completo e excluir exigem o módulo inteiro (`requirePermission`). O que se faz
+ * NO ANDAMENTO de um projeto — etapa, checklist, tarefa rápida — também vale para quem só tem a permissão "nos
+ * projetos em que está" (funcionário): `requireScopedPermission` devolve o escopo e cada ação confere se o
+ * projeto está nele (`scopeAllows`) antes de gravar. Projeto alheio e inexistente respondem igual.
+ */
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -11,6 +18,8 @@ import { requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { BACKUP_STATUSES, CLIENT_STATUS_LABELS, PROJECT_STAGE_LABELS, PROJECT_STAGES, SERVICE_INTERESTS } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
+import { requireScopedPermission, scopeAllows } from "@/server/access";
+import { listProjectMemberCandidates, listProjectMembers, removeProjectMember, setProjectMember } from "@/server/access/members";
 import { f, formToObject, jsonField, parseForm, parseInput } from "@/server/action";
 import {
   addChecklistItem,
@@ -27,6 +36,7 @@ import {
 import { funnelAdvanceNotice } from "@/server/proposals/funnel-logic";
 
 const MAX_CHECKLIST_ITEMS = 100;
+const DENIED = "Você não tem permissão para alterar este projeto.";
 
 // ------------------------------------------------------------ cadastro/edição
 /** Link opcional: vazio vira ""; preenchido precisa ser http(s) (sem protocolo, assume https) e é gravado normalizado. */
@@ -145,9 +155,10 @@ const stageSchema = z.object({ id: f.id("Projeto inválido."), stage: z.enum(PRO
 
 /** Mudança de etapa pelo formulário do detalhe. */
 export async function updateProjectStageAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requirePermission("projetos", "editar");
+  const { user, scope } = await requireScopedPermission("projetos", "editar");
   const parsed = parseForm(stageSchema, formData);
   if (!parsed.ok) return parsed.state;
+  if (!scopeAllows(scope, parsed.data.id)) return actionError(DENIED);
   const project = await setProjectStage(parsed.data.id, parsed.data.stage, todayISO());
   if (!project) return actionError("Este projeto não existe mais.");
   await logAudit({ user, action: "status", entity: "project", entityId: project.id, summary: `Etapa do projeto: ${PROJECT_STAGE_LABELS[project.stage]}` });
@@ -157,9 +168,10 @@ export async function updateProjectStageAction(_prev: ActionState, formData: For
 
 /** Mudança de etapa pelo quadro (arrastar / "Mover para…"). Recebe os valores direto, não um formulário. */
 export async function moveProjectAction(cardId: number, toColumnId: string): Promise<ActionState> {
-  const user = await requirePermission("projetos", "editar");
+  const { user, scope } = await requireScopedPermission("projetos", "editar");
   const parsed = parseInput(stageSchema, { id: cardId, stage: toColumnId });
   if (!parsed.ok) return parsed.state;
+  if (!scopeAllows(scope, parsed.data.id)) return actionError(DENIED);
   const project = await setProjectStage(parsed.data.id, parsed.data.stage, todayISO());
   if (!project) return actionError("Este projeto não existe mais.");
   await logAudit({ user, action: "status", entity: "project", entityId: project.id, summary: `Moveu o projeto para ${PROJECT_STAGE_LABELS[project.stage]}` });
@@ -171,9 +183,10 @@ export async function moveProjectAction(cardId: number, toColumnId: string): Pro
 const checklistAddSchema = z.object({ id: f.id("Projeto inválido."), text: f.text(200, "Escreva o item do checklist.") });
 
 export async function addChecklistItemAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requirePermission("projetos", "editar");
+  const { user, scope } = await requireScopedPermission("projetos", "editar");
   const parsed = parseForm(checklistAddSchema, formData);
   if (!parsed.ok) return parsed.state;
+  if (!scopeAllows(scope, parsed.data.id)) return actionError(DENIED);
   const project = await getProject(parsed.data.id);
   if (!project) return actionError("Este projeto não existe mais.");
   if (project.checklist.length >= MAX_CHECKLIST_ITEMS) return actionError(`O checklist chegou ao limite de ${MAX_CHECKLIST_ITEMS} itens.`);
@@ -187,18 +200,20 @@ const checklistItemSchema = z.object({ projectId: f.id("Projeto inválido."), it
 
 /** Marcar/desmarcar um item: grava na hora (chamada direta do cliente, com atualização otimista). */
 export async function toggleChecklistItemAction(projectId: number, itemId: string, done: boolean): Promise<ActionState> {
-  await requirePermission("projetos", "editar");
+  const { scope } = await requireScopedPermission("projetos", "editar");
   const parsed = parseInput(checklistItemSchema, { projectId, itemId, done });
   if (!parsed.ok) return actionError("Não foi possível atualizar o item.");
+  if (!scopeAllows(scope, parsed.data.projectId)) return actionError(DENIED);
   if (!(await toggleChecklistItem(parsed.data.projectId, parsed.data.itemId, parsed.data.done))) return actionError("Este projeto não existe mais.");
   refresh();
   return actionOk();
 }
 
 export async function removeChecklistItemAction(projectId: number, itemId: string): Promise<ActionState> {
-  const user = await requirePermission("projetos", "editar");
+  const { user, scope } = await requireScopedPermission("projetos", "editar");
   const parsed = parseInput(checklistItemSchema.omit({ done: true }), { projectId, itemId });
   if (!parsed.ok) return actionError("Não foi possível remover o item.");
+  if (!scopeAllows(scope, parsed.data.projectId)) return actionError(DENIED);
   if (!(await removeChecklistItem(parsed.data.projectId, parsed.data.itemId))) return actionError("Este projeto não existe mais.");
   await logAudit({ user, action: "update", entity: "project", entityId: parsed.data.projectId, summary: "Removeu item do checklist" });
   refresh();
@@ -209,16 +224,81 @@ export async function removeChecklistItemAction(projectId: number, itemId: strin
 const quickTaskSchema = z.object({ id: f.id("Projeto inválido."), title: f.text(160, "Escreva a tarefa."), dueDate: f.optionalDate() });
 
 export async function addProjectTaskAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requirePermission("projetos", "ver");
-  await requirePermission("tarefas", "editar");
+  const { user, scope: projectScope } = await requireScopedPermission("projetos", "ver");
+  const { scope: taskScope } = await requireScopedPermission("tarefas", "editar");
   const parsed = parseForm(quickTaskSchema, formData);
   if (!parsed.ok) return parsed.state;
+  if (!scopeAllows(projectScope, parsed.data.id) || !scopeAllows(taskScope, parsed.data.id)) return actionError(DENIED);
   const project = await getProject(parsed.data.id);
   if (!project) return actionError("Este projeto não existe mais.");
   const task = await addProjectTask(project, { title: parsed.data.title, dueDate: parsed.data.dueDate, priority: "normal" }, user.id);
   await logAudit({ user, action: "create", entity: "task", entityId: task.id, summary: "Criou uma tarefa a partir do projeto" });
   refresh();
   return actionOk("Tarefa adicionada.");
+}
+
+// ---------------------------------------------------------- equipe do projeto
+/*
+ * Quem está na equipe de um projeto e o que cada pessoa pode nele (`project_members`). É gestão de EQUIPE:
+ * exige "editar" em Equipe no módulo inteiro (sócios e gestor) — nunca vale por ser membro do projeto.
+ * Só entram contas ativas de funcionário, freelancer ou gestor (`listProjectMemberCandidates`).
+ */
+const memberSchema = z.object({
+  projectId: f.id("Projeto inválido."),
+  userId: f.id("Escolha a pessoa."),
+  role: f.optionalText(60),
+  canView: f.checkbox(),
+  canEdit: f.checkbox(),
+  canDownload: f.checkbox(),
+  canUpload: f.checkbox(),
+});
+
+const memberError = (error: "invalid" | "project_not_found" | "user_not_found" | "role_not_allowed") =>
+  error === "project_not_found"
+    ? "Este projeto não existe mais."
+    : error === "user_not_found"
+      ? "Esta conta não existe mais ou está desativada."
+      : error === "role_not_allowed"
+        ? "Só contas de funcionário, freelancer ou gestor entram na equipe de um projeto."
+        : "Confira os campos destacados.";
+
+/** Inclui alguém na equipe do projeto. */
+export async function addProjectMemberAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requirePermission("equipe", "editar");
+  const parsed = parseForm(memberSchema, formData);
+  if (!parsed.ok) return parsed.state;
+  const { projectId, userId, ...input } = parsed.data;
+  // só perfis que trabalham por projeto, e só quem ainda não está na equipe (mudar o que alguém pode é outra ação)
+  const candidates = await listProjectMemberCandidates(projectId);
+  if (!candidates.some((candidate) => candidate.id === userId)) return actionError(memberError("role_not_allowed"), { fieldErrors: { userId: "Escolha uma pessoa da lista." } });
+  const result = await setProjectMember(projectId, userId, input, user);
+  if (!result.ok) return actionError(memberError(result.error));
+  refresh();
+  return actionOk("Pessoa incluída na equipe do projeto.");
+}
+
+/** Muda o papel e o que a pessoa pode neste projeto. */
+export async function updateProjectMemberAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requirePermission("equipe", "editar");
+  const parsed = parseForm(memberSchema, formData);
+  if (!parsed.ok) return parsed.state;
+  const { projectId, userId, ...input } = parsed.data;
+  const members = await listProjectMembers(projectId);
+  if (!members.some((member) => member.userId === userId)) return actionError("Esta pessoa não está mais na equipe deste projeto.");
+  const result = await setProjectMember(projectId, userId, input, user);
+  if (!result.ok) return actionError(memberError(result.error));
+  refresh();
+  return actionOk("Permissões da pessoa neste projeto atualizadas.");
+}
+
+/** Tira a pessoa do projeto: o acesso dela a ele acaba na hora. */
+export async function removeProjectMemberAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requirePermission("equipe", "editar");
+  const parsed = parseForm(memberSchema.pick({ projectId: true, userId: true }), formData);
+  if (!parsed.ok) return parsed.state;
+  await removeProjectMember(parsed.data.projectId, parsed.data.userId, user);
+  refresh();
+  return actionOk("Pessoa retirada do projeto. O acesso dela a este projeto acabou.");
 }
 
 // --------------------------------------------------------------------- excluir

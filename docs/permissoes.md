@@ -2,8 +2,9 @@
 
 Fundação pedida pelo briefing v2 (seções 01, 12, 17–19, 27, 28 e 32): quatro ambientes sobre a mesma base,
 seis perfis (mais o acesso técnico), permissões por módulo e por projeto, tudo validado no servidor e com
-isolamento testado. Este documento descreve **o que já está valendo**, **o que ficou pronto para as telas** e
-**a tabela que falta aplicar nas páginas**.
+isolamento testado. Este documento descreve **o que está valendo**: a camada de dados e lógica (fundação) e a
+camada de telas do painel (aplicada — seção 7.2). Ficam para as próximas etapas a Área da Equipe e a Área do
+Cliente (seção 7.3) e as pendências da seção 10.
 
 ## 1. Onde fica cada coisa
 
@@ -11,14 +12,16 @@ isolamento testado. Este documento descreve **o que já está valendo**, **o que
 | --- | --- | --- |
 | Perfis e rótulos | `src/lib/domain.ts` | `USER_ROLES`, `USER_ROLE_LABELS`, `USER_ROLE_DESCRIPTIONS`, `TEAM_FUNCTIONS` |
 | Ambientes | `src/lib/permissions/environments.ts` | quem entra em qual ambiente, o que já tem telas (`ENVIRONMENT_READY`, `RESTRICTED_PANEL_READY`) |
+| Telas do painel | `src/lib/permissions/panel.ts` | `canUsePanelModule()` (menu, botões, guardas), módulos que filtram por projeto (`PROJECT_SCOPED_PANEL_MODULES`), `seesInternalNotes()` |
 | Matriz | `src/lib/permissions/matrix.ts` | módulos, ações, **a matriz por perfil**, ajustes individuais, `can()` |
 | Destino pós-login | `src/lib/permissions/landing.ts` | `landingFor()`, `panelAccess()` |
 | Validação dos ajustes | `src/lib/permissions/schema.ts` | zod estrito (separado para o zod não ir ao cliente) |
-| Guardas | `src/lib/auth/index.ts` | `requireUser`, `requireAdmin`, `requirePermission`, `requireEnvironment`, `authorizePermission`… |
-| Escopo por projeto/cliente | `src/server/access/scope.ts` | `projectScope`, `clientScope`, `canAccessProject`, `canInProject`, `inScope` |
+| Guardas | `src/lib/auth/index.ts`, `src/server/access/guards.ts` | `requirePermission`, `requirePanelUser`, `requireAdmin`, `requireUser`, `requireEnvironment`, `authorizePermission`; `requireScopedPermission`, `requireProjectPermission`, `requireProjectAccess` |
+| Escopo por projeto/cliente | `src/server/access/scope.ts` | `projectScope`, `clientScope`, `moduleScope`, `scopeAllows`, `canAccessProject`, `canInProject`, `inScope` |
 | O que o externo lê | `src/server/access/projects.ts` | visões por lista de campos permitidos (equipe e cliente) |
 | Vínculos | `src/server/access/members.ts` | membros de projeto, usuários vinculados a cliente |
-| Convites | `src/server/access/invites.ts`, `invite-actions.ts` | criar, revogar, aceitar |
+| Convites | `src/server/access/invites.ts`, `invite-actions.ts` | criar, convidar de novo, revogar, aceitar |
+| Telas | `painel/config/usuarios/**`, `(auth)/convite`, `(auth)/conta/senha`, `painel/projetos/_components/project-team*`, `painel/clientes/client-access*` | usuários, convites, permissões por conta, aceite, troca de senha fora do painel, equipe do projeto, acessos do cliente |
 | Arquivos privados | `src/server/access/media.ts` | quem abre cada arquivo de `/media` |
 
 `src/lib/permissions` é **puro** (sem banco, sem Next): serve para esconder botões no cliente e para barrar no
@@ -30,29 +33,31 @@ servidor. Quem manda é sempre o servidor.
 | --- | --- | --- |
 | `admin` Administrador(a) | Painel | acesso total |
 | `socio` Sócio(a) | Painel | acesso total, incluindo o societário |
-| `gestor` Gestor(a) de projetos | Painel (restrito) | operação, sem financeiro/configurações |
+| `gestor` Gestor(a) de projetos | Painel (restrito) | operação, sem financeiro/site/configurações |
 | `tecnico` Acesso técnico | Painel | suporte do desenvolvedor, como já era |
-| `funcionario` Funcionário(a) | Área da Equipe **e** Painel (restrito) | começa pela Área da Equipe |
+| `funcionario` Funcionário(a) | Área da Equipe **e** Painel (restrito) | hoje entra no painel e vê só os projetos em que é membro (e as tarefas deles); quando a Área da Equipe abrir, começa por ela |
 | `freelancer` Freelancer | Área da Equipe | só projetos em que foi escalado |
 | `cliente` Cliente | Área do Cliente | só projetos dos clientes vinculados |
 
 As duas contas atuais dos sócios são `admin` e nada muda para elas. `requireAdmin()` passou a aceitar `admin`
 e `socio`.
 
-### O que acontece hoje com quem não tem telas
+### Quem entra hoje
 
-`/equipe` e `/cliente` ainda não existem, e as páginas do painel ainda não checam permissão por módulo. Por
-isso, **hoje só entram admin, sócio e técnico**. Para os demais (gestor, funcionário, freelancer, cliente, e um
-técnico que tenha algum módulo negado):
-
-- o **login** confere a senha e responde, na própria tela de login, _"Sua conta (…) está ativa, mas o acesso a
-  (Área da Equipe / Área do Cliente / Painel Administrativo) ainda não foi liberado…"_ — **sem abrir sessão**
-  (auditoria: `login_sem_ambiente`). Com a senha errada a resposta é a genérica de sempre;
-- se, por qualquer caminho, existir uma sessão de um desses perfis, **todo guarda do painel a recusa** a cada
-  requisição (redireciona para `/login?aviso=sem-acesso`; rotas de API respondem 401/403/404). Nunca cai no
-  painel, nunca dá erro 500, nunca entra em laço de redirecionamento.
-
-Foi a forma mais simples que não exige tela nova: a resposta clara mora na tela de login que já existe.
+- **Admin, sócio e técnico**: painel inteiro (o técnico, sem usuários, auditoria, exportação e societário).
+- **Gestor e funcionário** (e um técnico com algum módulo negado): **painel restrito** — aberto nesta etapa
+  (`RESTRICTED_PANEL_READY = true`). O menu, a visão geral e cada página mostram só o que a matriz permite; uma
+  URL de módulo negado leva a `/login?aviso=sem-acesso`, que mostra "Sua conta não tem acesso a essa página" com o
+  botão de volta ao início do painel (a sessão continua).
+- **Freelancer e cliente**: `/equipe` e `/cliente` ainda não existem. O **login** confere a senha e responde, na
+  própria tela, _"Sua conta (…) está ativa, mas o acesso a (Área da Equipe / Área do Cliente) ainda não foi
+  liberado…"_ — **sem abrir sessão** (auditoria: `login_sem_ambiente`). Com a senha errada a resposta é a genérica
+  de sempre. Se, por qualquer caminho, existir uma sessão de um desses perfis, **todo guarda do painel a recusa**
+  a cada requisição (páginas e actions: `/login?aviso=sem-acesso`; rotas de API: 401/403/404).
+- **Única exceção de sessão sem ambiente**: conta de freelancer/cliente ainda com a **senha provisória**. O login
+  abre a sessão só para a troca na tela neutra `/conta/senha`; trocada a senha, a sessão é encerrada e a pessoa
+  volta ao login com o aviso `senha-criada`. Durante esse intervalo nenhum guarda de ambiente a deixa passar
+  (`login-landing.db.test.ts`).
 
 Chaves para abrir os ambientes (em `src/lib/permissions/environments.ts`):
 
@@ -60,31 +65,39 @@ Chaves para abrir os ambientes (em `src/lib/permissions/environments.ts`):
 | --- | --- | --- |
 | `ENVIRONMENT_READY.equipe` | `false` | `/equipe` existir (páginas com `requireTeamUser()` + escopo por projeto) |
 | `ENVIRONMENT_READY.cliente` | `false` | `/cliente` existir (páginas com `requireClientUser()` + escopo por cliente) |
-| `RESTRICTED_PANEL_READY` | `false` | a tabela da seção 7 estiver aplicada nas páginas do painel |
+| `RESTRICTED_PANEL_READY` | **`true`** | (aplicado) — voltar para `false` é o freio de emergência: fecha o LOGIN de gestor, funcionário e técnico com negações. Sessões já abertas continuam valendo até expirar ou a conta ser desativada |
 
 ## 3. Guardas — quem passa em cada um
 
 | Guarda | Passa | Uso |
 | --- | --- | --- |
-| `requireUser()` / `getCurrentUser()` | acesso **integral** ao painel: admin, sócio, técnico sem negações | páginas e rotas atuais, que não sabem a que módulo pertencem |
+| `requireUser()` / `getCurrentUser()` | acesso **integral** ao painel: admin, sócio, técnico sem negações | só a demonstração do kit (`/painel/kit`) e a base de `requireAdmin` |
 | `requireAdmin()` | admin, sócio | telas só de administrador |
 | `requirePermission(mod, ação)` | conta do painel com a permissão no **módulo inteiro** | toda página e Server Action de um módulo |
-| `requireProjectPermission(mod, ação, projectId)` (`@/server/access`) | idem, **ou** membro do projeto quando o alcance do perfil é "projetos" | registros ligados a um projeto (painel restrito do funcionário) |
+| `requireScopedPermission(mod, ação)` (`@/server/access`) | idem, **ou** quem tem a permissão "nos projetos em que está" — só nos módulos de `PROJECT_SCOPED_PANEL_MODULES`. Devolve `{ user, scope }` | listas e actions de projetos e tarefas: a lista usa `inScope(coluna, scope)`; a action confere `scopeAllows(scope, projectId do banco)` |
+| `requireProjectPermission(mod, ação, projectId)` (`@/server/access`) | idem, **ou** membro do projeto quando o alcance do perfil é "projetos" | página de detalhe de um registro de projeto (`/painel/projetos/[id]`) |
 | `requirePanelUser()` | qualquer perfil do painel | páginas comuns: Minha conta, Ajuda, casca do painel |
 | `requireTeamUser()` / `requireClientUser()` / `requireEnvironment(env)` | perfis daquele ambiente | áreas futuras |
 | `requireProjectAccess("equipe" \| "cliente", projectId, ação)` | membro do projeto / conta vinculada ao cliente do projeto; senão **404** | páginas de detalhe das áreas futuras |
-| `requireSessionUser()` | qualquer conta com sessão | só o que é da própria conta (trocar senha, encerrar sessões) |
+| `requireSessionUser()` | qualquer conta com sessão | só o que é da própria conta (trocar senha — inclusive `/conta/senha` —, encerrar sessões) |
 | `authorizePermission(mod, ação)` | como `requirePermission`, respondendo **JSON 401/403** | Route Handlers |
 | `authorize(request, ação)` (`painel/api/media/guard.ts`) | `arquivos:<ação>` + mesma origem | API de upload |
 
-Semântica: sem sessão → `/login`; troca de senha pendente → tela de troca; sem a permissão → início do painel
-(como `requireAdmin` sempre fez) ou, para quem não tem acesso integral, `/login?aviso=sem-acesso`; quem é de
-outro ambiente vai para o ambiente dele quando existir.
+Semântica: sem sessão → `/login`; troca de senha pendente → tela de troca (`/painel/conta/senha` para quem entra
+no painel; `/conta/senha` para os demais); sem a permissão → início do painel (como `requireAdmin` sempre fez)
+ou, para quem não tem acesso integral, `/login?aviso=sem-acesso` (a tela de login mostra o aviso e o botão de
+volta ao ambiente da pessoa); quem é de outro ambiente vai para o ambiente dele quando existir.
 
 Por que `requireUser()` é mais estreito do que "qualquer conta do painel": a visão geral soma o financeiro, a
-ficha do cliente mistura propostas, contratos e lançamentos, as listas não são filtradas por projeto. Deixar
-gestor ou funcionário passar por `requireUser()` mostraria o que a matriz diz que eles não veem. Página não
-migrada = fechada para perfis restritos (falha fechada).
+ficha do cliente mistura propostas, contratos e lançamentos. Uma página que usa `requireUser()` continua fechada
+para perfis restritos (falha fechada); as páginas dos módulos declaram módulo e ação.
+
+**Módulo inteiro × só os projetos da pessoa.** `canEverywhere()` = tem a permissão no módulo inteiro.
+`canUsePanelModule()` = consegue abrir as telas do módulo: módulo inteiro, **ou** "nos projetos em que está"
+quando o módulo já filtra por projeto. Hoje filtram por projeto **projetos** e **tarefas**
+(`PROJECT_SCOPED_PANEL_MODULES`). Para o funcionário, a matriz também prevê agenda, conteúdo, arquivos e marca
+"(P)", mas as telas desses módulos ainda exigem o módulo inteiro — ele fica **sem** elas (falha fechada; motivos
+na seção 10).
 
 ## 4. Matriz padrão por perfil
 
@@ -123,8 +136,10 @@ Notas:
 - **Gestor** não exclui o que tem histórico (clientes, contratos, projetos, fichas da equipe). Propostas sim:
   o servidor só deixa excluir rascunhos e modelos. `site` e `relatorios` ficaram de fora por não estarem na
   lista de operação do briefing — dá para conceder individualmente.
-- **Funcionário**: nunca o módulo inteiro. Não exclui, não compartilha com o cliente. `marca (P)` só passa a
-  ter efeito quando a identidade visual for ligada a cliente/projeto (seção 14 do briefing).
+- **Funcionário**: nunca o módulo inteiro. Não exclui, não compartilha com o cliente. **Nas telas de hoje o
+  "(P)" vale em Projetos e Tarefas**; agenda, conteúdo, arquivos e marca "(P)" ainda não abrem para ele (seção
+  10). `marca (P)` só passa a ter efeito quando a identidade visual for ligada a cliente/projeto (seção 14 do
+  briefing).
 - **Freelancer e cliente**: a matriz é do painel, e eles não entram nele. O que veem nas áreas deles vem do
   escopo (seção 6), não da matriz.
 
@@ -143,6 +158,9 @@ Coluna JSON `users.permissions`: `{ "grant": ["financeiro:ver"], "deny": ["leads
 - Vale na requisição seguinte: as permissões são lidas do banco junto com a sessão.
 - Gravar: `setUserPermissions()` em `src/server/config/users.ts` (zod estrito) e a action
   `setUserPermissionsAction`. Ler: `parseOverrides()` (tolerante: JSON estranho vira "sem ajustes").
+- Tela: **Configurações › Usuários › Permissões** (`/painel/config/usuarios/[id]`): grade módulo × ação com o
+  padrão do perfil, o resultado que vale (recalculado na hora com `permissionScope`, a mesma função do servidor) e,
+  em cada célula, "Padrão / Permitir / Negar"; "Voltar ao padrão do perfil" apaga os ajustes.
 
 Por que coluna JSON e não tabela: o conjunto é pequeno e limitado (no máximo 95 chaves), é lido e gravado
 sempre inteiro, e vem na mesma consulta da sessão — zero consultas a mais por requisição.
@@ -159,7 +177,13 @@ Tabela `user_invites`. Não existe cadastro público: **sem convite válido não
 Configurações › Usuários e da linha de comando).
 
 - Só quem tem `usuarios:editar` (admin, sócio) cria e revoga. Conferido na action e de novo na função.
-- O banco guarda só o **SHA-256 do token**; o token aparece uma vez, no link do e-mail. Validade: 7 dias.
+- O banco guarda só o **SHA-256 do token**; o token aparece uma vez: no link do e-mail **e na tela de quem
+  convidou** (retorno da action, com botão de copiar — sem SMTP é o único jeito de entregar o link). Validade:
+  7 dias.
+- **Convidar de novo** (`resendInviteAction` → `recreateInvite`): como o token antigo não existe mais, cria um
+  convite novo com os mesmos dados e revoga o anterior. Vale para pendente, expirado e revogado; aceito não.
+- **Nova conta** (senha temporária) ficou só para admin, sócio e técnico (`createUserAction` recusa os demais
+  perfis): gestor, funcionário, freelancer e cliente nascem por convite.
 - Convite de `cliente` exige a ficha do cliente; projeto só em convites de funcionário/freelancer.
 - Um convite pendente por e-mail (criar outro revoga o anterior). E-mail que já tem conta não é convidado.
 - Aceitar: nome + senha (mesma política de senha), **e-mail igual ao convidado**. Expirado, revogado, já
@@ -170,8 +194,9 @@ Configurações › Usuários e da linha de comando).
 - Auditoria: `convite_criado`, `convite_revogado`, `convite_aceito` (sem e-mail nem nome do convidado).
 - A exportação de dados não inclui `user_invites`.
 
-Falta: a tela de aceite (`/convite?token=…`, usando `getPendingInvite` + `acceptInviteAction`) e a lista de
-convites em Usuários (`listInvites`, `createInviteAction`, `revokeInviteAction`).
+Telas: **Configurações › Usuários** (aba Convites: pendentes, aceitos, expirados, revogados; "Convidar pessoa",
+"Convidar de novo", "Revogar"), a ficha do cliente (bloco "Acessos do cliente") e o aceite público
+`/convite?token=…` (`getPendingInvite` + `acceptInviteAction`; `X-Robots-Tag: noindex`, `referrer: no-referrer`).
 
 ## 6. Escopo por projeto e por cliente
 
@@ -187,6 +212,9 @@ Tabelas: `project_members` (projeto, usuário, papel em texto livre, `can_view` 
 - `canAccessProject(user, projectId, "ver" | "editar" | "baixar" | "enviar")`: vale nos três ambientes.
   Projeto alheio, inexistente e id inválido respondem igual (`false` → 404 nos guardas).
 - `canInProject(user, mod, ação, projectId)`: matriz + participação (painel).
+- `moduleScope(user, mod, ação)`: em quais projetos a pessoa pode aquela ação do módulo — `"todos"`, a lista dos
+  projetos em que é membro com a permissão correspondente (`can_view` + `can_edit`/`can_download`), ou `[]`.
+  `scopeAllows(scope, projectId)`: o registro está no escopo? (registro sem projeto só entra em `"todos"`).
 - `inScope(coluna, escopo)`: condição Drizzle para listas. Escopo vazio = nenhuma linha (nunca "todas").
 - O cliente só **vê**. Baixar depende da liberação explícita de arquivos (galerias), que ainda não existe.
 - Vínculo do perfil errado não vale: conta de cliente nunca é "membro"; só conta de cliente é vinculada a
@@ -195,8 +223,24 @@ Tabelas: `project_members` (projeto, usuário, papel em texto livre, `can_view` 
   `getClientProjectView`: listas de campos permitidos — sem notas internas, backup, links de trabalho,
   proposta de origem, financeiro, nem dados de outros membros ou de outros clientes.
 
-Regra para as telas novas: **toda lista passa por `inScope`, todo detalhe por `requireProjectAccess` /
+Regra para as telas: **toda lista passa por `inScope`, todo detalhe por `requireProjectAccess` /
 `requireProjectPermission` com o id lido do banco.** Conferir só o id da URL não basta.
+
+**Telas dos vínculos (painel):**
+
+- **Equipe do projeto** (`/painel/projetos/[id]`): quem vê é `equipe:ver`; quem inclui, ajusta e tira é
+  `equipe:editar` (admin, sócio, gestor, técnico) — `addProjectMemberAction`, `updateProjectMemberAction`,
+  `removeProjectMemberAction`. Só entram contas ativas de funcionário, freelancer ou gestor. O funcionário não vê
+  o bloco.
+- **Acessos do cliente** (`/painel/clientes/[id]`): `usuarios:ver` / `usuarios:editar` (admin, sócio) —
+  convidar (convite de perfil cliente já com a ficha), vincular conta existente, desvincular
+  (`linkClientUserAction`, `unlinkClientUserAction` em `config/usuarios/actions.ts`).
+
+**O que o funcionário vê no painel** (membro com "ver"): lista de projetos (quadro e lista; sem a visão "Arquivos
+e entregas"), o projeto (checklist, dados, prazos, nome do cliente sem link, tarefas; com "editar": etapa,
+checklist e tarefas; com "baixar": os links dos arquivos) e as tarefas dos projetos dele. Não vê observações do
+projeto, backup, proposta de origem, contratos, financeiro, agenda nem a equipe; não cria nem exclui projeto ou
+tarefa fora dos projetos em que pode editar; não escolhe cliente nem passa tarefa para outra pessoa.
 
 ## 7. Tabela rota → permissão
 
@@ -212,8 +256,8 @@ action exportada não começar por um guarda, ou usar `requireUser()` genérico.
 | `clientes/actions.ts` | `clientes` | — |
 | `orcamentos/actions.ts` | `propostas` | `convertToProjectAction` → + `projetos:editar`; `linkContractAction` → + `contratos:editar` |
 | `contratos/actions.ts` | `contratos` | — |
-| `projetos/actions.ts` | `projetos` | `addProjectTaskAction` → `projetos:ver` + `tarefas:editar`; itens de checklist → `projetos:editar` |
-| `tarefas/actions.ts` | `tarefas` | — |
+| `projetos/actions.ts` | `projetos` | etapa, quadro e checklist → `requireScopedPermission("projetos","editar")` + `scopeAllows`; `addProjectTaskAction` → idem com `projetos:ver` + `tarefas:editar`; criar, editar o cadastro e excluir → módulo inteiro; equipe do projeto → `equipe:editar` |
+| `tarefas/actions.ts` | `tarefas` | criar, editar, concluir → `requireScopedPermission("tarefas","editar")` + projeto da tarefa lido do banco; excluir → `tarefas:excluir` (módulo inteiro) |
 | `agenda/actions.ts` | `agenda` | — |
 | `conteudo/actions.ts` | `conteudo` | — |
 | `financeiro/actions.ts` | `financeiro` | — |
@@ -221,7 +265,7 @@ action exportada não começar por um guarda, ou usar `requireUser()` genérico.
 | `site/**/actions.ts` | `site` | — |
 | `config/propostas/actions.ts` | `config` | — |
 | `config/notificacoes/actions.ts` | — | `requireAdmin()` (admin, sócio) |
-| `config/usuarios/actions.ts` | `usuarios` | tudo `usuarios:editar` |
+| `config/usuarios/actions.ts` | `usuarios` | tudo `usuarios:editar` (inclui vincular/desvincular conta de cliente) |
 | `conta/actions.ts` | — | `requireSessionUser()` (própria conta) |
 | `kit/**/actions.ts` | — | `requireUser()` (demonstração do kit) |
 | `src/lib/auth/actions.ts` | — | troca de senha: `requireSessionUser({ allowPasswordChange })` |
@@ -239,44 +283,48 @@ action exportada não começar por um guarda, ou usar `requireUser()` genérico.
 | `GET /painel/clientes/exportar`, `GET /painel/clientes/[id]/dados` | `dados:baixar` + `clientes:ver` |
 | `GET /painel/financeiro/exportar` | `dados:baixar` + `financeiro:ver` |
 
-### 7.2 A aplicar nas páginas (arquivos `.tsx`, intocados nesta etapa)
+### 7.2 Páginas (aplicado)
 
-Trocar o `await requireUser()` do topo de cada página pelo guarda abaixo. Depois de **todas** trocadas,
-`RESTRICTED_PANEL_READY = true`.
+O `await` do topo de cada página é o guarda abaixo. A tabela é conferida por
+`src/app/painel/pages-access.db.test.ts`: cada página é chamada com a sessão de cada perfil e precisa responder
+como a tabela manda; página nova sem linha na tabela do teste faz o teste falhar.
 
 | Página | Guarda |
 | --- | --- |
-| `_shell/shell.tsx` (casca) | `requirePanelUser({ allowPasswordChange: true })`; menu filtrado por `can(user, módulo, "ver")` |
-| `/painel` (visão geral) | `requirePanelUser()`; cada bloco condicionado a `can(…, "ver")` do seu módulo (financeiro, leads, propostas, tarefas, agenda); consultas de `dashboard/queries.ts` precisam de escopo |
+| `_shell/shell.tsx` (casca) | `requirePanelUser({ allowPasswordChange: true })`; menu, atalhos do celular e contador de leads filtrados por `canUsePanelModule(user, módulo, "ver")` (`nav.ts`: cada item tem `module`) |
+| `/painel` (visão geral) | `requirePanelUser()`; cartões, avisos, atalhos e listas por módulo (`dashboardAccess`): o que a pessoa não vê **não é consultado**; projetos e tarefas filtrados pelo escopo |
 | `/painel/[...resto]`, `/painel/ajuda`, `/painel/conta` | `requirePanelUser()` |
 | `/painel/conta/senha` | `requirePanelUser({ allowPasswordChange: true })` |
 | `/painel/leads`, `/leads/[id]` · `/leads/novo` | `leads:ver` · `leads:editar` |
-| `/painel/clientes`, `/clientes/[id]` · `/clientes/novo`, `/[id]/editar` | `clientes:ver` · `clientes:editar` (na ficha, blocos de propostas/projetos/contratos/financeiro por `can`) |
-| `/painel/orcamentos`, `/[id]`, `/modelos` · `/novo` | `propostas:ver` · `propostas:editar` |
+| `/painel/clientes`, `/clientes/[id]` · `/clientes/novo`, `/[id]/editar` | `clientes:ver` · `clientes:editar` (na ficha, abas de propostas/projetos/contratos/financeiro/agenda/tarefas por `canEverywhere`; o que não pode ver não é consultado) |
+| `/painel/orcamentos`, `/[id]`, `/modelos` · `/novo` | `propostas:ver` · `propostas:editar` (em `/[id]`, os lançamentos do financeiro só vão ao navegador para quem tem `financeiro:ver`) |
 | `/painel/contratos`, `/[id]`, `/modelos`, `/modelos/[id]` · `/novo`, `/[id]/editar`, `/modelos/novo` | `contratos:ver` · `contratos:editar` |
-| `/painel/projetos` · `/projetos/[id]` · `/novo`, `/[id]/editar` | `projetos:ver` (lista com `inScope`) · `requireProjectPermission("projetos", "ver", id)` · `projetos:editar` |
-| `/painel/tarefas` | `tarefas:ver` (lista com `inScope` para o funcionário) |
-| `/painel/agenda`, `/agenda/[id]` · `/agenda/novo` | `agenda:ver` · `agenda:editar` |
+| `/painel/projetos` · `/projetos/[id]` · `/novo`, `/[id]/editar` | `requireScopedPermission("projetos", "ver")` (lista com `inScope`) · `requireProjectPermission("projetos", "ver", id)` · `projetos:editar` |
+| `/painel/tarefas` | `requireScopedPermission("tarefas", "ver")` (lista com `inScope`) |
+| `/painel/agenda/**` | em reescrita por outra frente: `/agenda` já usa `agenda:ver`; `/agenda/[id]` e `/agenda/novo` devem usar `agenda:ver` / `agenda:editar` (hoje `requireUser()`, mais estreito: o gestor não abre) |
 | `/painel/conteudo`, `/conteudo/[id]` · `/conteudo/novo` | `conteudo:ver` · `conteudo:editar` |
 | `/painel/financeiro`, `/financeiro/[id]` · `/novo`, `/novo/parcelas` | `financeiro:ver` · `financeiro:editar` |
 | `/painel/marca`, `/marca/[id]` · `/marca/novo` | `marca:ver` · `marca:editar` |
 | `/painel/site/**` (listas) · `/novo`, `/[id]`, `/textos/[secao]` | `site:ver` · `site:editar` |
 | `/painel/config`, `/config/propostas` | `config:ver` |
-| `/painel/config/notificacoes` | `requireAdmin()` (já é) |
-| `/painel/config/usuarios` | `usuarios:ver` (hoje `requireAdmin()`, equivalente) |
-| `/painel/config/auditoria` | `auditoria:ver` (hoje `requireAdmin()`) |
-| `/painel/config/dados` | `dados:baixar` (hoje `requireAdmin()`) |
-| `/painel/kit/**` | `requireUser()` (fica como está) |
-| `(auth)/login/page.tsx` | trocar `getCurrentUser()` + `redirect(next)` por `getSessionUser()` + `landingFor(user)`; mostrar os avisos `?aviso=sem-acesso` e `?aviso=conta-criada` |
+| `/painel/config/notificacoes` | `requireAdmin()` |
+| `/painel/config/usuarios`, `/config/usuarios/[id]` (permissões) | `usuarios:ver` (botões e actions: `usuarios:editar`) |
+| `/painel/config/auditoria` | `auditoria:ver` |
+| `/painel/config/dados` | `dados:baixar` |
+| `/painel/kit/**` | `requireUser()` (demonstração; fica como está) |
+| `(auth)/login/page.tsx` | `getSessionUser()` + `landingFor(user)`; avisos `?aviso=sem-acesso`, `conta-criada`, `senha-redefinida`, `senha-criada` |
+| `(auth)/convite/page.tsx` | pública; só mostra o formulário com `getPendingInvite(token)` válido |
+| `(auth)/conta/senha/page.tsx` | `requireSessionUser({ allowPasswordChange: true })` — troca de senha de quem não entra no painel |
 
-Ajustes de interface que acompanham (não são barreira de segurança — o servidor já barra):
+Ajustes de interface aplicados (não são barreira de segurança — o servidor já barra):
 
-- `user.role === "admin"` em `config/page.tsx`, `config/layout.tsx`, `conta/page.tsx`, `clientes/page.tsx`,
-  `clientes/[id]/page.tsx`, `financeiro/page.tsx` e `painel/page.tsx` → `isAdminRole(user.role)` ou
-  `can(user, "dados", "baixar")`. Enquanto não trocar, **uma conta `socio` não vê os botões de exportar nem as
-  abas de administrador** (as rotas funcionam para ela).
-- Botões de excluir/editar: esconder com `can(user, módulo, ação)`.
-- `painel/nav.ts`: acrescentar o módulo de cada item para o menu filtrar sozinho.
+- Nenhuma tela compara `user.role === "admin"`: usa-se `isAdminRole(role)` ou `canEverywhere(user, módulo, ação)`
+  (a conta `socio` vê os mesmos botões e abas que `admin`).
+- Botões de criar/editar/excluir e links para outros módulos só aparecem para quem pode a ação (ficha do
+  cliente, projeto, proposta, tarefas, configurações, visão geral).
+- "Observações internas" da ficha do cliente (a tela promete "só os sócios veem"): só para quem tem acesso
+  integral (`seesInternalNotes`); o gestor não as vê nem as altera ao salvar o cadastro.
+- `getUserOptions()` ("responsável") lista só perfis do painel — contas de freelancer e de cliente não aparecem.
 
 ### 7.3 Áreas futuras
 
@@ -285,6 +333,8 @@ Ajustes de interface que acompanham (não são barreira de segurança — o serv
 - `/cliente/**`: `requireClientUser()`; `requireProjectAccess("cliente", id)`; leitura por
   `getClientProjectView` / `listClientProjectViews`.
 - O `proxy.ts` já cobre `/equipe/:path*` e `/cliente/:path*` (sem cookie → login; API → 401 JSON).
+- `X-Robots-Tag: noindex, nofollow` já vale para `/equipe/**`, `/cliente/**`, `/convite` e `/conta/**`
+  (`next.config.ts`), e o `robots.txt` os desautoriza.
 
 ## 8. Testes de isolamento
 
@@ -297,7 +347,9 @@ Ajustes de interface que acompanham (não são barreira de segurança — o serv
 | `src/server/access/scope.db.test.ts` | A não vê projeto de B trocando o id; cliente A × cliente B; filtros de lista; nada interno nas visões; revogação |
 | `src/server/access/invites.db.test.ts` | expirado, revogado, reutilizado (inclusive simultâneo), e-mail divergente, senha, limites, vínculos |
 | `src/server/access/routes.db.test.ts` | `/media`, PDF, exportações e API de upload com cada perfil |
-| `src/app/painel/actions-access.db.test.ts` | todas as Server Actions do painel × perfis |
+| `src/app/painel/actions-access.db.test.ts` | todas as Server Actions do painel × perfis (lista fechada das que aceitam escopo por projeto) |
+| `src/app/painel/pages-access.db.test.ts` | **todas as páginas do painel × perfis**: tabela página → guarda (renderiza, redireciona ou 404), sem sessão, senha provisória; proposta: gestor não recebe o financeiro |
+| `src/app/painel/funcionario-scope.db.test.ts` | funcionário × projeto alheio/inexistente/só-ver/tarefa sem projeto: páginas, listas, visão geral e todas as actions de projeto e tarefa; equipe do projeto; revogação na requisição seguinte |
 | `src/server/config/permissions.db.test.ts` | último admin/sócio; `setUserPermissions` |
 | `src/proxy.test.ts` | matcher dos três ambientes |
 
@@ -312,13 +364,18 @@ migration. `npm run db:seed -- --dev --demo` cria uma conta de exemplo por perfi
 
 ## 10. Pendências conhecidas
 
-- **Troca de senha obrigatória fora do painel**: a tela vive em `/painel/conta/senha`. Conta de equipe/cliente
-  com senha temporária (criada em Usuários, não por convite) não tem onde trocar; o caminho hoje é "Esqueci
-  minha senha". Resolver ao abrir as áreas (tela de conta neutra ou por ambiente).
-- **Painel restrito do funcionário**: as actions atuais exigem a permissão no módulo inteiro, então o
-  funcionário não executa nenhuma. Para ele, cada action de tarefa/agenda/conteúdo/projeto precisa ler o
-  `projectId` do registro e usar `requireProjectPermission`.
+- **Funcionário sem agenda, conteúdo, marca e arquivos** (falha fechada; a matriz prevê "(P)"):
+  - `agenda`: as telas exigem o módulo inteiro (o módulo está em reescrita). Para abrir: listas com
+    `inScope(agendaEvents.projectId, scope)`, actions com o projeto do compromisso lido do banco, e incluir
+    `"agenda"` em `PROJECT_SCOPED_PANEL_MODULES`.
+  - `conteudo` e `marca`: `content_items` e `brand_assets` **não têm coluna de projeto** — não há como filtrar.
+    Precisa de migration (`project_id`) e de decisão dos sócios sobre o vínculo.
+  - `arquivos`: `POST /painel/api/media` exige `arquivos:editar` no módulo inteiro; o envio por projeto
+    (`can_upload`) fica para a Área da Equipe.
+- **Opções de outros módulos em formulários**: quem edita projetos/tarefas/propostas vê a lista de clientes nos
+  campos de seleção mesmo com um ajuste individual negando `clientes:ver` (os perfis padrão não têm esse caso; o
+  funcionário não recebe essas listas).
+- **Freio `RESTRICTED_PANEL_READY = false`** fecha o login dos perfis restritos, mas não derruba sessões já
+  abertas (desative a conta ou mude o perfil para encerrá-las).
 - **Autenticação em dois fatores**: fora desta etapa.
-- **Sem indexação** de `/equipe` e `/cliente` (`X-Robots-Tag` em `next.config.ts`) ao criar as rotas.
-- `CLAUDE.md` (seção Segurança) e `docs/manual-do-painel.md` ainda descrevem só `requireUser`/`requireAdmin` e
-  os dois perfis antigos.
+- **Área da Equipe e Área do Cliente**: seção 7.3.

@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getMediaValue } from "@/server/media";
 import { getTestimonial } from "@/server/site/admin/testimonials";
 import { getSiteContentForEdit } from "@/server/site/content";
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Editar depoimento" };
 export const instant = false;
 
 export default async function EditTestimonialPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("site", "editar");
   const id = paramId((await params).id);
   const item = id ? await getTestimonial(id) : null;
   if (!item) notFound();

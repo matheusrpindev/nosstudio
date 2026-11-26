@@ -13,7 +13,7 @@ import { addChecklistItemAction, removeChecklistItemAction, toggleChecklistItemA
 type Change = { type: "toggle"; id: string; done: boolean } | { type: "remove"; id: string };
 
 /** Checklist do projeto: marcar e remover gravam na hora (Server Action) com atualização otimista. */
-export function Checklist({ projectId, items }: { projectId: number; items: ChecklistItem[] }) {
+export function Checklist({ projectId, items, readOnly = false }: { projectId: number; items: ChecklistItem[]; /** Só leitura (quem não pode editar o projeto): sem marcar, remover nem adicionar. */ readOnly?: boolean }) {
   const [, startTransition] = useTransition();
   const [optimistic, apply] = useOptimistic(items, (state, change: Change) =>
     change.type === "remove" ? state.filter((item) => item.id !== change.id) : state.map((item) => (item.id === change.id ? { ...item, done: change.done } : item)),
@@ -49,21 +49,27 @@ export function Checklist({ projectId, items }: { projectId: number; items: Chec
                     type="checkbox"
                     className="checkbox"
                     checked={item.done}
+                    disabled={readOnly}
                     onChange={(event) => run({ type: "toggle", id: item.id, done: event.target.checked }, () => toggleChecklistItemAction(projectId, item.id, event.target.checked))}
                   />
                   <span className={item.done ? "text-texto-suave break-words line-through" : "text-texto break-words"}>{item.text}</span>
                 </label>
-                <IconButton aria-label={`Remover "${item.text}"`} variant="danger-ghost" onClick={() => run({ type: "remove", id: item.id }, () => removeChecklistItemAction(projectId, item.id))}>
-                  <Trash2 />
-                </IconButton>
+                {readOnly ? null : (
+                  <IconButton aria-label={`Remover "${item.text}"`} variant="danger-ghost" onClick={() => run({ type: "remove", id: item.id }, () => removeChecklistItemAction(projectId, item.id))}>
+                    <Trash2 />
+                  </IconButton>
+                )}
               </li>
             ))}
           </ul>
         </>
       ) : (
-        <p className="text-texto-suave mb-3 text-sm">Nenhum item ainda. Liste o que precisa acontecer até a entrega (ex.: “Receber briefing”, “Alinhar roteiro”, “Enviar para revisão”).</p>
+        <p className="text-texto-suave mb-3 text-sm">
+          {readOnly ? "Nenhum item no checklist ainda." : "Nenhum item ainda. Liste o que precisa acontecer até a entrega (ex.: “Receber briefing”, “Alinhar roteiro”, “Enviar para revisão”)."}
+        </p>
       )}
 
+      {readOnly ? null : (
       <ActionForm action={addChecklistItemAction} hidden={{ id: projectId }} resetOnSuccess success="none" className="mt-3 flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <Field name="text" label="Novo item do checklist" hideLabel>
@@ -74,6 +80,7 @@ export function Checklist({ projectId, items }: { projectId: number; items: Chec
           Adicionar
         </SubmitButton>
       </ActionForm>
+      )}
     </div>
   );
 }

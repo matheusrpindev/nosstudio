@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { CONTRACT_KIND_LABELS } from "@/lib/domain";
 import { fillContractBody, getLinkDefaults, getTemplate, listTemplates } from "@/server/contracts/admin";
@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: "Novo contrato" };
 export const instant = false;
 
 export default async function NewContractPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("contratos", "editar");
   const params = await searchParams;
   const [clients, projects, proposals, templates] = await Promise.all([getClientOptions(), getProjectOptions(), getProposalOptions(), listTemplates()]);
 

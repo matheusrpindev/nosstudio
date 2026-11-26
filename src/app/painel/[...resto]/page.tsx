@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requirePanelUser } from "@/lib/auth";
 
 export const instant = false;
 
@@ -8,6 +8,6 @@ export const instant = false;
  * DENTRO do shell (sem isto, o Next usaria a página 404 geral do site). Rotas reais têm prioridade sobre esta.
  */
 export default async function PainelCatchAll() {
-  await requireUser();
+  await requirePanelUser();
   notFound();
 }

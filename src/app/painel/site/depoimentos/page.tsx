@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { DataList, type DataListColumn } from "@/components/ui/data-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { TESTIMONIAL_KIND_LABELS } from "@/lib/domain";
 import { truncate } from "@/lib/format";
 import type { Testimonial } from "@/db/schema";
@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: "Depoimentos do site" };
 export const instant = false;
 
 export default async function TestimonialsPage() {
-  await requireUser();
+  await requirePermission("site", "ver");
   const [rows, visibility] = await Promise.all([listTestimonials(), getSiteContentForEdit("visibility")]);
 
   const columns: DataListColumn<Testimonial>[] = [

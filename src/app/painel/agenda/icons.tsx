@@ -1,0 +1,65 @@
+import {
+  Banknote,
+  Briefcase,
+  Calendar,
+  Camera,
+  CircleCheck,
+  Clapperboard,
+  Coffee,
+  FileClock,
+  Flag,
+  Handshake,
+  Heart,
+  Landmark,
+  MapPin,
+  Megaphone,
+  Mic,
+  PackageCheck,
+  PartyPopper,
+  Phone,
+  Plane,
+  Scissors,
+  Send,
+  Star,
+  TreePalm,
+  User,
+  Users,
+  Video,
+  type LucideIcon,
+} from "lucide-react";
+import type { AgendaIcon } from "@/lib/domain";
+
+/** Conjunto fechado de ícones das categorias (os nomes vivem em `AGENDA_ICONS`, em src/lib/domain.ts). */
+const ICONS: Record<AgendaIcon, LucideIcon> = {
+  calendar: Calendar,
+  users: Users,
+  handshake: Handshake,
+  megaphone: Megaphone,
+  phone: Phone,
+  video: Video,
+  clapperboard: Clapperboard,
+  camera: Camera,
+  mic: Mic,
+  "party-popper": PartyPopper,
+  heart: Heart,
+  scissors: Scissors,
+  send: Send,
+  "package-check": PackageCheck,
+  "circle-check": CircleCheck,
+  "file-clock": FileClock,
+  banknote: Banknote,
+  landmark: Landmark,
+  briefcase: Briefcase,
+  user: User,
+  "tree-palm": TreePalm,
+  plane: Plane,
+  "map-pin": MapPin,
+  star: Star,
+  flag: Flag,
+  coffee: Coffee,
+};
+
+export function CategoryIcon({ name, className }: { name: AgendaIcon | null | undefined; className?: string }) {
+  const Icon = ICONS[name ?? "calendar"] ?? Calendar;
+  return <Icon aria-hidden="true" className={className} />;
+}

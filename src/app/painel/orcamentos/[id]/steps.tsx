@@ -476,7 +476,7 @@ export function StepPreco({ draft, patch, numbers, errors, attempted, listsKey }
 }
 
 // --------------------------------------------------------------------- Textos
-export function StepTextos({ draft, patch, errors }: StepProps) {
+export function StepTextos({ draft, patch, errors, canOpenConfig }: StepProps & { /** Pode abrir Configurações › Propostas (senão o nome aparece sem link). */ canOpenConfig: boolean }) {
   return (
     <Card as="section" aria-labelledby="etapa-textos">
       <CardHeader
@@ -485,9 +485,13 @@ export function StepTextos({ draft, patch, errors }: StepProps) {
         description={
           <>
             Vão para o PDF depois do investimento. Os textos padrão de propostas novas ficam em{" "}
-            <Link href="/painel/config/propostas" className="link">
-              Configurações › Propostas
-            </Link>
+            {canOpenConfig ? (
+              <Link href="/painel/config/propostas" className="link">
+                Configurações › Propostas
+              </Link>
+            ) : (
+              "Configurações › Propostas"
+            )}
             .
           </>
         }

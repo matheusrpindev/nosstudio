@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { BRAND_ASSET_CATEGORIES, BRAND_ASSET_CATEGORY_LABELS, BRAND_COLOR_HEX, BRAND_COLOR_LABELS, type BrandColor } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
 import { listBrandAssets, type BrandAssetItem } from "@/server/brand/admin";
@@ -15,13 +15,14 @@ import { CopyHexButton } from "./copy-hex";
 export const metadata: Metadata = { title: "Marca" };
 export const instant = false;
 
-const PALETTE: readonly BrandColor[] = ["roxo", "lima", "lavanda", "offwhite", "grafite"];
+const PALETTE: readonly BrandColor[] = ["roxo", "lima", "lavanda", "offwhite", "grafite", "preto"];
 const PALETTE_ROLE: Record<string, string> = {
   roxo: "Cor principal",
   lima: "Destaque pontual",
   lavanda: "Apoio suave",
   offwhite: "Fundo claro",
   grafite: "Texto e fundo escuro",
+  preto: "Fundo do painel e das áreas internas",
 };
 
 /** SVGs do logo que vêm com o site (`/brand/*.svg`): são os únicos arquivos da marca que o site público serve. */
@@ -64,7 +65,7 @@ function AssetRow({ item, first, last }: { item: BrandAssetItem; first: boolean;
 }
 
 export default async function BrandPage() {
-  await requireUser();
+  await requirePermission("marca", "ver");
   const grouped = await listBrandAssets();
   const logos = grouped.logo.filter(isLogoSvg);
   const total = BRAND_ASSET_CATEGORIES.reduce((sum, category) => sum + grouped[category].length, 0);
@@ -86,7 +87,7 @@ export default async function BrandPage() {
         {/* ----------------------------------------------------------- paleta */}
         <Card as="section" aria-labelledby="paleta-titulo">
           <CardHeader id="paleta-titulo" title="Paleta oficial" description="Toque no código para copiar. O lima nunca vai como texto sobre fundo claro (falta contraste)." />
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {PALETTE.map((color) => (
               <li key={color} className="flex min-w-0 flex-col gap-2">
                 <div

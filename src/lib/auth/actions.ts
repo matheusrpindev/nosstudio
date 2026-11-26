@@ -13,7 +13,7 @@ import { sendMail } from "@/lib/mail";
 import { getClientIp, getUserAgent } from "@/lib/request";
 import { USER_ROLE_LABELS } from "@/lib/domain";
 import { ENVIRONMENT_LABELS, landingFor, parseOverrides } from "@/lib/permissions";
-import { FORCE_PASSWORD_PATH, LOGIN_PATH, NO_ACCESS_PATH, requireSessionUser, safeNextPath } from "./index";
+import { LOGIN_PATH, passwordChangePath, requireSessionUser, safeNextPath } from "./index";
 import { hashPassword, passwordProblem, verifyAgainstDummy, verifyPassword } from "./password";
 import { checkLoginAttempt, clearLoginAttempts, loginGateMessage } from "./login-limits";
 import { consumeRateLimit, retryMessage, unlockLogin } from "./rate-limit";
@@ -65,6 +65,15 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
   // lê o motivo aqui mesmo, na tela de login. Assim ninguém cai no painel por falta de outro lugar.
   const landing = landingFor({ role: user.role, permissions: parseOverrides(user.permissions) });
   if (!landing.ok) {
+    // Única exceção: a conta ainda está com a senha PROVISÓRIA (quem a criou no painel a conhece). Abrimos a
+    // sessão só para a pessoa criar a própria senha na tela neutra — todo guarda de ambiente continua recusando
+    // esta conta, e a sessão é encerrada assim que a senha é trocada (ver changePasswordAction).
+    if (user.mustChangePassword) {
+      await createSession(user.id, { ip, userAgent: await getUserAgent() });
+      await rememberDevice(email);
+      await logAudit({ user, action: "login", entity: "user", entityId: user.id, summary: "Entrou só para trocar a senha provisória (perfil ainda sem ambiente liberado)" });
+      redirect(passwordChangePath(user));
+    }
     await logAudit({
       user,
       action: "login_sem_ambiente",
@@ -80,10 +89,10 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
   await logAudit({ user, action: "login", entity: "user", entityId: user.id, summary: `Entrou (${ENVIRONMENT_LABELS[landing.environment]})` });
 
+  // Senha provisória: antes de qualquer coisa, a pessoa cria a própria (no painel ou na tela neutra).
+  if (user.mustChangePassword) redirect(passwordChangePath(user));
   // `next` só vale dentro do painel (safeNextPath); nos outros ambientes a pessoa começa pelo início dele.
-  const inPanel = landing.environment === "painel";
-  if (user.mustChangePassword && inPanel) redirect(`${FORCE_PASSWORD_PATH}?obrigatoria=1`);
-  redirect(inPanel ? next : landing.path);
+  redirect(landing.environment === "painel" ? next : landing.path);
 }
 
 // -------------------------------------------------------------------- logout
@@ -266,7 +275,10 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
 
   if (current.mustChangePassword) {
     const landing = landingFor(current);
-    redirect(landing.ok ? landing.path : NO_ACCESS_PATH);
+    if (landing.ok) redirect(landing.path);
+    // Perfil ainda sem ambiente liberado: a sessão existia só para esta troca. Encerramos e explicamos no login.
+    await destroyCurrentSession();
+    redirect(`${LOGIN_PATH}?aviso=senha-criada`);
   }
   return actionOk("Senha alterada. Os outros aparelhos conectados foram desconectados.");
 }

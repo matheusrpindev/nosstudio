@@ -9,7 +9,7 @@ import type { MediaValue } from "@/components/ui/media-fields";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramText, type PageSearchParams } from "@/components/ui/search-params";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { getMediaValues } from "@/server/media";
 import { getSiteContentForEdit } from "@/server/site/content";
@@ -54,7 +54,7 @@ function hostOf(url: string): string {
 }
 
 export default async function SiteTextSectionPage({ params, searchParams }: Props) {
-  await requireUser();
+  await requirePermission("site", "editar");
   const { secao } = await params;
   if (!isSiteContentKey(secao)) notFound();
   const sp = await searchParams;

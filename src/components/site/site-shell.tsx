@@ -30,7 +30,7 @@ async function currentYear(): Promise<string> {
 
 /** Cor do acento da barra de avisos: lima sobre fundos escuros; nunca lima sobre claro. */
 function noticeMark(bg: BrandColor): string {
-  if (bg === "roxo" || bg === "grafite") return BRAND_COLOR_HEX.lima;
+  if (bg === "roxo" || bg === "grafite" || bg === "preto") return BRAND_COLOR_HEX.lima;
   return bg === "lima" ? BRAND_COLOR_HEX.grafite : BRAND_COLOR_HEX.roxo;
 }
 

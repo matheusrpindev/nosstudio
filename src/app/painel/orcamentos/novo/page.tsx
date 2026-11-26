@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatDate, addDays, todayISO } from "@/lib/dates";
 import { getClientOptions } from "@/server/options";
 import { getTemplateOptions } from "@/server/proposals/admin";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Novo orçamento" };
 export const instant = false;
 
 export default async function NewProposalPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("propostas", "editar");
   const params = await searchParams;
   const [clients, templates, settings] = await Promise.all([getClientOptions(), getTemplateOptions(), getSetting("proposal")]);
   // a URL é entrada do usuário: só vale se o id existir

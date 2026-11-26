@@ -452,3 +452,178 @@
   animation: painel-de-baixo 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 /* fim do bloco painel */
+
+/* agenda */
+/* ==========================================================================
+   Agenda do painel (src/app/painel/agenda). Tons das categorias e das agendas: cada classe `.agenda-tom-*`
+   (um por valor de AGENDA_COLORS em src/lib/domain.ts) define `--tom`; os blocos usam esse tom misturado à
+   superfície, então o texto continua sendo o do tema. Valores claros para impressão; escuros no tema do painel.
+   ========================================================================== */
+:root {
+  --agenda-roxo: #3b1f8e;
+  --agenda-lavanda: #7a68c9;
+  --agenda-lima: #6b8a00;
+  --agenda-verde: #1f7a4d;
+  --agenda-ciano: #0e7c86;
+  --agenda-azul: #1f5fbf;
+  --agenda-rosa: #b8327a;
+  --agenda-laranja: #b85a12;
+  --agenda-amarelo: #8a5a00;
+  --agenda-vermelho: #b3261e;
+  --agenda-cinza: #5e5c66;
+  --agenda-hora: 3rem; /* altura de uma hora na grade de dia/semana */
+  --agenda-regua: 3.25rem; /* coluna das horas */
+}
+@media screen {
+  :root:has(.tema-painel) {
+    --agenda-roxo: #9d7dff;
+    --agenda-lavanda: #cfc6ff;
+    --agenda-lima: #c6f432;
+    --agenda-verde: #5fd69a;
+    --agenda-ciano: #4fd1d9;
+    --agenda-azul: #6ea8ff;
+    --agenda-rosa: #ff8fc7;
+    --agenda-laranja: #ff9f5a;
+    --agenda-amarelo: #f2c14e;
+    --agenda-vermelho: #ff8f85;
+    --agenda-cinza: #a7a4b3;
+  }
+}
+@media (max-width: 639px) {
+  :root {
+    --agenda-hora: 4rem; /* blocos mais altos: alvo de toque */
+    --agenda-regua: 2.75rem;
+  }
+}
+@layer components {
+  .agenda-tom-roxo {
+    --tom: var(--agenda-roxo);
+  }
+  .agenda-tom-lavanda {
+    --tom: var(--agenda-lavanda);
+  }
+  .agenda-tom-lima {
+    --tom: var(--agenda-lima);
+  }
+  .agenda-tom-verde {
+    --tom: var(--agenda-verde);
+  }
+  .agenda-tom-ciano {
+    --tom: var(--agenda-ciano);
+  }
+  .agenda-tom-azul {
+    --tom: var(--agenda-azul);
+  }
+  .agenda-tom-rosa {
+    --tom: var(--agenda-rosa);
+  }
+  .agenda-tom-laranja {
+    --tom: var(--agenda-laranja);
+  }
+  .agenda-tom-amarelo {
+    --tom: var(--agenda-amarelo);
+  }
+  .agenda-tom-vermelho {
+    --tom: var(--agenda-vermelho);
+  }
+  .agenda-tom-cinza {
+    --tom: var(--agenda-cinza);
+  }
+
+  /* bloco de compromisso (grade, mês, faixa de dia inteiro) */
+  .agenda-evento {
+    @apply text-texto block overflow-hidden rounded-md text-left leading-tight transition-colors;
+    background: color-mix(in oklab, var(--tom) 26%, var(--color-superficie));
+    box-shadow: inset 3px 0 0 var(--tom);
+  }
+  .agenda-evento:hover,
+  .agenda-evento:focus-visible {
+    background: color-mix(in oklab, var(--tom) 40%, var(--color-superficie));
+  }
+  .agenda-evento:focus-visible {
+    outline-offset: 1px;
+  }
+  /* a confirmar: contorno tracejado no lugar do preenchimento cheio */
+  .agenda-evento[data-status="a_confirmar"] {
+    background: color-mix(in oklab, var(--tom) 12%, var(--color-superficie));
+    outline: 1px dashed color-mix(in oklab, var(--tom) 70%, transparent);
+    outline-offset: -1px;
+  }
+  .agenda-evento[data-status="cancelado"] {
+    @apply text-texto-suave line-through;
+    background: var(--color-superficie-alta);
+    box-shadow: inset 3px 0 0 var(--color-borda-forte);
+  }
+  .agenda-evento[data-status="concluido"] {
+    @apply text-texto-suave;
+    background: color-mix(in oklab, var(--tom) 12%, var(--color-superficie));
+  }
+  /* particular de outra pessoa: hachurado, sem cor de categoria */
+  .agenda-evento[data-ocupado] {
+    @apply text-texto-suave;
+    background-color: var(--color-superficie-alta);
+    background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in oklab, var(--color-texto-suave) 26%, transparent) 5px 6px);
+    box-shadow: inset 3px 0 0 var(--color-borda-forte);
+  }
+  /* camada derivada (prazo, vencimento, publicação): só contorno, para não competir com os compromissos */
+  .agenda-evento[data-camada] {
+    background: color-mix(in oklab, var(--tom) 10%, var(--color-superficie));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tom) 55%, transparent);
+  }
+  .agenda-evento[data-camada]:hover,
+  .agenda-evento[data-camada]:focus-visible {
+    background: color-mix(in oklab, var(--tom) 22%, var(--color-superficie));
+  }
+  .agenda-ponto {
+    @apply inline-block size-2.5 shrink-0 rounded-full;
+    background: var(--tom);
+  }
+  .agenda-caixa {
+    @apply size-5 shrink-0 cursor-pointer rounded;
+    accent-color: var(--tom);
+  }
+
+  /* grade de horas */
+  .agenda-grade {
+    display: grid;
+    grid-template-columns: var(--agenda-regua) repeat(var(--agenda-dias), minmax(0, 1fr));
+  }
+  .agenda-grade-topo {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+  .agenda-coluna {
+    height: calc(var(--agenda-hora) * 24);
+    background-image: linear-gradient(to bottom, var(--color-borda) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-borda) 45%, transparent) 1px, transparent 1px);
+    background-size:
+      100% var(--agenda-hora),
+      100% calc(var(--agenda-hora) / 2);
+  }
+  .agenda-agora {
+    @apply bg-primaria pointer-events-none absolute right-0 left-0 z-10 h-0.5;
+  }
+  .agenda-agora::before {
+    content: "";
+    @apply bg-primaria absolute -top-1 -left-1 size-2.5 rounded-full;
+  }
+  /* intensidade dos dias na visão anual (0 = vazio … 3 = cheio) */
+  .agenda-calor-1 {
+    background: color-mix(in oklab, var(--color-detalhe) 22%, transparent);
+  }
+  .agenda-calor-2 {
+    background: color-mix(in oklab, var(--color-detalhe) 45%, transparent);
+  }
+  .agenda-calor-3 {
+    background: color-mix(in oklab, var(--color-detalhe) 75%, transparent);
+    color: var(--color-fundo);
+  }
+}
+/* semana no celular: três dias por tela, o resto rolando de lado dentro da própria grade */
+@media (max-width: 639px) {
+  .agenda-grade[data-dias="7"] {
+    grid-template-columns: var(--agenda-regua) repeat(7, calc((100% - var(--agenda-regua)) / 3));
+  }
+}
+/* fim do bloco agenda */

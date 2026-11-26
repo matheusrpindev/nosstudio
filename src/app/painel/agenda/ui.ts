@@ -1,29 +1,61 @@
 /**
- * Apresentação da agenda compartilhada entre as telas do módulo. Os RÓTULOS vêm de `src/lib/domain.ts`;
- * aqui ficam só as cores de cada tipo (decisão visual do módulo).
+ * Apresentação compartilhada entre as telas da agenda. Rótulos e enums vêm de `src/lib/domain.ts`;
+ * aqui ficam só as decisões visuais do módulo (classe de cada tom, tons dos status).
  */
-import type { CalendarTone } from "@/components/ui/month-calendar";
-import type { AgendaKind } from "@/lib/domain";
-import type { AgendaEntry } from "@/server/agenda/logic";
+import type { BadgeTone } from "@/components/ui/badge";
+import type { AgendaItem } from "@/lib/agenda/view";
+import { AGENDA_REMINDER_PRESETS, type AgendaColor, type AgendaPriority, type AgendaStatus } from "@/lib/domain";
 
-export const AGENDA_KIND_TONES: Record<AgendaKind, CalendarTone> = {
-  gravacao: "roxo",
-  evento: "lima",
-  reuniao: "sucesso",
-  entrega: "alerta",
-  outro: "neutral",
+/** Classe que define `--tom` (globals.css, bloco "agenda"). Escrita por extenso para o Tailwind não podar. */
+export const TONE_CLASS: Record<AgendaColor, string> = {
+  roxo: "agenda-tom-roxo",
+  lavanda: "agenda-tom-lavanda",
+  lima: "agenda-tom-lima",
+  verde: "agenda-tom-verde",
+  ciano: "agenda-tom-ciano",
+  azul: "agenda-tom-azul",
+  rosa: "agenda-tom-rosa",
+  laranja: "agenda-tom-laranja",
+  amarelo: "agenda-tom-amarelo",
+  vermelho: "agenda-tom-vermelho",
+  cinza: "agenda-tom-cinza",
 };
 
-/** Prazos de projeto são somente leitura: cor própria (vermelha) + losango no texto, para não depender só da cor. */
-export const DEADLINE_TONE: CalendarTone = "perigo";
-export const DEADLINE_MARK = "◆";
+export const STATUS_TONES: Record<AgendaStatus, BadgeTone> = {
+  confirmado: "sucesso",
+  a_confirmar: "alerta",
+  cancelado: "perigo",
+  concluido: "neutral",
+};
 
-/** "Das 14:00 às 16:00" / "14:00" / "Dia inteiro". */
-export function timeLabel(
-  entry: Pick<AgendaEntry, "startTime" | "endTime">,
-): string {
-  if (!entry.startTime) return "Dia inteiro";
-  return entry.endTime
-    ? `${entry.startTime} – ${entry.endTime}`
-    : entry.startTime;
+export const PRIORITY_TONES: Record<AgendaPriority, BadgeTone> = { baixa: "neutral", normal: "neutral", alta: "perigo" };
+
+/** Marca dos itens de camada (não depender só da cor): ◆ prazo · $ financeiro · ✎ publicação. */
+export const LAYER_MARK: Record<Exclude<AgendaItem["source"], "event">, string> = { deadline: "◆", finance: "$", editorial: "✎" };
+
+/** Atributos `data-*` que o CSS usa para desenhar o bloco (status, ocupado, camada). */
+export function itemDataProps(item: Pick<AgendaItem, "masked" | "status" | "source">): Record<string, string | undefined> {
+  return {
+    "data-status": item.masked ? undefined : (item.status ?? undefined),
+    "data-ocupado": item.masked ? "" : undefined,
+    "data-camada": item.source !== "event" ? "" : undefined,
+  };
+}
+
+/** Texto completo do item para leitor de tela e `title`: "Reunião — 19:30 – 20:30 — Reuniões com clientes". */
+export function itemSummary(item: AgendaItem, time: string): string {
+  if (item.masked) return `Ocupado${item.ownerName ? ` (${item.ownerName})` : ""} — ${time}`;
+  return [item.title, time, item.label, item.status === "cancelado" ? "cancelado" : item.status === "a_confirmar" ? "a confirmar" : null, item.clientName, item.location]
+    .filter(Boolean)
+    .join(" — ");
+}
+
+/** "1 hora antes", "3 dias antes"… */
+export function describeReminder(minutes: number): string {
+  const preset = AGENDA_REMINDER_PRESETS.find((item) => item.minutes === minutes);
+  if (preset) return preset.label;
+  if (minutes === 0) return "Na hora";
+  if (minutes % 1440 === 0) return `${minutes / 1440} dias antes`;
+  if (minutes % 60 === 0) return `${minutes / 60} horas antes`;
+  return `${minutes} minutos antes`;
 }

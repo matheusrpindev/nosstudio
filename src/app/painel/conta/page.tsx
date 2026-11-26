@@ -8,7 +8,7 @@ import { DescriptionList } from "@/components/ui/description-list";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere, requirePanelUser } from "@/lib/auth";
 import { getSession } from "@/lib/auth/session";
 import { USER_ROLE_LABELS } from "@/lib/domain";
 import { endOtherSessionsAction } from "./actions";
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Minha conta" };
 export const instant = false;
 
 export default async function AccountPage() {
-  const user = await requireUser();
+  const user = await requirePanelUser();
   const session = await getSession();
   const [details, sessions] = await Promise.all([getAccountDetails(user.id), listUserSessions(user.id, session?.sessionId)]);
   const others = sessions.filter((item) => !item.current).length;
@@ -46,7 +46,7 @@ export default async function AccountPage() {
               ]}
             />
             <p className="hint mt-4">
-              {user.role === "admin"
+              {canEverywhere(user, "usuarios", "editar")
                 ? "Nome e e-mail das contas são alterados em Configurações › Usuários."
                 : "Para mudar o nome ou o e-mail da conta, peça a um administrador."}
             </p>

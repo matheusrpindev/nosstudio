@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ActionForm, Field, FieldRow, FormActions, SubmitButton } from "@/components/ui/form";
 import { DateInput, Input, Select, Textarea } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CONTACT_SOURCE_LABELS, CONTACT_SOURCES, SERVICE_INTEREST_LABELS } from "@/lib/domain";
 import { createLeadAction } from "../actions";
 
@@ -15,7 +15,7 @@ export const instant = false;
 const MANUAL_SOURCES = CONTACT_SOURCES.filter((source) => source !== "site").map((source) => ({ value: source, label: CONTACT_SOURCE_LABELS[source] }));
 
 export default async function NewLeadPage() {
-  await requireUser();
+  await requirePermission("leads", "editar");
 
   return (
     <div className="max-w-2xl">

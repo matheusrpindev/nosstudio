@@ -15,7 +15,8 @@ import { Checkbox, Input, Select, Textarea } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { TabPanel, Tabs } from "@/components/ui/tabs";
 import { DateText, Money } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere, requirePermission } from "@/lib/auth";
+import { seesInternalNotes } from "@/lib/permissions";
 import { nowLocal, todayISO } from "@/lib/dates";
 import {
   AGENDA_KIND_LABELS,
@@ -35,6 +36,7 @@ import { formatPhone, mailtoHref, whatsAppLink } from "@/lib/format";
 import { formatDocument, getClient, getClientRelated, listInteractions, type ClientRelated } from "@/server/clients/admin";
 import { describeRemaining, getClientFootprint } from "@/server/clients/subject-data";
 import { addInteractionAction, deleteClientAction, updateClientStatusAction } from "../actions";
+import { ClientAccess } from "../client-access";
 import { StatusFields } from "../status-fields";
 import { CLIENT_STATUS_TONES, INTERACTION_TONES, PROPOSAL_STATUS_TONES } from "../ui";
 
@@ -46,18 +48,41 @@ type Props = { params: Promise<{ id: string }> };
 const MANUAL_INTERACTION_KINDS = INTERACTION_KINDS.filter((kind) => kind !== "status").map((kind) => ({ value: kind, label: INTERACTION_KIND_LABELS[kind] }));
 
 export default async function ClientPage({ params }: Props) {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const client = await getClient(id);
   if (!client) notFound();
 
+  // A ficha junta vários módulos. Cada bloco só existe para quem pode ver o módulo dele (o que a pessoa não
+  // vê nem é consultado), e cada botão só aparece para quem pode executar a ação — as actions conferem de novo.
+  const sees = {
+    proposals: canEverywhere(user, "propostas", "ver"),
+    projects: canEverywhere(user, "projetos", "ver"),
+    contracts: canEverywhere(user, "contratos", "ver"),
+    finance: canEverywhere(user, "financeiro", "ver"),
+    events: canEverywhere(user, "agenda", "ver"),
+    tasks: canEverywhere(user, "tarefas", "ver"),
+  };
+  const may = {
+    edit: canEverywhere(user, "clientes", "editar"),
+    remove: canEverywhere(user, "clientes", "excluir"),
+    newProposal: canEverywhere(user, "propostas", "editar"),
+    newProject: canEverywhere(user, "projetos", "editar"),
+    newContract: canEverywhere(user, "contratos", "editar"),
+    newIncome: canEverywhere(user, "financeiro", "editar"),
+    schedule: canEverywhere(user, "agenda", "editar"),
+    exportData: canEverywhere(user, "dados", "baixar"),
+    seeAccess: canEverywhere(user, "usuarios", "ver"),
+    manageAccess: canEverywhere(user, "usuarios", "editar"),
+    notes: seesInternalNotes(user),
+  };
+
   const today = todayISO();
-  const [interactions, related, footprint] = await Promise.all([listInteractions(id), getClientRelated(id, today), getClientFootprint(id)]);
+  const [interactions, related, footprint] = await Promise.all([listInteractions(id), getClientRelated(id, today, sees), getClientFootprint(id)]);
   if (!footprint) notFound();
   // o que continua existindo depois de excluir o cliente (o diálogo de exclusão diz a verdade sobre isso)
   const remaining = describeRemaining(footprint);
-  const isAdmin = user.role === "admin";
 
   const contactFirstName = (client.contactName || client.name).trim().split(/\s+/)[0];
   const whatsapp = whatsAppLink(client.whatsapp, `Olá, ${contactFirstName}! Aqui é ${user.name.split(" ")[0]}, da NÓS Studio. Tudo bem?`);
@@ -83,15 +108,22 @@ export default async function ClientPage({ params }: Props) {
                 Chamar no WhatsApp
               </ButtonLink>
             ) : null}
-            <ButtonLink href={`/painel/orcamentos/novo?cliente=${client.id}`} icon={<FilePlus2 />}>
-              Novo orçamento
-            </ButtonLink>
-            <ButtonLink href={`/painel/projetos/novo?cliente=${client.id}`} variant="secondary" icon={<FolderPlus />}>
-              Novo projeto
-            </ButtonLink>
-            <ButtonLink href={`/painel/clientes/${client.id}/editar`} variant="secondary" icon={<Pencil />}>
-              Editar
-            </ButtonLink>
+            {may.newProposal ? (
+              <ButtonLink href={`/painel/orcamentos/novo?cliente=${client.id}`} icon={<FilePlus2 />}>
+                Novo orçamento
+              </ButtonLink>
+            ) : null}
+            {may.newProject ? (
+              <ButtonLink href={`/painel/projetos/novo?cliente=${client.id}`} variant="secondary" icon={<FolderPlus />}>
+                Novo projeto
+              </ButtonLink>
+            ) : null}
+            {may.edit ? (
+              <ButtonLink href={`/painel/clientes/${client.id}/editar`} variant="secondary" icon={<Pencil />}>
+                Editar
+              </ButtonLink>
+            ) : null}
+            {may.remove ? (
             <ConfirmDialog
               trigger={
                 <Button variant="danger-ghost" icon={<Trash2 />}>
@@ -130,6 +162,7 @@ export default async function ClientPage({ params }: Props) {
                 />
               ) : null}
             </ConfirmDialog>
+            ) : null}
           </>
         }
       />
@@ -145,11 +178,13 @@ export default async function ClientPage({ params }: Props) {
         items={[
           { value: "resumo", label: "Resumo" },
           { value: "historico", label: "Histórico", count: interactions.length },
-          { value: "orcamentos", label: "Orçamentos", count: related.proposals.length },
-          { value: "projetos", label: "Projetos", count: related.projects.length },
-          { value: "contratos", label: "Contratos", count: related.contracts.length },
-          { value: "financeiro", label: "Financeiro", count: related.finance.total },
-          { value: "agenda", label: "Agenda e tarefas", count: related.events.length + related.tasks.length },
+          ...(sees.proposals ? [{ value: "orcamentos", label: "Orçamentos", count: related.proposals.length }] : []),
+          ...(sees.projects ? [{ value: "projetos", label: "Projetos", count: related.projects.length }] : []),
+          ...(sees.contracts ? [{ value: "contratos", label: "Contratos", count: related.contracts.length }] : []),
+          ...(sees.finance ? [{ value: "financeiro", label: "Financeiro", count: related.finance.total }] : []),
+          ...(sees.events || sees.tasks
+            ? [{ value: "agenda", label: sees.events && sees.tasks ? "Agenda e tarefas" : sees.events ? "Agenda" : "Tarefas", count: related.events.length + related.tasks.length }]
+            : []),
         ]}
       >
         <TabPanel value="resumo">
@@ -169,7 +204,13 @@ export default async function ClientPage({ params }: Props) {
                   </div>
                 ) : (
                   <p className="text-texto-suave text-sm">
-                    Nada definido. <Link href={`/painel/clientes/${client.id}/editar`} className="link">Defina o próximo passo</Link> para não esquecer este cliente.
+                    {may.edit ? (
+                      <>
+                        Nada definido. <Link href={`/painel/clientes/${client.id}/editar`} className="link">Defina o próximo passo</Link> para não esquecer este cliente.
+                      </>
+                    ) : (
+                      "Nada definido."
+                    )}
                   </p>
                 )}
               </Card>
@@ -198,8 +239,8 @@ export default async function ClientPage({ params }: Props) {
                     { label: "Primeiro contato", value: client.firstContactAt ? <DateText value={client.firstContactAt} format="long" /> : null },
                   ]}
                 />
-                {/* LGPD (acesso/portabilidade): só administradores exportam dados — a rota confere de novo e registra na auditoria */}
-                {isAdmin ? (
+                {/* LGPD (acesso/portabilidade): só quem pode exportar dados (admin, sócio) — a rota confere de novo e registra na auditoria */}
+                {may.exportData ? (
                   <div className="border-borda mt-4 border-t pt-4">
                     <ButtonLink href={`/painel/clientes/${client.id}/dados`} download prefetch={false} variant="secondary" size="sm" className="min-h-11 sm:min-h-9" icon={<FileJson />}>
                       Dados deste titular (JSON)
@@ -209,22 +250,26 @@ export default async function ClientPage({ params }: Props) {
                 ) : null}
               </Card>
 
-              <Card as="section" aria-labelledby="notas-titulo">
-                <CardHeader id="notas-titulo" title="Observações internas" description="Só os sócios veem." />
-                {client.notes.trim() ? <p className="text-texto text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{client.notes}</p> : <p className="text-texto-suave text-sm">Nenhuma observação.</p>}
-              </Card>
+              {may.notes ? (
+                <Card as="section" aria-labelledby="notas-titulo">
+                  <CardHeader id="notas-titulo" title="Observações internas" description="Só os sócios veem." />
+                  {client.notes.trim() ? <p className="text-texto text-[0.9375rem] leading-relaxed break-words whitespace-pre-line">{client.notes}</p> : <p className="text-texto-suave text-sm">Nenhuma observação.</p>}
+                </Card>
+              ) : null}
             </div>
 
             <div className="space-y-4">
-              <Card as="section" aria-labelledby="status-titulo">
-                <CardHeader id="status-titulo" title="Andamento" description="Cada mudança entra no histórico." />
-                <ActionForm action={updateClientStatusAction} hidden={{ id: client.id }} className="space-y-4">
-                  <StatusFields defaultStatus={client.status} defaultLostReason={client.lostReason} />
-                  <SubmitButton variant="secondary" pendingLabel="Salvando…">
-                    Salvar status
-                  </SubmitButton>
-                </ActionForm>
-              </Card>
+              {may.edit ? (
+                <Card as="section" aria-labelledby="status-titulo">
+                  <CardHeader id="status-titulo" title="Andamento" description="Cada mudança entra no histórico." />
+                  <ActionForm action={updateClientStatusAction} hidden={{ id: client.id }} className="space-y-4">
+                    <StatusFields defaultStatus={client.status} defaultLostReason={client.lostReason} />
+                    <SubmitButton variant="secondary" pendingLabel="Salvando…">
+                      Salvar status
+                    </SubmitButton>
+                  </ActionForm>
+                </Card>
+              ) : null}
 
               <Card as="section" aria-labelledby="datas-titulo">
                 <CardHeader id="datas-titulo" title="Datas importantes" />
@@ -241,38 +286,47 @@ export default async function ClientPage({ params }: Props) {
                   </ul>
                 ) : (
                   <p className="text-texto-suave text-sm">
-                    Nenhuma. <Link href={`/painel/clientes/${client.id}/editar`} className="link">Adicionar data</Link>
+                    Nenhuma.{" "}
+                    {may.edit ? (
+                      <Link href={`/painel/clientes/${client.id}/editar`} className="link">
+                        Adicionar data
+                      </Link>
+                    ) : null}
                   </p>
                 )}
               </Card>
+
+              {may.seeAccess ? <ClientAccess clientId={client.id} clientName={client.name} canManage={may.manageAccess} /> : null}
             </div>
           </div>
         </TabPanel>
 
         <TabPanel value="historico">
-          <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr] lg:items-start">
-            <Card as="section" aria-labelledby="registrar-titulo">
-              <CardHeader id="registrar-titulo" title="Registrar atendimento" description="Anote conversas, ligações e reuniões para a equipe toda saber." />
-              <ActionForm action={addInteractionAction} hidden={{ clientId: client.id }} resetOnSuccess className="space-y-4">
-                <FieldRow>
-                  <Field name="kind" label="Tipo" required>
-                    <Select options={MANUAL_INTERACTION_KINDS} defaultValue="nota" />
+          <div className={may.edit ? "grid gap-4 lg:grid-cols-[1fr_1.2fr] lg:items-start" : "max-w-3xl"}>
+            {may.edit ? (
+              <Card as="section" aria-labelledby="registrar-titulo">
+                <CardHeader id="registrar-titulo" title="Registrar atendimento" description="Anote conversas, ligações e reuniões para a equipe toda saber." />
+                <ActionForm action={addInteractionAction} hidden={{ clientId: client.id }} resetOnSuccess className="space-y-4">
+                  <FieldRow>
+                    <Field name="kind" label="Tipo" required>
+                      <Select options={MANUAL_INTERACTION_KINDS} defaultValue="nota" />
+                    </Field>
+                    <Field name="occurredAt" label="Quando" required>
+                      <Input type="datetime-local" defaultValue={nowLocal()} />
+                    </Field>
+                  </FieldRow>
+                  <Field name="content" label="O que aconteceu" required>
+                    <Textarea rows={4} maxLength={4000} placeholder="Ex.: Pediu orçamento para cobertura de 6 horas, envio até sexta." />
                   </Field>
-                  <Field name="occurredAt" label="Quando" required>
-                    <Input type="datetime-local" defaultValue={nowLocal()} />
-                  </Field>
-                </FieldRow>
-                <Field name="content" label="O que aconteceu" required>
-                  <Textarea rows={4} maxLength={4000} placeholder="Ex.: Pediu orçamento para cobertura de 6 horas, envio até sexta." />
-                </Field>
-                <SubmitButton pendingLabel="Registrando…">Registrar atendimento</SubmitButton>
-              </ActionForm>
-            </Card>
+                  <SubmitButton pendingLabel="Registrando…">Registrar atendimento</SubmitButton>
+                </ActionForm>
+              </Card>
+            ) : null}
 
             <Card as="section" aria-labelledby="linha-titulo">
               <CardHeader id="linha-titulo" title="Linha do tempo" />
               {interactions.length === 0 ? (
-                <EmptyState variant="plain" title="Nenhum atendimento registrado" description="Use o formulário ao lado para registrar o primeiro contato." />
+                <EmptyState variant="plain" title="Nenhum atendimento registrado" description={may.edit ? "Use o formulário ao lado para registrar o primeiro contato." : undefined} />
               ) : (
                 <ol className="border-borda relative ml-2 space-y-5 border-l-2 pl-5">
                   {interactions.map((item) => (
@@ -294,28 +348,38 @@ export default async function ClientPage({ params }: Props) {
           </div>
         </TabPanel>
 
-        <TabPanel value="orcamentos">
-          <ProposalsSection clientId={client.id} rows={related.proposals} />
-        </TabPanel>
-        <TabPanel value="projetos">
-          <ProjectsSection clientId={client.id} rows={related.projects} />
-        </TabPanel>
-        <TabPanel value="contratos">
-          <ContractsSection clientId={client.id} rows={related.contracts} />
-        </TabPanel>
-        <TabPanel value="financeiro">
-          <FinanceSection clientId={client.id} finance={related.finance} />
-        </TabPanel>
-        <TabPanel value="agenda">
-          <AgendaSection clientId={client.id} events={related.events} tasks={related.tasks} today={today} />
-        </TabPanel>
+        {sees.proposals ? (
+          <TabPanel value="orcamentos">
+            <ProposalsSection clientId={client.id} rows={related.proposals} canCreate={may.newProposal} />
+          </TabPanel>
+        ) : null}
+        {sees.projects ? (
+          <TabPanel value="projetos">
+            <ProjectsSection clientId={client.id} rows={related.projects} canCreate={may.newProject} />
+          </TabPanel>
+        ) : null}
+        {sees.contracts ? (
+          <TabPanel value="contratos">
+            <ContractsSection clientId={client.id} rows={related.contracts} canCreate={may.newContract} />
+          </TabPanel>
+        ) : null}
+        {sees.finance ? (
+          <TabPanel value="financeiro">
+            <FinanceSection clientId={client.id} finance={related.finance} canCreate={may.newIncome} />
+          </TabPanel>
+        ) : null}
+        {sees.events || sees.tasks ? (
+          <TabPanel value="agenda">
+            <AgendaSection clientId={client.id} events={sees.events ? related.events : null} tasks={sees.tasks ? related.tasks : null} today={today} canSchedule={may.schedule} />
+          </TabPanel>
+        ) : null}
       </Tabs>
     </>
   );
 }
 
 // ---------------------------------------------------------------- listas relacionadas
-function SectionHeader({ title, action }: { title: string; action: React.ReactNode }) {
+function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
       <h2 className="text-texto text-base font-bold">{title}</h2>
@@ -324,7 +388,7 @@ function SectionHeader({ title, action }: { title: string; action: React.ReactNo
   );
 }
 
-function ProposalsSection({ clientId, rows }: { clientId: number; rows: ClientRelated["proposals"] }) {
+function ProposalsSection({ clientId, rows, canCreate }: { clientId: number; rows: ClientRelated["proposals"]; canCreate: boolean }) {
   const columns: DataListColumn<ClientRelated["proposals"][number]>[] = [
     {
       key: "titulo",
@@ -346,20 +410,20 @@ function ProposalsSection({ clientId, rows }: { clientId: number; rows: ClientRe
   ];
   return (
     <>
-      <SectionHeader title="Orçamentos do cliente" action={<ButtonLink href={`/painel/orcamentos/novo?cliente=${clientId}`} size="sm" icon={<FilePlus2 />}>Novo orçamento</ButtonLink>} />
+      <SectionHeader title="Orçamentos do cliente" action={canCreate ? <ButtonLink href={`/painel/orcamentos/novo?cliente=${clientId}`} size="sm" icon={<FilePlus2 />}>Novo orçamento</ButtonLink> : undefined} />
       <DataList
         caption="Orçamentos do cliente"
         columns={columns}
         rows={rows}
         rowKey={(row) => row.id}
         href={(row) => `/painel/orcamentos/${row.id}`}
-        empty={<EmptyState variant="plain" icon={<FilePlus2 />} title="Nenhum orçamento ainda" description="Monte uma proposta para este cliente a partir de um modelo ou do zero." action={<ButtonLink href={`/painel/orcamentos/novo?cliente=${clientId}`} icon={<FilePlus2 />}>Novo orçamento</ButtonLink>} />}
+        empty={<EmptyState variant="plain" icon={<FilePlus2 />} title="Nenhum orçamento ainda" description="Monte uma proposta para este cliente a partir de um modelo ou do zero." action={canCreate ? <ButtonLink href={`/painel/orcamentos/novo?cliente=${clientId}`} icon={<FilePlus2 />}>Novo orçamento</ButtonLink> : undefined} />}
       />
     </>
   );
 }
 
-function ProjectsSection({ clientId, rows }: { clientId: number; rows: ClientRelated["projects"] }) {
+function ProjectsSection({ clientId, rows, canCreate }: { clientId: number; rows: ClientRelated["projects"]; canCreate: boolean }) {
   const columns: DataListColumn<ClientRelated["projects"][number]>[] = [
     { key: "titulo", header: "Projeto", primary: true, cell: (row) => <span className="block break-words">{row.title}</span> },
     { key: "etapa", header: "Etapa", hideLabelOnMobile: true, cell: (row) => <Badge tone={row.stage === "entregue" ? "sucesso" : row.stage === "cancelado" ? "neutral" : "roxo"} dot>{PROJECT_STAGE_LABELS[row.stage]}</Badge> },
@@ -368,20 +432,20 @@ function ProjectsSection({ clientId, rows }: { clientId: number; rows: ClientRel
   ];
   return (
     <>
-      <SectionHeader title="Projetos do cliente" action={<ButtonLink href={`/painel/projetos/novo?cliente=${clientId}`} size="sm" icon={<FolderPlus />}>Novo projeto</ButtonLink>} />
+      <SectionHeader title="Projetos do cliente" action={canCreate ? <ButtonLink href={`/painel/projetos/novo?cliente=${clientId}`} size="sm" icon={<FolderPlus />}>Novo projeto</ButtonLink> : undefined} />
       <DataList
         caption="Projetos do cliente"
         columns={columns}
         rows={rows}
         rowKey={(row) => row.id}
         href={(row) => `/painel/projetos/${row.id}`}
-        empty={<EmptyState variant="plain" icon={<FolderPlus />} title="Nenhum projeto ainda" description="Quando o orçamento for aceito, crie o projeto para acompanhar prazos e entregas." action={<ButtonLink href={`/painel/projetos/novo?cliente=${clientId}`} icon={<FolderPlus />}>Novo projeto</ButtonLink>} />}
+        empty={<EmptyState variant="plain" icon={<FolderPlus />} title="Nenhum projeto ainda" description="Quando o orçamento for aceito, crie o projeto para acompanhar prazos e entregas." action={canCreate ? <ButtonLink href={`/painel/projetos/novo?cliente=${clientId}`} icon={<FolderPlus />}>Novo projeto</ButtonLink> : undefined} />}
       />
     </>
   );
 }
 
-function ContractsSection({ clientId, rows }: { clientId: number; rows: ClientRelated["contracts"] }) {
+function ContractsSection({ clientId, rows, canCreate }: { clientId: number; rows: ClientRelated["contracts"]; canCreate: boolean }) {
   const columns: DataListColumn<ClientRelated["contracts"][number]>[] = [
     {
       key: "titulo",
@@ -399,20 +463,20 @@ function ContractsSection({ clientId, rows }: { clientId: number; rows: ClientRe
   ];
   return (
     <>
-      <SectionHeader title="Contratos do cliente" action={<ButtonLink href={`/painel/contratos/novo?cliente=${clientId}`} size="sm" icon={<FilePlus2 />}>Novo contrato</ButtonLink>} />
+      <SectionHeader title="Contratos do cliente" action={canCreate ? <ButtonLink href={`/painel/contratos/novo?cliente=${clientId}`} size="sm" icon={<FilePlus2 />}>Novo contrato</ButtonLink> : undefined} />
       <DataList
         caption="Contratos do cliente"
         columns={columns}
         rows={rows}
         rowKey={(row) => row.id}
         href={(row) => `/painel/contratos/${row.id}`}
-        empty={<EmptyState variant="plain" icon={<FilePlus2 />} title="Nenhum contrato ainda" description="Gere o contrato a partir de um modelo, já com os dados deste cliente." action={<ButtonLink href={`/painel/contratos/novo?cliente=${clientId}`} icon={<FilePlus2 />}>Novo contrato</ButtonLink>} />}
+        empty={<EmptyState variant="plain" icon={<FilePlus2 />} title="Nenhum contrato ainda" description="Gere o contrato a partir de um modelo, já com os dados deste cliente." action={canCreate ? <ButtonLink href={`/painel/contratos/novo?cliente=${clientId}`} icon={<FilePlus2 />}>Novo contrato</ButtonLink> : undefined} />}
       />
     </>
   );
 }
 
-function FinanceSection({ clientId, finance }: { clientId: number; finance: ClientRelated["finance"] }) {
+function FinanceSection({ clientId, finance, canCreate }: { clientId: number; finance: ClientRelated["finance"]; canCreate: boolean }) {
   const { summary, entries } = finance;
   const columns: DataListColumn<ClientRelated["finance"]["entries"][number]>[] = [
     {
@@ -435,7 +499,7 @@ function FinanceSection({ clientId, finance }: { clientId: number; finance: Clie
   ];
   return (
     <>
-      <SectionHeader title="Financeiro do cliente" action={<ButtonLink href={`/painel/financeiro/novo?tipo=receita&cliente=${clientId}`} size="sm" icon={<Wallet />}>Nova receita</ButtonLink>} />
+      <SectionHeader title="Financeiro do cliente" action={canCreate ? <ButtonLink href={`/painel/financeiro/novo?tipo=receita&cliente=${clientId}`} size="sm" icon={<Wallet />}>Nova receita</ButtonLink> : undefined} />
       {finance.total > 0 ? (
         <dl className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
@@ -460,67 +524,85 @@ function FinanceSection({ clientId, finance }: { clientId: number; finance: Clie
         rows={entries}
         rowKey={(row) => row.id}
         href={(row) => `/painel/financeiro/${row.id}`}
-        empty={<EmptyState variant="plain" icon={<Wallet />} title="Nenhum lançamento financeiro" description="Registre a entrada e as parcelas deste cliente para acompanhar previsto × recebido." action={<ButtonLink href={`/painel/financeiro/novo?tipo=receita&cliente=${clientId}`} icon={<Wallet />}>Nova receita</ButtonLink>} />}
+        empty={<EmptyState variant="plain" icon={<Wallet />} title="Nenhum lançamento financeiro" description="Registre a entrada e as parcelas deste cliente para acompanhar previsto × recebido." action={canCreate ? <ButtonLink href={`/painel/financeiro/novo?tipo=receita&cliente=${clientId}`} icon={<Wallet />}>Nova receita</ButtonLink> : undefined} />}
       />
       {finance.total > entries.length ? <p className="text-texto-suave mt-2 text-sm">Mostrando {entries.length} de {finance.total} lançamentos. Veja todos em <Link href="/painel/financeiro" className="link">Financeiro</Link>.</p> : null}
     </>
   );
 }
 
-function AgendaSection({ clientId, events, tasks, today }: { clientId: number; events: ClientRelated["events"]; tasks: ClientRelated["tasks"]; today: string }) {
+function AgendaSection({
+  clientId,
+  events,
+  tasks,
+  today,
+  canSchedule,
+}: {
+  clientId: number;
+  /** `null` = a pessoa não vê a Agenda (o cartão some). */
+  events: ClientRelated["events"] | null;
+  /** `null` = a pessoa não vê as Tarefas. */
+  tasks: ClientRelated["tasks"] | null;
+  today: string;
+  canSchedule: boolean;
+}) {
   return (
     <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-      <Card as="section" aria-labelledby="agenda-titulo">
-        <CardHeader id="agenda-titulo" title="Próximos compromissos" action={<ButtonLink href={`/painel/agenda/novo?cliente=${clientId}`} size="sm" variant="secondary" icon={<CalendarPlus />}>Agendar</ButtonLink>} />
-        {events.length === 0 ? (
-          <EmptyState variant="plain" icon={<CalendarPlus />} title="Nada agendado" description="Agende uma reunião, gravação ou entrega com este cliente." action={<ButtonLink href={`/painel/agenda/novo?cliente=${clientId}`} icon={<CalendarPlus />}>Agendar</ButtonLink>} />
-        ) : (
-          <ul className="divide-borda divide-y">
-            {events.map((event) => (
-              <li key={event.id}>
-                <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave -mx-2 flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2">
-                  <span className="min-w-0">
-                    <span className="text-texto block text-[0.9375rem] font-semibold break-words">{event.title}</span>
-                    <span className="text-texto-suave block text-[0.8125rem]">{AGENDA_KIND_LABELS[event.kind]}</span>
-                  </span>
-                  <span className="text-texto-suave shrink-0 text-right text-sm">
-                    <DateText value={event.date} format="short" />
-                    {event.startTime ? <span className="block">{event.startTime}</span> : null}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      {events ? (
+        <Card as="section" aria-labelledby="agenda-titulo">
+          <CardHeader id="agenda-titulo" title="Próximos compromissos" action={canSchedule ? <ButtonLink href={`/painel/agenda/novo?cliente=${clientId}`} size="sm" variant="secondary" icon={<CalendarPlus />}>Agendar</ButtonLink> : undefined} />
+          {events.length === 0 ? (
+            <EmptyState variant="plain" icon={<CalendarPlus />} title="Nada agendado" description={canSchedule ? "Agende uma reunião, gravação ou entrega com este cliente." : undefined} action={canSchedule ? <ButtonLink href={`/painel/agenda/novo?cliente=${clientId}`} icon={<CalendarPlus />}>Agendar</ButtonLink> : undefined} />
+          ) : (
+            <ul className="divide-borda divide-y">
+              {events.map((event) => (
+                <li key={event.id}>
+                  <Link href={`/painel/agenda/${event.id}`} className="hover:bg-detalhe-suave -mx-2 flex min-h-11 items-center justify-between gap-3 rounded-md px-2 py-2">
+                    <span className="min-w-0">
+                      <span className="text-texto block text-[0.9375rem] font-semibold break-words">{event.title}</span>
+                      <span className="text-texto-suave block text-[0.8125rem]">{AGENDA_KIND_LABELS[event.kind]}</span>
+                    </span>
+                    <span className="text-texto-suave shrink-0 text-right text-sm">
+                      <DateText value={event.date} format="short" />
+                      {event.startTime ? <span className="block">{event.startTime}</span> : null}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      ) : null}
 
-      <Card as="section" aria-labelledby="tarefas-titulo">
-        <CardHeader id="tarefas-titulo" title="Tarefas em aberto" action={<ButtonLink href={`/painel/tarefas?cliente=${clientId}`} size="sm" variant="secondary" icon={<ListPlus />}>Ver tarefas</ButtonLink>} />
-        {tasks.length === 0 ? (
-          <EmptyState variant="plain" icon={<ListPlus />} title="Nenhuma tarefa em aberto" description="Crie tarefas ligadas a este cliente para não perder prazos." action={<ButtonLink href={`/painel/tarefas?cliente=${clientId}`} icon={<ListPlus />}>Abrir tarefas</ButtonLink>} />
-        ) : (
-          <ul className="divide-borda divide-y">
-            {tasks.map((task) => (
-              <li key={task.id} className="flex min-h-11 items-center justify-between gap-3 py-2">
-                <span className="min-w-0">
-                  <span className="text-texto block text-[0.9375rem] break-words">{task.title}</span>
-                  <span className="text-texto-suave block text-[0.8125rem]">
-                    {task.ownerName ?? "Sem responsável"}
-                    {task.priority === "alta" ? ` · prioridade ${TASK_PRIORITY_LABELS.alta.toLowerCase()}` : ""}
+      {tasks ? (
+        <Card as="section" aria-labelledby="tarefas-titulo">
+          <CardHeader id="tarefas-titulo" title="Tarefas em aberto" action={<ButtonLink href={`/painel/tarefas?cliente=${clientId}`} size="sm" variant="secondary" icon={<ListPlus />}>Ver tarefas</ButtonLink>} />
+          {tasks.length === 0 ? (
+            <EmptyState variant="plain" icon={<ListPlus />} title="Nenhuma tarefa em aberto" description="Crie tarefas ligadas a este cliente para não perder prazos." action={<ButtonLink href={`/painel/tarefas?cliente=${clientId}`} icon={<ListPlus />}>Abrir tarefas</ButtonLink>} />
+          ) : (
+            <ul className="divide-borda divide-y">
+              {tasks.map((task) => (
+                <li key={task.id} className="flex min-h-11 items-center justify-between gap-3 py-2">
+                  <span className="min-w-0">
+                    <span className="text-texto block text-[0.9375rem] break-words">{task.title}</span>
+                    <span className="text-texto-suave block text-[0.8125rem]">
+                      {task.ownerName ?? "Sem responsável"}
+                      {task.priority === "alta" ? ` · prioridade ${TASK_PRIORITY_LABELS.alta.toLowerCase()}` : ""}
+                    </span>
                   </span>
-                </span>
-                {task.dueDate ? (
-                  <Badge tone={task.dueDate < today ? "perigo" : "neutral"}>
-                    <DateText value={task.dueDate} format="relative" />
-                  </Badge>
-                ) : (
-                  <span className="text-texto-suave shrink-0 text-sm">Sem prazo</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+                  {task.dueDate ? (
+                    <Badge tone={task.dueDate < today ? "perigo" : "neutral"}>
+                      <DateText value={task.dueDate} format="relative" />
+                    </Badge>
+                  ) : (
+                    <span className="text-texto-suave shrink-0 text-sm">Sem prazo</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { parsePage, type PageSearchParams } from "@/components/ui/search-params";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere, requirePermission } from "@/lib/auth";
 import { CLIENT_PIPELINE, CLIENT_STATUS_LABELS, CONTACT_SOURCE_LABELS, SERVICE_INTEREST_LABELS } from "@/lib/domain";
 import { formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -60,7 +60,7 @@ const columns: DataListColumn<ClientListItem>[] = [
 ];
 
 export default async function ClientsPage({ searchParams }: { searchParams: PageSearchParams }) {
-  const user = await requireUser();
+  const user = await requirePermission("clientes", "ver");
   const params = await searchParams;
   const funnel = isFunnelView(params.vista);
   const filters = clientFiltersFromParams(params);
@@ -87,15 +87,17 @@ export default async function ClientsPage({ searchParams }: { searchParams: Page
       description="Quem já falou com a gente: histórico de atendimento, orçamentos, projetos e financeiro de cada cliente num lugar só."
       actions={
         <>
-          {/* exportação é só de administradores (a rota confere de novo) */}
-          {user.role === "admin" ? (
+          {/* exportação: só quem pode exportar dados (admin, sócio) — a rota confere de novo */}
+          {canEverywhere(user, "dados", "baixar") ? (
             <ButtonLink href={`/painel/clientes/exportar${query}`} download prefetch={false} variant="secondary" icon={<Download />}>
               Exportar CSV
             </ButtonLink>
           ) : null}
-          <ButtonLink href="/painel/clientes/novo" icon={<Plus />}>
-            Novo cliente
-          </ButtonLink>
+          {canEverywhere(user, "clientes", "editar") ? (
+            <ButtonLink href="/painel/clientes/novo" icon={<Plus />}>
+              Novo cliente
+            </ButtonLink>
+          ) : null}
         </>
       }
     />

@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { paramOneOf, paramText, parsePage, type PageSearchParams } from "@/components/ui/search-params";
 import { DateText, Money } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { PROPOSAL_MODALITY_LABELS, PROPOSAL_STATUS_LABELS, PROPOSAL_STATUSES, type ProposalStatus } from "@/lib/domain";
 import { countProposalsByStatus, listProposals, type ProposalListItem } from "@/server/proposals/admin";
@@ -59,7 +59,7 @@ const columns: DataListColumn<ProposalListItem>[] = [
 ];
 
 export default async function ProposalsPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("propostas", "ver");
   const params = await searchParams;
   const filters = {
     status: paramOneOf(PROPOSAL_STATUSES, params.status),

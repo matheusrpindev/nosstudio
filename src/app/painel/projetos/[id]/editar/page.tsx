@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getClientOptions, getUserOptions } from "@/server/options";
 import { getProject } from "@/server/projects/admin";
 import { updateProjectAction } from "../../actions";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Editar projeto" };
 export const instant = false;
 
 export default async function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("projetos", "editar");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const project = await getProject(id);

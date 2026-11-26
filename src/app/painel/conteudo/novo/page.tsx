@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { firstParam, paramId, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { isISODate } from "@/lib/dates";
 import { getClientOptions, getUserOptions } from "@/server/options";
 import { createContentAction } from "../actions";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Novo conteúdo" };
 export const instant = false;
 
 export default async function NewContentPage({ searchParams }: { searchParams: PageSearchParams }) {
-  const user = await requireUser();
+  const user = await requirePermission("conteudo", "editar");
   const params = await searchParams;
   const dateParam = firstParam(params.data);
   const publishDate = dateParam && isISODate(dateParam) ? dateParam : null;

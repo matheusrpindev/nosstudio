@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import { isNavItemActive, PANEL_NAV, type NavBadges } from "../nav";
+import { filterNav, isNavItemActive, type NavBadges } from "../nav";
 
 type NavListProps = {
+  /** Hrefs dos itens que esta pessoa pode abrir (calculado no servidor, pela matriz de permissões). */
+  allowed: readonly string[];
   badges: NavBadges;
   /** Chamado ao clicar num item (a gaveta do celular usa para fechar). */
   onNavigate?: () => void;
@@ -14,11 +16,11 @@ type NavListProps = {
 };
 
 /** Grupos e itens do menu sobre o fundo do menu (`bg-menu`, preto arroxeado). O item ativo (por prefixo de rota) fica em lima. */
-export function NavList({ badges, onNavigate, touch }: NavListProps) {
+export function NavList({ allowed, badges, onNavigate, touch }: NavListProps) {
   const pathname = usePathname();
   return (
     <div className="space-y-4">
-      {PANEL_NAV.map((group) => (
+      {filterNav(allowed).map((group) => (
         <div key={group.label}>
           <p className="text-lavanda/75 px-3 pb-1.5 text-[0.6875rem] font-bold tracking-[0.14em] uppercase">{group.label}</p>
           <ul className="space-y-0.5">

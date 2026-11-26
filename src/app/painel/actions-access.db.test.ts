@@ -1,7 +1,8 @@
 /**
  * TODAS as Server Actions do painel, chamadas de verdade com sessões de cada perfil (banco de teste):
  * - freelancer e cliente não executam NENHUMA;
- * - o funcionário (permissão só "nos projetos em que está") não executa nenhuma ação de módulo inteiro;
+ * - o funcionário (permissão só "nos projetos em que está") só passa do guarda nas ações de ANDAMENTO de projeto
+ *   e de tarefas — e nelas o projeto do registro é conferido no banco (funcionario-scope.db.test.ts);
  * - o gestor não executa nada de financeiro, site, configurações e usuários;
  * - o técnico não gerencia usuários.
  * O teste varre os arquivos `actions.ts`: uma action nova entra sozinha na conferência.
@@ -100,7 +101,7 @@ describe("Server Actions do painel × perfis", () => {
         const name = chunk.slice(0, chunk.indexOf("("));
         const body = chunk.slice(chunk.indexOf("{"));
         const firstAwait = /await\s+(\w+)\(/.exec(body)?.[1] ?? "";
-        if (!/^require(Permission|Admin|User|SessionUser|PanelUser)$/.test(firstAwait)) unguarded.push(`${path.relative(ROOT, file)}#${name} (${firstAwait || "nenhum await"})`);
+        if (!/^require(Permission|ScopedPermission|Admin|User|SessionUser|PanelUser)$/.test(firstAwait)) unguarded.push(`${path.relative(ROOT, file)}#${name} (${firstAwait || "nenhum await"})`);
       }
     }
     expect(unguarded).toEqual([]);
@@ -125,8 +126,31 @@ describe("Server Actions do painel × perfis", () => {
     expect(await deniedFor("cliente", panelActions)).toEqual([]);
   });
 
-  it("FUNCIONÁRIO: nenhuma action de módulo inteiro executa (o acesso dele é por projeto)", async () => {
-    expect(await deniedFor("funcionario", actions.filter((action) => !ACCOUNT_ACTIONS.has(action.key)))).toEqual([]);
+  it("FUNCIONÁRIO: só passam do guarda as ações de andamento de projeto e de tarefas — a lista é fechada", async () => {
+    // Estas (e só estas) aceitam quem tem a permissão "nos projetos em que está". Com o formulário vazio elas
+    // param na validação; com dados de verdade, conferem o projeto do registro no banco — ver
+    // funcionario-scope.db.test.ts (projeto alheio, inexistente, só-ver, tarefa sem projeto).
+    const PROJECT_SCOPED = [
+      "projetos/actions.ts#addChecklistItemAction",
+      "projetos/actions.ts#addProjectTaskAction",
+      "projetos/actions.ts#moveProjectAction",
+      "projetos/actions.ts#removeChecklistItemAction",
+      "projetos/actions.ts#toggleChecklistItemAction",
+      "projetos/actions.ts#updateProjectStageAction",
+      "tarefas/actions.ts#createTaskAction",
+      "tarefas/actions.ts#setTaskDoneAction",
+      "tarefas/actions.ts#updateTaskAction",
+    ];
+    const passed = await deniedFor("funcionario", actions.filter((action) => !ACCOUNT_ACTIONS.has(action.key)));
+    expect(passed.sort()).toEqual(PROJECT_SCOPED);
+    // …e no código, cada uma delas usa o guarda com escopo E confere o escopo antes de gravar
+    for (const key of PROJECT_SCOPED) {
+      const [file, name] = key.split("#");
+      const source = readFileSync(path.join(ROOT, file), "utf8");
+      const body = source.slice(source.indexOf(`export async function ${name}(`)).split(/^export async function /m)[1];
+      expect(body, key).toMatch(/await requireScopedPermission\(/);
+      expect(body, key).toMatch(/scopeAllows\(|restrictedRefs\(/);
+    }
   });
 
   it("GESTOR: nada de financeiro, site, configurações, usuários nem demonstração do kit", async () => {

@@ -20,7 +20,7 @@ import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import { clientUsers, projectMembers, projects } from "@/db/schema";
 import type { UserRole } from "@/lib/domain";
-import { canEverywhere, permissionScope, type Action, type Module, type PermissionOverrides } from "@/lib/permissions";
+import { canEverywhere, PROJECT_SCOPED_PANEL_MODULES, permissionScope, type Action, type Module, type PermissionOverrides } from "@/lib/permissions";
 
 /** O que as funções de escopo precisam saber de alguém. `CurrentUser` serve. */
 export type AccessUser = { id: number; role: UserRole; permissions?: PermissionOverrides | null };
@@ -120,6 +120,34 @@ export async function canInProject(user: AccessUser, mod: Module, action: Action
   if (scope === "todos") return true;
   if (!validId(projectId) || action === "excluir" || action === "compartilhar") return false;
   return memberAllows(await membershipOf(user, projectId), action);
+}
+
+/**
+ * PAINEL: em quais projetos a pessoa pode `action` nos registros do módulo `mod` — para filtrar listas
+ * (`inScope(tasks.projectId, escopo)`) e conferir registros (`scopeAllows`).
+ * - alcance "todos" → `"todos"`;
+ * - alcance "projetos" (funcionário) → os projetos em que é membro com a permissão correspondente — e só nos
+ *   módulos cujas telas já filtram por projeto (`PROJECT_SCOPED_PANEL_MODULES`); excluir e compartilhar nunca vêm
+ *   de ser membro;
+ * - sem permissão → `[]` (nada).
+ */
+export async function moduleScope(user: AccessUser, mod: Module, action: Action = "ver"): Promise<IdScope> {
+  const scope = permissionScope(user, mod, action);
+  if (scope === null) return [];
+  if (scope === "todos") return "todos";
+  if (!PROJECT_SCOPED_PANEL_MODULES.includes(mod) || action === "excluir" || action === "compartilhar" || user.role === "cliente") return [];
+  const flag = action === "editar" ? projectMembers.canEdit : action === "baixar" ? projectMembers.canDownload : undefined;
+  const rows = await db
+    .select({ projectId: projectMembers.projectId })
+    .from(projectMembers)
+    .where(and(eq(projectMembers.userId, user.id), eq(projectMembers.canView, true), flag ? eq(flag, true) : undefined));
+  return rows.map((row) => row.projectId).sort((a, b) => a - b);
+}
+
+/** O registro (pelo `projectId` LIDO DO BANCO) está dentro do escopo? Registro sem projeto só entra em `"todos"`. */
+export function scopeAllows(scope: IdScope, projectId: number | null | undefined): boolean {
+  if (scope === "todos") return true;
+  return validId(projectId) && scope.includes(projectId);
 }
 
 // ------------------------------------------------------- filtros de consulta

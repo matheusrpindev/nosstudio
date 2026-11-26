@@ -144,7 +144,7 @@ export function ProposalEditor({ id, isTemplate, number, version, serverKey, ini
             <StepPreco {...stepProps} />
           </TabPanel>
           <TabPanel value="textos">
-            <StepTextos {...stepProps} />
+            <StepTextos {...stepProps} canOpenConfig={control.may.openConfig} />
           </TabPanel>
         </form>
 

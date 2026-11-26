@@ -9,7 +9,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { paramOneOf, paramText, parsePage, type PageSearchParams } from "@/components/ui/search-params";
 import { StatusBadge } from "@/components/ui/badge";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CONTACT_SOURCE_LABELS, LEAD_STATUS_LABELS, LEAD_STATUSES, SERVICE_INTEREST_LABELS, SERVICE_INTERESTS } from "@/lib/domain";
 import { formatPhone } from "@/lib/format";
 import { listLeads, type LeadListItem } from "@/server/leads/admin";
@@ -41,7 +41,7 @@ const columns: DataListColumn<LeadListItem>[] = [
 ];
 
 export default async function LeadsPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("leads", "ver");
   const params = await searchParams;
   const filters = {
     // a URL é entrada do usuário: só passam valores que existem nos enums

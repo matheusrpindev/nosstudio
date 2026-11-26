@@ -11,7 +11,7 @@ import { ActionForm, Field, SubmitButton } from "@/components/ui/form";
 import { Select } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CONTACT_SOURCE_LABELS, LEAD_STATUS_LABELS, SERVICE_INTEREST_LABELS } from "@/lib/domain";
 import { formatPhone, mailtoHref, whatsAppLink } from "@/lib/format";
 import { getLead } from "@/server/leads/admin";
@@ -25,7 +25,7 @@ export const instant = false;
 type Props = { params: Promise<{ id: string }> };
 
 export default async function LeadPage({ params }: Props) {
-  const user = await requireUser();
+  const user = await requirePermission("leads", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const lead = await getLead(id);

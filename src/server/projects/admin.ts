@@ -27,6 +27,7 @@ import {
 } from "@/db/schema";
 import type { ISODate } from "@/lib/dates";
 import { PROJECT_OPEN_STAGES, type BackupStatus, type ProjectStage, type ServiceInterest, type TaskPriority } from "@/lib/domain";
+import { inScope, type IdScope } from "@/server/access/scope";
 import { advanceClientInFunnel, type FunnelMove } from "@/server/proposals/funnel";
 import { isOpenStage, resolveDeliveredAt } from "./logic";
 
@@ -50,8 +51,8 @@ export type ProjectListItem = Project & { clientName: string | null; ownerName: 
 /** `%` e `_` digitados pelo usuário não podem virar curingas do LIKE. */
 const likePattern = (term: string) => `%${term.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
 
-function projectWhere(filters: ProjectFilters): SQL | undefined {
-  const conditions: (SQL | undefined)[] = [];
+function projectWhere(filters: ProjectFilters, scope: IdScope): SQL | undefined {
+  const conditions: (SQL | undefined)[] = [inScope(projects.id, scope)];
   if (filters.ownerId) conditions.push(eq(projects.ownerId, filters.ownerId));
   if (filters.clientId) conditions.push(eq(projects.clientId, filters.clientId));
   if (filters.service) conditions.push(eq(projects.serviceType, filters.service));
@@ -68,9 +69,11 @@ function projectWhere(filters: ProjectFilters): SQL | undefined {
 /**
  * Lista de projetos ordenada pelo prazo de entrega (sem prazo por último); entregues e cancelados vão para o fim.
  * Com `page`, pagina; sem `page`, devolve todos.
+ * `scope` = quais projetos esta pessoa vê (`moduleScope(user, "projetos", "ver")`): `"todos"` ou só os projetos
+ * em que é membro. É obrigatório de propósito: quem chama precisa decidir o escopo.
  */
-export async function listProjects(filters: ProjectFilters = {}): Promise<{ rows: ProjectListItem[]; total: number; page: number; pageSize: number }> {
-  const where = projectWhere(filters);
+export async function listProjects(filters: ProjectFilters, scope: IdScope): Promise<{ rows: ProjectListItem[]; total: number; page: number; pageSize: number }> {
+  const where = projectWhere(filters, scope);
   const [{ total }] = await db.select({ total: count() }).from(projects).leftJoin(clients, eq(clients.id, projects.clientId)).where(where);
 
   const paginate = filters.page !== undefined;

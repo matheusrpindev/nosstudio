@@ -20,6 +20,8 @@ export type { CurrentUser } from "./session";
 export const LOGIN_PATH = "/login";
 export { PANEL_HOME };
 export const FORCE_PASSWORD_PATH = "/painel/conta/senha";
+/** Troca de senha de quem NÃO entra no painel (freelancer, cliente): tela neutra, fora de qualquer ambiente. */
+export const ACCOUNT_PASSWORD_PATH = "/conta/senha";
 /** Conta válida, mas sem acesso ao que tentou abrir e sem outro ambiente para onde ir. */
 export const NO_ACCESS_PATH = `${LOGIN_PATH}?aviso=sem-acesso`;
 
@@ -30,6 +32,8 @@ export const NO_ACCESS_PATH = `${LOGIN_PATH}?aviso=sem-acesso`;
  *   requireEnvironment(env)               contas cujo PERFIL entra naquele ambiente (painel, equipe, cliente)
  *   requirePanelUser                      = requireEnvironment("painel")
  *   requirePermission(módulo, ação)       conta do painel COM a permissão no módulo inteiro
+ *   requireScopedPermission /             (em @/server/access) módulos que filtram por projeto: passa também quem
+ *   requireProjectPermission              só tem a permissão "nos projetos em que está" (funcionário)
  *   requireUser / getCurrentUser          conta do painel com acesso INTEGRAL (pode ver todos os módulos das
  *                                         telas atuais): é o guarda das páginas que ainda não checam módulo
  *   requireAdmin                          admin ou sócio
@@ -71,8 +75,13 @@ function deniedPath(user: CurrentUser, from: Environment): string {
 
 type RequireOptions = { allowPasswordChange?: boolean };
 
+/** Onde esta conta troca a senha provisória: dentro do painel, se ela entra nele; senão na tela neutra. */
+export function passwordChangePath(user: Pick<CurrentUser, "role">): string {
+  return `${hasEnvironment(user.role, "painel") ? FORCE_PASSWORD_PATH : ACCOUNT_PASSWORD_PATH}?obrigatoria=1`;
+}
+
 function enforcePasswordChange(user: CurrentUser, options: RequireOptions): void {
-  if (user.mustChangePassword && !options.allowPasswordChange) redirect(`${FORCE_PASSWORD_PATH}?obrigatoria=1`);
+  if (user.mustChangePassword && !options.allowPasswordChange) redirect(passwordChangePath(user));
 }
 
 // ---------------------------------------------------------------- guardas
@@ -107,9 +116,10 @@ export const requireTeamUser = (options: RequireOptions = {}) => requireEnvironm
 export const requireClientUser = (options: RequireOptions = {}) => requireEnvironment("cliente", options);
 
 /**
- * Guarda das páginas e ações ATUAIS do painel: exige sessão e acesso integral ao painel (admin, sócio, técnico
- * sem negações). Freelancer e cliente nunca passam; gestor e funcionário também não, porque estas páginas não
- * sabem a que módulo pertencem — eles entram por `requirePermission` / `requirePanelUser`, página a página.
+ * Guarda de quem pode ver TUDO: exige sessão e acesso integral ao painel (admin, sócio, técnico sem negações).
+ * Freelancer e cliente nunca passam; gestor e funcionário também não. As páginas e ações dos módulos NÃO usam
+ * este guarda — declaram módulo e ação (`requirePermission`…); ele ficou para a demonstração do kit e como base
+ * de `requireAdmin`.
  * (O proxy.ts só faz um redirecionamento otimista; a autorização de verdade é esta checagem no servidor.)
  *
  * Contas marcadas com "trocar a senha" são levadas à tela de troca, a menos que `allowPasswordChange`.
@@ -167,5 +177,5 @@ export async function authorizePermission(mod: Module, action: Action): Promise<
   return user;
 }
 
-export { can, canEverywhere, isAdminRole, permissionScope } from "@/lib/permissions";
+export { can, canEverywhere, canUsePanelModule, isAdminRole, permissionScope } from "@/lib/permissions";
 export { safeNextPath } from "./next-path";

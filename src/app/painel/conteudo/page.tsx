@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import type { PageSearchParams } from "@/components/ui/search-params";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatDate, todayISO } from "@/lib/dates";
 import {
   APPROVAL_STATUS_LABELS,
@@ -92,7 +92,7 @@ function BoardCardBody({ item }: { item: ContentListItem }) {
 }
 
 export default async function ContentPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("conteudo", "ver");
   const params = await searchParams;
   const today = todayISO();
   const [clients, users] = await Promise.all([getClientOptions(), getUserOptions()]);

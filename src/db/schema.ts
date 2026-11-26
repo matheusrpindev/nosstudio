@@ -12,7 +12,14 @@
 import { relations, sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
+  AGENDA_CALENDAR_KINDS,
+  AGENDA_COLORS,
+  AGENDA_ICONS,
   AGENDA_KINDS,
+  AGENDA_PERSON_ROLES,
+  AGENDA_PRIORITIES,
+  AGENDA_STATUSES,
+  AGENDA_VISIBILITIES,
   APPROVAL_STATUSES,
   BACKUP_STATUSES,
   BRAND_ASSET_CATEGORIES,
@@ -45,6 +52,8 @@ import {
   TESTIMONIAL_KINDS,
   USER_ROLES,
 } from "@/lib/domain";
+import type { AgendaReminderChannel } from "@/lib/domain";
+import type { Recurrence } from "@/lib/agenda/recurrence";
 import type { PermissionOverrides } from "@/lib/permissions/matrix";
 
 // ------------------------------------------------------------------ helpers
@@ -66,6 +75,24 @@ export type LabeledDate = { label: string; date: string };
 export type LabeledLink = { label: string; url: string };
 export type ChecklistItem = { id: string; text: string; done: boolean };
 export type Deliverable = { label: string; quantity: string };
+/** Lembrete de um compromisso: antecedência em minutos + canal. (O envio é da Parte 2 da agenda.) */
+export type AgendaReminder = { minutes: number; channel: AgendaReminderChannel };
+/** Planejamento de gravação (só em categorias de produção). */
+export type AgendaProductionPlan = {
+  address: string;
+  /** Horário de chegada da equipe (`HH:mm`). */
+  crewArrival: string | null;
+  script: string;
+  references: string;
+  equipment: string;
+  /** Quantidade de conteúdos previstos. */
+  contentCount: number | null;
+  /** Tempo estimado de gravação, em minutos. */
+  estimatedMinutes: number | null;
+  editDeadline: string | null;
+  deliveryDate: string | null;
+  prepChecklist: ChecklistItem[];
+};
 export type MediaVariant = { width: number; height: number; key: string };
 export type LeadDetails = {
   /** Campos extras do formulário de evento/casamento. */
@@ -535,25 +562,130 @@ export const tasks = sqliteTable(
   (t) => [index("tasks_due_idx").on(t.done, t.dueDate)],
 );
 
+/** Categorias da agenda (personalizáveis): dão cor e ícone ao compromisso e ligam comportamentos. */
+export const agendaCategories = sqliteTable("agenda_categories", {
+  id: id(),
+  /** Chave estável das categorias iniciais (`AGENDA_DEFAULT_CATEGORIES`); nula nas criadas pelo cliente. */
+  slug: text("slug").unique(),
+  name: text("name").notNull(),
+  color: text("color", { enum: AGENDA_COLORS }).notNull().default("roxo"),
+  icon: text("icon", { enum: AGENDA_ICONS }).notNull().default("calendar"),
+  /** Dia inteiro desta categoria ocupa a pessoa (férias, indisponibilidade): entra na conta de conflitos. */
+  blocksDay: bool("blocks_day", false),
+  /** Mostra o bloco "Planejamento de gravação" no compromisso. */
+  isProduction: bool("is_production", false),
+  active: bool("active", true),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/**
+ * Agendas (calendários). As de tipo `financeira` e `editorial` são camadas DERIVADAS de outros módulos: existem
+ * aqui só para ter nome, cor e ordem — nenhum compromisso é gravado nelas.
+ */
+export const agendaCalendars = sqliteTable(
+  "agenda_calendars",
+  {
+    id: id(),
+    slug: text("slug").unique(),
+    name: text("name").notNull(),
+    kind: text("kind", { enum: AGENDA_CALENDAR_KINDS }).notNull().default("geral"),
+    /** Dono, nas agendas pessoais (uma por usuário do painel). */
+    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+    color: text("color", { enum: AGENDA_COLORS }).notNull().default("roxo"),
+    active: bool("active", true),
+    sortOrder: sortOrder(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("agenda_calendars_user_idx").on(t.userId)],
+);
+
 export const agendaEvents = sqliteTable(
   "agenda_events",
   {
     id: id(),
     title: text("title").notNull(),
+    /** LEGADO: resumo grosso da categoria para as telas antigas. A agenda usa `categoryId`. */
     kind: text("kind", { enum: AGENDA_KINDS }).notNull().default("outro"),
-    date: text("date").notNull(), // YYYY-MM-DD
+    categoryId: integer("category_id").references(() => agendaCategories.id, { onDelete: "set null" }),
+    calendarId: integer("calendar_id").references(() => agendaCalendars.id, { onDelete: "set null" }),
+    description: text("description").notNull().default(""),
+    date: text("date").notNull(), // YYYY-MM-DD (em séries: a primeira ocorrência)
+    /** Último dia, em compromissos de vários dias. Nulo = termina no mesmo dia. */
+    endDate: text("end_date"),
     startTime: text("start_time"), // HH:mm — nulo = dia inteiro
     endTime: text("end_time"),
     location: text("location").notNull().default(""),
+    mapUrl: text("map_url").notNull().default(""),
+    meetingUrl: text("meeting_url").notNull().default(""),
     clientId: integer("client_id").references(() => clients.id, { onDelete: "set null" }),
     projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }),
+    /** LEGADO: o primeiro responsável (as pessoas ficam em `agenda_event_people`). */
     ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }),
+    priority: text("priority", { enum: AGENDA_PRIORITIES }).notNull().default("normal"),
+    status: text("status", { enum: AGENDA_STATUSES }).notNull().default("confirmado"),
+    /** `particular`: quem não participa só vê "Ocupado" no horário (ver src/server/agenda/privacy.ts). */
+    visibility: text("visibility", { enum: AGENDA_VISIBILITIES }).notNull().default("normal"),
+    checklist: text("checklist", { mode: "json" }).$type<ChecklistItem[]>().notNull().default([]),
+    /** Observações internas. */
     notes: text("notes").notNull().default(""),
+    /** Só a configuração; o envio dos lembretes é da Parte 2. */
+    reminders: text("reminders", { mode: "json" }).$type<AgendaReminder[]>().notNull().default([]),
+    /** Regra de repetição (`src/lib/agenda/recurrence.ts`). Nulo = não se repete. */
+    recurrence: text("recurrence", { mode: "json" }).$type<Recurrence | null>(),
+    /** Dias da série que não acontecem (excluídos ou editados sozinhos). */
+    recurrenceExceptions: text("recurrence_exceptions", { mode: "json" }).$type<string[]>().notNull().default([]),
+    /** Ocorrência editada sozinha ("só este"): a série de origem e o dia que ela substitui. */
+    seriesId: integer("series_id").references((): AnySQLiteColumn => agendaEvents.id, { onDelete: "cascade" }),
+    originalDate: text("original_date"),
+    /** Anexos: ids de `media` (privados, pelo pipeline de upload). */
+    attachments: text("attachments", { mode: "json" }).$type<number[]>().notNull().default([]),
+    /** Planejamento de gravação (categorias com `isProduction`). */
+    production: text("production", { mode: "json" }).$type<AgendaProductionPlan | null>(),
+    /** Quem criou — o "dono" de um compromisso particular. */
+    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("agenda_date_idx").on(t.date)],
+  (t) => [
+    index("agenda_date_idx").on(t.date),
+    index("agenda_series_idx").on(t.seriesId),
+    index("agenda_calendar_idx").on(t.calendarId),
+    index("agenda_category_idx").on(t.categoryId),
+  ],
 );
+
+/** Pessoas de um compromisso: responsáveis e participantes (usuários) e participantes externos (só o nome). */
+export const agendaEventPeople = sqliteTable(
+  "agenda_event_people",
+  {
+    id: id(),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => agendaEvents.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+    role: text("role", { enum: AGENDA_PERSON_ROLES }).notNull().default("participante"),
+    /** Nome do participante externo (quando `userId` é nulo). */
+    externalName: text("external_name").notNull().default(""),
+    sortOrder: sortOrder(),
+  },
+  (t) => [uniqueIndex("agenda_people_event_user_idx").on(t.eventId, t.userId), index("agenda_people_user_idx").on(t.userId)],
+);
+
+/** Modelos de checklist reutilizáveis (por tipo de produção, quando ligados a uma categoria). */
+export const agendaChecklistTemplates = sqliteTable("agenda_checklist_templates", {
+  id: id(),
+  name: text("name").notNull(),
+  /** Categoria sugerida (nulo = serve para qualquer compromisso). */
+  categoryId: integer("category_id").references(() => agendaCategories.id, { onDelete: "set null" }),
+  items: text("items", { mode: "json" }).$type<string[]>().notNull().default([]),
+  active: bool("active", true),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
 
 // ================================================================= PROPOSTAS
 export const proposals = sqliteTable(
@@ -849,10 +981,18 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   project: one(projects, { fields: [tasks.projectId], references: [projects.id] }),
 }));
 
-export const agendaEventsRelations = relations(agendaEvents, ({ one }) => ({
+export const agendaEventsRelations = relations(agendaEvents, ({ one, many }) => ({
   owner: one(users, { fields: [agendaEvents.ownerId], references: [users.id] }),
   client: one(clients, { fields: [agendaEvents.clientId], references: [clients.id] }),
   project: one(projects, { fields: [agendaEvents.projectId], references: [projects.id] }),
+  category: one(agendaCategories, { fields: [agendaEvents.categoryId], references: [agendaCategories.id] }),
+  calendar: one(agendaCalendars, { fields: [agendaEvents.calendarId], references: [agendaCalendars.id] }),
+  people: many(agendaEventPeople),
+}));
+
+export const agendaEventPeopleRelations = relations(agendaEventPeople, ({ one }) => ({
+  event: one(agendaEvents, { fields: [agendaEventPeople.eventId], references: [agendaEvents.id] }),
+  user: one(users, { fields: [agendaEventPeople.userId], references: [users.id] }),
 }));
 
 export const proposalsRelations = relations(proposals, ({ one, many }) => ({
@@ -918,6 +1058,10 @@ export type ClientInteraction = typeof clientInteractions.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type AgendaEvent = typeof agendaEvents.$inferSelect;
+export type AgendaCategory = typeof agendaCategories.$inferSelect;
+export type AgendaCalendar = typeof agendaCalendars.$inferSelect;
+export type AgendaEventPerson = typeof agendaEventPeople.$inferSelect;
+export type AgendaChecklistTemplate = typeof agendaChecklistTemplates.$inferSelect;
 export type Proposal = typeof proposals.$inferSelect;
 export type ProposalItem = typeof proposalItems.$inferSelect;
 export type ProposalCost = typeof proposalCosts.$inferSelect;

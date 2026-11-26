@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere, requirePermission } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { PROPOSAL_MODALITY_LABELS, PROPOSAL_STATUS_LABELS } from "@/lib/domain";
 import { getClientOptions, getUserOptions } from "@/server/options";
@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Orçamento" };
 export const instant = false;
 
 export default async function ProposalEditorPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  const user = await requirePermission("propostas", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const data = await getProposalEditorData(id);
@@ -47,8 +47,16 @@ export default async function ProposalEditorPage({ params }: { params: Promise<{
     })),
     project: data.project,
     contractId: proposal.contractId,
-    contracts: data.contracts,
-    finance: data.finance,
+    contracts: canEverywhere(user, "contratos", "ver") ? data.contracts : [],
+    // quem não vê o Financeiro (gestor) não recebe os lançamentos desta proposta — nem os valores chegam ao navegador
+    finance: canEverywhere(user, "financeiro", "ver") ? { ...data.finance, canCreate: canEverywhere(user, "financeiro", "editar") } : null,
+    may: {
+      convertToProject: canEverywhere(user, "projetos", "editar"),
+      linkContract: canEverywhere(user, "contratos", "editar"),
+      seeProjects: canEverywhere(user, "projetos", "ver"),
+      seeContracts: canEverywhere(user, "contratos", "ver"),
+      openConfig: canEverywhere(user, "config", "ver"),
+    },
     today: todayISO(),
     defaultTemplateName: isTemplate ? templateName : `${proposal.title}${data.client ? ` — ${data.client.name}` : ""}`.slice(0, 120),
   };

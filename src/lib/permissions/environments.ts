@@ -49,13 +49,15 @@ export const ENVIRONMENT_READY: Record<Environment, boolean> = {
 };
 
 /**
- * O painel "restrito" (perfis que NÃO podem ver todos os módulos das telas atuais: gestor, funcionário, ou um
- * técnico com negações individuais) só pode abrir quando as páginas do painel checarem permissão por módulo
- * (`requirePermission`) — hoje elas chamam `requireUser()`, que não sabe de qual módulo a página é.
- * Enquanto for `false`, esses perfis não entram no painel. Troque para `true` DEPOIS de aplicar a tabela
- * "rota → permissão" de docs/permissoes.md.
+ * O painel "restrito" (perfis que NÃO podem ver todos os módulos: gestor, funcionário, ou um técnico com
+ * negações individuais). Está ABERTO: todas as páginas do painel declaram a permissão que exigem
+ * (`requirePermission`, `requireScopedPermission`, `requireProjectPermission` — tabela em docs/permissoes.md,
+ * conferida página a página por `src/app/painel/pages-access.db.test.ts`), o menu e a visão geral só mostram o
+ * que a pessoa pode ver, e projetos e tarefas filtram pelos projetos do funcionário.
+ * Voltar para `false` fecha o login desses perfis de uma vez (o login responde com uma mensagem clara, sem
+ * abrir sessão) — é o freio de emergência.
  */
-export const RESTRICTED_PANEL_READY: boolean = false;
+export const RESTRICTED_PANEL_READY: boolean = true;
 
 export function environmentsOf(role: UserRole): readonly Environment[] {
   return ROLE_ENVIRONMENTS[role] ?? [];

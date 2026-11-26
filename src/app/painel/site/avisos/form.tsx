@@ -33,7 +33,7 @@ function ColorSwatches({ name, label, value, onChange }: { name: string; label: 
       <legend id={legendId} className="label">
         {label}
       </legend>
-      <div className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="mt-1 grid grid-cols-4 gap-2 sm:grid-cols-7">
         {BRAND_COLORS.map((color) => {
           const selected = value === color;
           return (

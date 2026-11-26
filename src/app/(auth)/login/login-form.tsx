@@ -1,25 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { Alert } from "@/components/ui/alert";
+import { Alert, type AlertTone } from "@/components/ui/alert";
 import { ActionForm, Field, SubmitButton } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { loginAction } from "@/lib/auth/actions";
 import { PasswordField } from "../password-field";
 
+/** Aviso acima do formulário (senha redefinida, conta criada pelo convite…). O texto é escolhido no servidor. */
+export type LoginNotice = { tone: AlertTone; text: string };
+
 type LoginFormProps = {
   /** Destino depois do login (já validado no servidor; a action valida de novo). */
   next: string;
-  /** Veio de uma redefinição de senha concluída. */
-  passwordReset: boolean;
+  notice: LoginNotice | null;
 };
 
-export function LoginForm({ next, passwordReset }: LoginFormProps) {
+export function LoginForm({ next, notice }: LoginFormProps) {
   return (
     <div className="mt-8">
-      {passwordReset ? (
-        <Alert tone="sucesso" role="status" className="mb-5">
-          Senha redefinida. Entre com a nova senha.
+      {notice ? (
+        <Alert tone={notice.tone} role="status" className="mb-5">
+          {notice.text}
         </Alert>
       ) : null}
       <ActionForm action={loginAction} hidden={{ next: next || undefined }}>

@@ -8,7 +8,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramOneOf, paramText, type PageSearchParams } from "@/components/ui/search-params";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PORTFOLIO_CATEGORIES, PORTFOLIO_CATEGORY_LABELS } from "@/lib/domain";
 import type { PortfolioProject } from "@/db/schema";
 import { listPortfolio } from "@/server/site/admin/portfolio";
@@ -25,7 +25,7 @@ export const instant = false;
 const STATUS_OPTIONS = { publicado: "Publicados", rascunho: "Rascunhos" } as const;
 
 export default async function PortfolioAdminPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("site", "ver");
   const params = await searchParams;
   const filters = {
     category: paramOneOf(PORTFOLIO_CATEGORIES, params.categoria),

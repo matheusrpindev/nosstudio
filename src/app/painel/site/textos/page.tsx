@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { SECTION_ORDER, SITE_SECTIONS } from "./config";
 import { getSectionInfos } from "./store";
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Textos do site" };
 export const instant = false;
 
 export default async function SiteTextsPage() {
-  await requireUser();
+  await requirePermission("site", "ver");
   const infos = await getSectionInfos(SECTION_ORDER);
 
   return (

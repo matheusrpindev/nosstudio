@@ -11,6 +11,7 @@ import { logAudit } from "@/lib/audit";
 import { requirePermission } from "@/lib/auth";
 import { USER_ROLE_LABELS, USER_ROLES } from "@/lib/domain";
 import { f, formToObject, jsonField, parseForm } from "@/server/action";
+import { linkClientUser, unlinkClientUser } from "@/server/access/members";
 import { createUser, resetUserPassword, setUserActive, setUserPermissions, updateUser } from "@/server/config/users";
 import { getSetting } from "@/server/settings";
 
@@ -31,7 +32,13 @@ function typed(formData: FormData): Record<string, string> {
   return Object.fromEntries(Object.entries(formToObject(formData)).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
 }
 
-const createSchema = z.object(accountFields);
+/**
+ * Perfis que podem nascer AQUI, com senha temporária: os de quem administra ou dá suporte. Gestor, funcionário,
+ * freelancer e cliente nascem por CONVITE (a pessoa cria a própria senha e o convite já carrega os vínculos de
+ * projeto/cliente) — `createInviteAction` em src/server/access.
+ */
+const DIRECT_ROLES = ["admin", "socio", "tecnico"] as const;
+const createSchema = z.object({ ...accountFields, role: z.enum(DIRECT_ROLES, { error: "Este perfil nasce por convite: use “Convidar pessoa”." }) });
 const updateSchema = z.object({ id: f.id("Conta inválida."), ...accountFields });
 const idSchema = z.object({ id: f.id("Conta inválida.") });
 
@@ -110,7 +117,7 @@ export async function setUserActiveAction(_prev: ActionState, formData: FormData
 const permissionsSchema = z.object({ id: f.id("Conta inválida.") });
 
 /**
- * Ajustes individuais de permissão (ainda sem tela). O formulário manda `grant` e `deny` como JSON em campos
+ * Ajustes individuais de permissão (tela: "Permissões" em cada conta). O formulário manda `grant` e `deny` como JSON em campos
  * ocultos: listas de "modulo:acao". Quem valida as chaves e as regras é `setUserPermissions`.
  */
 export async function setUserPermissionsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -131,4 +138,35 @@ export async function setUserPermissionsAction(_prev: ActionState, formData: For
   });
   refresh();
   return actionOk("Permissões atualizadas.");
+}
+
+// ------------------------------------------------------- acessos do cliente
+/*
+ * Contas de perfil Cliente vinculadas a uma ficha (bloco "Acessos do cliente" em Clientes › ficha). É gestão de
+ * ACESSO DE CONTA, não do cadastro do cliente: exige "editar" em Usuários (admin e sócio) — por isso mora aqui
+ * e não em `clientes/actions.ts`. Convidar um acesso novo usa `createInviteAction` (src/server/access).
+ */
+const clientLinkSchema = z.object({ clientId: f.id("Cliente inválido."), userId: f.id("Escolha a conta.") });
+
+export async function linkClientUserAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requirePermission("usuarios", "editar");
+  const parsed = parseForm(clientLinkSchema, formData);
+  if (!parsed.ok) return parsed.state;
+  const result = await linkClientUser(parsed.data.clientId, parsed.data.userId, admin);
+  if (!result.ok) {
+    return actionError(
+      result.error === "client_not_found" ? "Este cliente não existe mais." : result.error === "user_not_found" ? "Esta conta não existe mais ou está desativada." : "Só contas de perfil Cliente podem ser vinculadas a uma ficha.",
+    );
+  }
+  refresh();
+  return actionOk("Conta vinculada a este cliente.");
+}
+
+export async function unlinkClientUserAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requirePermission("usuarios", "editar");
+  const parsed = parseForm(clientLinkSchema, formData);
+  if (!parsed.ok) return parsed.state;
+  await unlinkClientUser(parsed.data.clientId, parsed.data.userId, admin);
+  refresh();
+  return actionOk("Conta desvinculada. Ela deixa de ver os projetos deste cliente.");
 }

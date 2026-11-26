@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getClientOptions, getUserOptions } from "@/server/options";
 import { findProjectByProposal, getProposalForProject, type ProjectInput } from "@/server/projects/admin";
 import { SERVICE_BY_MODALITY } from "@/server/projects/logic";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Novo projeto" };
 export const instant = false;
 
 export default async function NewProjectPage({ searchParams }: { searchParams: PageSearchParams }) {
-  const user = await requireUser();
+  const user = await requirePermission("projetos", "editar");
   const params = await searchParams;
   const proposal = (await (async () => {
     const id = paramId(params.proposta);

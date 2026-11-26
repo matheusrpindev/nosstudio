@@ -9,7 +9,7 @@ import { ActionForm, Field, FormActions, SubmitButton } from "@/components/ui/fo
 import { Input, Select } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Money } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PROPOSAL_MODALITY_LABELS } from "@/lib/domain";
 import { listTemplates } from "@/server/proposals/admin";
 import { createTemplateAction, deleteProposalAction, duplicateProposalAction } from "../actions";
@@ -44,7 +44,7 @@ function NewTemplateDialog({ variant = "primary" }: { variant?: "primary" | "sec
 }
 
 export default async function TemplatesPage() {
-  await requireUser();
+  await requirePermission("propostas", "ver");
   const templates = await listTemplates();
 
   return (

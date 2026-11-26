@@ -319,59 +319,79 @@ export type ClientRelated = {
   tasks: { id: number; title: string; dueDate: string | null; priority: (typeof tasks.$inferSelect)["priority"]; ownerName: string | null }[];
 };
 
-/** Tudo o que a ficha mostra ligado ao cliente — só leitura, consultas simples às tabelas dos outros módulos. */
-export async function getClientRelated(clientId: number, today: string): Promise<ClientRelated> {
+/** Quais blocos de OUTROS módulos a ficha pode mostrar a quem está olhando (decidido pela matriz de permissões). */
+export type ClientRelatedAccess = { proposals: boolean; projects: boolean; contracts: boolean; finance: boolean; events: boolean; tasks: boolean };
+const ALL_RELATED: ClientRelatedAccess = { proposals: true, projects: true, contracts: true, finance: true, events: true, tasks: true };
+
+/**
+ * Tudo o que a ficha mostra ligado ao cliente — só leitura, consultas simples às tabelas dos outros módulos.
+ * `include` diz o que a pessoa pode ver: o que não pode NÃO É CONSULTADO e volta vazio (o gestor, por exemplo,
+ * não recebe os lançamentos financeiros do cliente).
+ */
+export async function getClientRelated(clientId: number, today: string, include: ClientRelatedAccess = ALL_RELATED): Promise<ClientRelated> {
   const taskOwner = alias(users, "task_owner");
   const [proposalRows, projectRows, contractRows, financeAgg, financeRows, eventRows, taskRows] = await Promise.all([
-    listClientProposals(clientId),
-    db
-      .select({ id: projects.id, title: projects.title, stage: projects.stage, deliveryDeadline: projects.deliveryDeadline, eventDate: projects.eventDate })
-      .from(projects)
-      .where(eq(projects.clientId, clientId))
-      .orderBy(desc(projects.createdAt), desc(projects.id)),
-    db
-      .select({ id: contracts.id, title: contracts.title, kind: contracts.kind, status: contracts.status, signedAt: contracts.signedAt })
-      .from(contracts)
-      .where(and(eq(contracts.clientId, clientId), eq(contracts.isTemplate, false)))
-      .orderBy(desc(contracts.createdAt), desc(contracts.id)),
-    db
-      .select({
-        type: financeEntries.type,
-        planned: sql<number>`coalesce(sum(${financeEntries.amountCents}), 0)`,
-        done: sql<number>`coalesce(sum(case when ${financeEntries.paidAt} is not null then ${financeEntries.amountCents} else 0 end), 0)`,
-        total: count(),
-      })
-      .from(financeEntries)
-      .where(eq(financeEntries.clientId, clientId))
-      .groupBy(financeEntries.type),
-    db
-      .select({
-        id: financeEntries.id,
-        type: financeEntries.type,
-        description: financeEntries.description,
-        amountCents: financeEntries.amountCents,
-        dueDate: financeEntries.dueDate,
-        paidAt: financeEntries.paidAt,
-        installmentLabel: financeEntries.installmentLabel,
-      })
-      .from(financeEntries)
-      .where(eq(financeEntries.clientId, clientId))
-      .orderBy(asc(financeEntries.dueDate), asc(financeEntries.id))
-      .limit(30),
-    db
-      .select({ id: agendaEvents.id, title: agendaEvents.title, kind: agendaEvents.kind, date: agendaEvents.date, startTime: agendaEvents.startTime })
-      .from(agendaEvents)
-      .where(and(eq(agendaEvents.clientId, clientId), gte(agendaEvents.date, today)))
-      .orderBy(asc(agendaEvents.date), asc(sql`coalesce(${agendaEvents.startTime}, '')`))
-      .limit(10),
-    db
-      .select({ id: tasks.id, title: tasks.title, dueDate: tasks.dueDate, priority: tasks.priority, ownerName: taskOwner.name })
-      .from(tasks)
-      .leftJoin(taskOwner, eq(taskOwner.id, tasks.ownerId))
-      .where(and(eq(tasks.clientId, clientId), eq(tasks.done, false)))
-      // sem prazo por último
-      .orderBy(asc(sql`${tasks.dueDate} is null`), asc(tasks.dueDate), asc(tasks.id))
-      .limit(10),
+    include.proposals ? listClientProposals(clientId) : [],
+    !include.projects
+      ? []
+      : db
+        .select({ id: projects.id, title: projects.title, stage: projects.stage, deliveryDeadline: projects.deliveryDeadline, eventDate: projects.eventDate })
+        .from(projects)
+        .where(eq(projects.clientId, clientId))
+        .orderBy(desc(projects.createdAt), desc(projects.id)),
+    !include.contracts
+      ? []
+      : db
+        .select({ id: contracts.id, title: contracts.title, kind: contracts.kind, status: contracts.status, signedAt: contracts.signedAt })
+        .from(contracts)
+        .where(and(eq(contracts.clientId, clientId), eq(contracts.isTemplate, false)))
+        .orderBy(desc(contracts.createdAt), desc(contracts.id)),
+    !include.finance
+      ? []
+      : db
+        .select({
+          type: financeEntries.type,
+          planned: sql<number>`coalesce(sum(${financeEntries.amountCents}), 0)`,
+          done: sql<number>`coalesce(sum(case when ${financeEntries.paidAt} is not null then ${financeEntries.amountCents} else 0 end), 0)`,
+          total: count(),
+        })
+        .from(financeEntries)
+        .where(eq(financeEntries.clientId, clientId))
+        .groupBy(financeEntries.type),
+    !include.finance
+      ? []
+      : db
+        .select({
+          id: financeEntries.id,
+          type: financeEntries.type,
+          description: financeEntries.description,
+          amountCents: financeEntries.amountCents,
+          dueDate: financeEntries.dueDate,
+          paidAt: financeEntries.paidAt,
+          installmentLabel: financeEntries.installmentLabel,
+        })
+        .from(financeEntries)
+        .where(eq(financeEntries.clientId, clientId))
+        .orderBy(asc(financeEntries.dueDate), asc(financeEntries.id))
+        .limit(30),
+    !include.events
+      ? []
+      : db
+        .select({ id: agendaEvents.id, title: agendaEvents.title, kind: agendaEvents.kind, date: agendaEvents.date, startTime: agendaEvents.startTime })
+        .from(agendaEvents)
+        .where(and(eq(agendaEvents.clientId, clientId), gte(agendaEvents.date, today)))
+        .orderBy(asc(agendaEvents.date), asc(sql`coalesce(${agendaEvents.startTime}, '')`))
+        .limit(10),
+    !include.tasks
+      ? []
+      : db
+        .select({ id: tasks.id, title: tasks.title, dueDate: tasks.dueDate, priority: tasks.priority, ownerName: taskOwner.name })
+        .from(tasks)
+        .leftJoin(taskOwner, eq(taskOwner.id, tasks.ownerId))
+        .where(and(eq(tasks.clientId, clientId), eq(tasks.done, false)))
+        // sem prazo por último
+        .orderBy(asc(sql`${tasks.dueDate} is null`), asc(tasks.dueDate), asc(tasks.id))
+        .limit(10),
   ]);
 
   const income = financeAgg.find((row) => row.type === "receita");

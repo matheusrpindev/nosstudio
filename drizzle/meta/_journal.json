@@ -15,6 +15,13 @@
       "when": 1795729012714,
       "tag": "0001_perfis_e_permissoes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795731278636,
+      "tag": "0002_agenda_central",
+      "breakpoints": true
     }
   ]
 }

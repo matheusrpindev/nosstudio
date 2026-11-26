@@ -5,7 +5,7 @@ import path from "node:path";
 import { Markdown } from "@/components/markdown";
 import { Alert } from "@/components/ui/alert";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePanelUser } from "@/lib/auth";
 import { parseManual } from "./manual";
 
 export const metadata: Metadata = { title: "Ajuda" };
@@ -22,7 +22,7 @@ async function loadManual(): Promise<string | null> {
 }
 
 export default async function HelpPage() {
-  await requireUser();
+  await requirePanelUser();
   const source = await loadManual();
   const manual = source?.trim() ? parseManual(source) : null;
 

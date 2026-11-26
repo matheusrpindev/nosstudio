@@ -38,13 +38,20 @@ export type ControlData = {
   project: { id: number; title: string } | null;
   contractId: number | null;
   contracts: { id: number; title: string; status: ContractStatus }[];
-  /** Lançamentos do financeiro já ligados a esta proposta (`count` 0 = parcelas ainda não geradas). */
+  /**
+   * Lançamentos do financeiro já ligados a esta proposta (`count` 0 = parcelas ainda não geradas).
+   * `null` = a pessoa não vê o Financeiro (gestor): o servidor nem manda os valores e o bloco não aparece.
+   */
   finance: {
     count: number;
     receivableCents: number;
     receivedCents: number;
     entries: { id: number; type: FinanceType; description: string; amountCents: number; dueDate: string; paidAt: string | null }[];
-  };
+    /** Pode criar lançamentos (gerar parcelas, novo lançamento). */
+    canCreate: boolean;
+  } | null;
+  /** O que a pessoa pode a partir desta proposta em OUTROS módulos (decidido no servidor; as actions conferem de novo). */
+  may: { convertToProject: boolean; linkContract: boolean; seeProjects: boolean; seeContracts: boolean; openConfig: boolean };
   /** Hoje (`YYYY-MM-DD`, fuso do estúdio): para marcar lançamentos vencidos. */
   today: string;
   defaultTemplateName: string;
@@ -145,7 +152,7 @@ function TemplateControl({ id, defaultTemplateName }: Pick<Props, "id" | "defaul
 
 // ------------------------------------------------------------------ proposta
 export function ControlStep(props: Props) {
-  const { id, isTemplate, number, version, status, clientId, sentAt, respondedAt, versions, project, contractId, contracts, finance, today, defaultTemplateName, dirty, pdfKey } = props;
+  const { id, isTemplate, number, version, status, clientId, sentAt, respondedAt, versions, project, contractId, contracts, finance, may, today, defaultTemplateName, dirty, pdfKey } = props;
   if (isTemplate) return <TemplateControl id={id} defaultTemplateName={defaultTemplateName} />;
 
   const label = proposalNumberLabel(number, version);
@@ -264,10 +271,12 @@ export function ControlStep(props: Props) {
 
           {status === "aceita" ? (
             project ? (
-              <ButtonLink href={`/painel/projetos/${project.id}`} icon={<FolderKanban />}>
-                Abrir o projeto
-              </ButtonLink>
-            ) : (
+              may.seeProjects ? (
+                <ButtonLink href={`/painel/projetos/${project.id}`} icon={<FolderKanban />}>
+                  Abrir o projeto
+                </ButtonLink>
+              ) : null
+            ) : !may.convertToProject ? null : (
               <ConfirmDialog
                 trigger={
                   <Button icon={<FolderKanban />} disabled={blocked}>
@@ -305,7 +314,7 @@ export function ControlStep(props: Props) {
         ) : null}
       </Card>
 
-      {status === "aceita" ? (
+      {status === "aceita" && finance ? (
         <Card as="section" aria-labelledby="etapa-pdf-financeiro">
           <CardHeader
             id="etapa-pdf-financeiro"
@@ -317,11 +326,13 @@ export function ControlStep(props: Props) {
             }
           />
           {finance.count === 0 ? (
-            <div className="flex flex-wrap gap-2 max-sm:[&>*]:w-full">
-              <ButtonLink href={`/painel/financeiro/novo/parcelas?proposta=${id}`} icon={<ListChecks />}>
-                Gerar parcelas no financeiro
-              </ButtonLink>
-            </div>
+            finance.canCreate ? (
+              <div className="flex flex-wrap gap-2 max-sm:[&>*]:w-full">
+                <ButtonLink href={`/painel/financeiro/novo/parcelas?proposta=${id}`} icon={<ListChecks />}>
+                  Gerar parcelas no financeiro
+                </ButtonLink>
+              </div>
+            ) : null
           ) : (
             <>
               <p className="text-texto mb-3 text-sm">
@@ -355,9 +366,11 @@ export function ControlStep(props: Props) {
                 <ButtonLink href={financeListUrl(id)} icon={<Wallet />}>
                   Ver lançamentos desta proposta
                 </ButtonLink>
-                <ButtonLink href={`/painel/financeiro/novo?proposta=${id}`} variant="ghost" icon={<FilePlus2 />}>
-                  Novo lançamento desta proposta
-                </ButtonLink>
+                {finance.canCreate ? (
+                  <ButtonLink href={`/painel/financeiro/novo?proposta=${id}`} variant="ghost" icon={<FilePlus2 />}>
+                    Novo lançamento desta proposta
+                  </ButtonLink>
+                ) : null}
               </div>
             </>
           )}
@@ -367,13 +380,14 @@ export function ControlStep(props: Props) {
         </Card>
       ) : null}
 
+      {may.seeContracts ? (
       <Card as="section" aria-labelledby="etapa-pdf-contrato">
         <CardHeader id="etapa-pdf-contrato" title="Contrato" description="Vincule o contrato do cliente a esta proposta para achar tudo num lugar só." />
         {!clientId ? (
           <p className="text-texto-suave text-sm">Escolha o cliente na etapa Dados para vincular um contrato.</p>
         ) : (
           <div className="space-y-4">
-            {contracts.length > 0 ? (
+            {contracts.length > 0 && may.linkContract ? (
               <ActionForm action={linkContractAction} hidden={{ id }} className="space-y-3">
                 <Field name="contractId" label="Contrato do cliente" optional>
                   <Select
@@ -388,22 +402,25 @@ export function ControlStep(props: Props) {
                   </SubmitButton>
                 </FormActions>
               </ActionForm>
-            ) : (
+            ) : contracts.length === 0 ? (
               <p className="text-texto-suave text-sm">Este cliente ainda não tem contratos.</p>
-            )}
+            ) : null}
             <div className="flex flex-wrap items-center gap-3">
               {contractId ? (
                 <Link href={`/painel/contratos/${contractId}`} className="link text-sm font-semibold">
                   Abrir o contrato vinculado
                 </Link>
               ) : null}
-              <ButtonLink href={`/painel/contratos/novo?cliente=${clientId}&proposta=${id}`} variant="ghost" icon={<FilePlus2 />}>
-                Criar contrato desta proposta
-              </ButtonLink>
+              {may.linkContract ? (
+                <ButtonLink href={`/painel/contratos/novo?cliente=${clientId}&proposta=${id}`} variant="ghost" icon={<FilePlus2 />}>
+                  Criar contrato desta proposta
+                </ButtonLink>
+              ) : null}
             </div>
           </div>
         )}
       </Card>
+      ) : null}
 
       <Card as="section" aria-labelledby="etapa-pdf-versoes">
         <CardHeader

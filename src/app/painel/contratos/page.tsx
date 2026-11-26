@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { paramId, paramOneOf, paramText, parsePage, type PageSearchParams } from "@/components/ui/search-params";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CONTRACT_KIND_LABELS, CONTRACT_KINDS, CONTRACT_STATUS_LABELS, CONTRACT_STATUSES } from "@/lib/domain";
 import { listContracts, type ContractListItem } from "@/server/contracts/admin";
 import { getClientOptions } from "@/server/options";
@@ -40,7 +40,7 @@ const columns: DataListColumn<ContractListItem>[] = [
 ];
 
 export default async function ContractsPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireUser();
+  await requirePermission("contratos", "ver");
   const params = await searchParams;
   const clientOptions = await getClientOptions();
   const clientId = paramId(params.cliente);

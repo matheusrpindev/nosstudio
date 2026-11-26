@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#101014" };
 
 /**
- * Telas de acesso: a marca de um lado (em cima, no celular) e o formulário do outro. Sem cadastro público.
+ * Telas de acesso (login, senha, convite): a marca de um lado (em cima, no celular) e o formulário do outro.
+ * Sem cadastro público: conta nova só nasce por convite ou em Configurações › Usuários.
  * `tema-painel` liga o tema escuro para o documento inteiro (ver "TEMA ESCURO" em globals.css).
  */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
@@ -35,7 +36,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           </p>
           <p className="text-lavanda mt-3 hidden max-w-sm text-[0.9375rem] leading-relaxed lg:block">Painel de gestão da NÓS Studio — leads, clientes, orçamentos, agenda e o conteúdo do site num só lugar.</p>
         </div>
-        <p className="text-lavanda/80 relative hidden text-xs font-medium lg:block">Acesso restrito aos sócios.</p>
+        <p className="text-lavanda/80 relative hidden text-xs font-medium lg:block">Acesso só para contas criadas pela NÓS Studio.</p>
       </aside>
       <main className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 lg:px-16">
         <div className="mx-auto w-full max-w-sm">{children}</div>

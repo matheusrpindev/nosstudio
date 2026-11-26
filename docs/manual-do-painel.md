@@ -109,6 +109,15 @@ O que o painel **não** faz sozinho:
 
 Mover à mão continua valendo a qualquer momento: na aba **Funil** de Clientes, arraste o cartão (ou use **Mover para…** no celular), ou mude o status na ficha. Cada mudança fica registrada no histórico. Ao marcar como **Perdido**, o painel pede o motivo.
 
+#### Acessos do cliente
+
+Na aba **Resumo** da ficha, o bloco **Acessos do cliente** lista as pessoas daquele cliente que têm conta para acompanhar os projetos na **Área do Cliente** (que ainda vai abrir). Só administradores e sócios veem esse bloco.
+
+- **Convidar**: informe o e-mail (e o nome) da pessoa. Ela recebe o link para criar a senha e a conta já nasce ligada a esta ficha. Como nos outros convites, **copie o link** se o e-mail não estiver configurado.
+- Nos convites pendentes, o aviãozinho **convida de novo** (link novo) e o **X** revoga.
+- **Vincular conta que já existe**: para quando a mesma pessoa responde por duas empresas.
+- **Desvincular**: a conta deixa de ver os projetos deste cliente na hora. Ela continua existindo; para impedir que a pessoa entre, desative a conta em **Configurações › Usuários**.
+
 ### 4. Criar o orçamento
 
 1. Em **Orçamentos**, toque em **Novo orçamento** (ou, na ficha do cliente, em **Novo orçamento**).
@@ -293,6 +302,19 @@ Em **Projetos** há três visões: **Quadro**, **Lista** e **Arquivos e entregas
 
 Dentro do projeto você encontra o checklist (cada clique já fica salvo), as tarefas, os links dos arquivos (pasta do Drive, galeria, referências, arquivos finais; o painel **não guarda vídeos**, só links), a situação do backup dos arquivos (**Backup pendente**, **Backup parcial** ou **Backup feito**), a agenda, os contratos e o financeiro do projeto. Ao marcar a etapa como **Entregue**, a data de entrega vira a de hoje, se ainda estiver vazia.
 
+#### Equipe do projeto
+
+No projeto, o bloco **Equipe do projeto** mostra quem foi incluído e o que cada pessoa pode fazer **naquele projeto**. Sócios e gestores já veem todos os projetos; **funcionários e freelancers só enxergam os projetos em que estão nessa lista**.
+
+- **Adicionar**: escolha a pessoa (ela precisa já ter conta de funcionário, freelancer ou gestor), o **papel** (Fotógrafo, Editor…) e o que ela pode:
+  - **Ver o projeto**: desligado, o acesso fica pausado sem tirar a pessoa da equipe.
+  - **Editar**: mudar a etapa, marcar o checklist e criar ou concluir tarefas.
+  - **Baixar arquivos**: abrir os links dos arquivos do projeto (Drive, galeria, arquivos finais).
+  - **Enviar arquivos**: entregar arquivos para o projeto (passa a valer quando a Área da Equipe abrir).
+- O **lápis** muda o papel e as permissões da pessoa; o outro botão **tira a pessoa do projeto**. O acesso dela a esse projeto acaba na hora.
+
+O que o funcionário vê do projeto: checklist, etapa, dados e prazos, tarefas e, se tiver **Baixar arquivos**, os links. Ele **não** vê as observações, o backup, a proposta, os contratos, o financeiro nem a equipe. Quem monta a equipe são os sócios e os gestores.
+
 ### Conteúdo (calendário editorial)
 
 Em **Conteúdo** vocês organizam as publicações da NÓS e dos clientes, em três visões: **Calendário**, **Quadro** e **Lista e ideias**. Cada item passa por **Ideia**, **Roteiro**, **Gravação**, **Edição**, **Aprovação** e **Publicado**, com campos para tema, conta, rede, formato, roteiro, chamada para ação e link do material.
@@ -363,14 +385,68 @@ Em **Agenda**, use **Novo compromisso** para gravações, eventos, reuniões e e
 
 ## Configurações
 
-Em **Configurações** ficam as áreas de gestão. **Usuários**, **Notificações**, **Dados** e **Auditoria** são só para quem tem perfil de **Administrador(a)**.
+Em **Configurações** ficam as áreas de gestão. **Usuários**, **Notificações**, **Dados** e **Auditoria** são só para quem tem perfil de **Administrador(a)** ou **Sócio(a)**.
 
 ### Usuários
 
-- **Nova conta**: informe nome, e-mail e **Perfil**. A pessoa recebe uma **senha temporária**, mostrada **uma única vez**. Anote na hora e toque em **Já anotei, concluir**. No primeiro acesso, ela define a própria senha.
+Aqui vocês decidem **quem entra** e **o que cada pessoa enxerga**. A tela tem duas abas: **Contas** e **Convites**.
+
+#### Os perfis
+
+| Perfil | Para quem | O que acessa |
+| --- | --- | --- |
+| **Administrador(a)** e **Sócio(a)** | Vocês | Tudo, inclusive convidar pessoas, mudar permissões, exportar dados e ver a auditoria. |
+| **Gestor(a) de projetos** | Quem toca a operação | Leads, clientes, propostas, contratos, projetos, tarefas, agenda, conteúdo e marca. **Não vê** o financeiro, o site, as configurações nem as "Observações internas" dos clientes. Não exclui clientes, contratos nem projetos. |
+| **Funcionário(a)** | Quem trabalha nos projetos | Entra no painel e vê **só os projetos em que foi incluído** e as tarefas deles. Não vê clientes, propostas, contratos, financeiro, agenda nem conteúdo. |
+| **Freelancer** | Profissional escalado | A conta já pode existir, mas **só entra quando a Área da Equipe abrir**. |
+| **Cliente** | Pessoa do cliente | A conta já pode existir, mas **só entra quando a Área do Cliente abrir**. |
+| **Acesso técnico (temporário)** | O desenvolvedor | Usa o painel para dar suporte. Não gerencia contas, não exporta dados, não vê a auditoria. Desative quando o suporte acabar. |
+
+Enquanto a área de um perfil não abre, a pessoa que tentar entrar lê na tela de login que o acesso ainda não foi liberado. Ela nunca cai no painel por engano.
+
+#### Convidar pessoa
+
+É o caminho normal para dar acesso a alguém.
+
+1. Toque em **Convidar pessoa** e informe o **e-mail**, o **nome** (opcional) e o **perfil**.
+2. Para **Cliente**, escolha a **ficha do cliente**: a conta só enxerga os projetos dele. Para **Funcionário** ou **Freelancer**, dá para já escolher um **projeto** e o papel da pessoa nele.
+3. Toque em **Criar convite**. Aparece o **link do convite**, com o botão **Copiar link**.
+
+**O link só aparece nessa hora.** Se o envio de e-mails não estiver configurado, o convite não chega sozinho: copie o link e mande para a pessoa por WhatsApp ou outra conversa privada. Com o e-mail configurado, o painel envia o convite e o link serve de reserva.
+
+A pessoa abre o link, confere o nome, cria a **própria senha** e depois entra pela tela de login. O link vale por **7 dias** e só funciona uma vez.
+
+Na aba **Convites** vocês acompanham cada um: **Pendente**, **Aceito**, **Expirado** ou **Revogado**.
+
+- **Convidar de novo**: gera um link novo com os mesmos dados. O link anterior para de funcionar. Use quando a pessoa perdeu o link ou ele venceu.
+- **Revogar**: cancela um convite pendente na hora.
+
+Cada e-mail tem um convite válido por vez. Quem já tem conta não é convidado de novo: para dar mais acesso a uma conta que existe, inclua a pessoa no projeto ou vincule a conta ao cliente (veja abaixo).
+
+#### Nova conta (senha temporária)
+
+**Nova conta** ficou para **Administrador(a)**, **Sócio(a)** e **Acesso técnico**: vocês informam nome, e-mail e perfil e recebem uma **senha temporária**, mostrada **uma única vez**. Anote na hora e toque em **Já anotei, concluir**. No primeiro acesso, a pessoa define a própria senha. Contas de gestor, funcionário, freelancer e cliente nascem por **convite**.
+
+#### Ações em cada conta
+
+- **Editar**: nome, e-mail e perfil. Mudar o perfil desconecta a pessoa, volta as permissões ao padrão do perfil novo e tira os vínculos que não combinam com ele.
+- **Permissões**: abre a grade de permissões da pessoa (veja a seguir).
 - **Nova senha**: gera outra senha temporária e desconecta a pessoa de todos os aparelhos. Use quando alguém esquecer a senha e o e-mail não estiver funcionando. Também destrava o login da conta (veja "Bloqueio e desbloqueio do login") e cancela links de "Esqueci minha senha" pendentes.
 - **Desativar**: a pessoa não entra mais e é desconectada na hora. Nada é apagado, e dá para **Reativar** depois. Se o e-mail dela estiver na lista de **Notificações**, o painel lembra de tirá-lo de lá: desativar a conta não tira o e-mail da lista.
-- Perfis: **Administrador(a)** é para vocês (acesso completo). **Acesso técnico (temporário)** é para o desenvolvedor dar suporte. Quando o suporte acabar, use **Desativar**.
+
+O painel não deixa desativar nem rebaixar a **última** conta ativa de administrador ou sócio, para ninguém ficar trancado para fora.
+
+#### Permissões de uma pessoa
+
+Em **Permissões** aparece uma grade com os módulos (Leads, Clientes, Financeiro…) e as ações (**Ver**, **Criar e editar**, **Excluir**, **Baixar**, **Compartilhar**). Cada quadradinho mostra o que vale hoje para a pessoa e tem três opções:
+
+- **Padrão**: segue o perfil.
+- **Permitir**: libera aquela ação no módulo inteiro, mesmo que o perfil não tenha. Exemplo: deixar um gestor **ver** o Financeiro.
+- **Negar**: tira aquela ação, mesmo que o perfil tenha. Negar sempre vence. Negar o **Ver** de um módulo tira o módulo inteiro, e ele some do menu da pessoa.
+
+Toque em **Salvar permissões**. Vale no próximo clique da pessoa, sem ela precisar entrar de novo. **Voltar ao padrão do perfil** apaga todos os ajustes.
+
+Limites de propósito: administradores e sócios sempre têm acesso total (para restringir alguém, mude o perfil); **Usuários e permissões** e **Societário** não podem ser liberados para outros perfis; freelancer e cliente não têm permissões de painel.
 
 O que o **Acesso técnico** não faz:
 

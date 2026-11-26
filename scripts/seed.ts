@@ -14,7 +14,9 @@ import { count, eq, inArray } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
-  agendaEvents,
+  agendaCalendars,
+  agendaCategories,
+  agendaChecklistTemplates,
   announcements,
   brandAssets,
   clientInteractions,
@@ -37,7 +39,10 @@ import {
   users,
 } from "@/db/schema";
 import { hashPassword } from "@/lib/auth/password";
-import { addDays, todayISO } from "@/lib/dates";
+import { addDays, startOfWeek, todayISO } from "@/lib/dates";
+import type { EventInput } from "@/server/agenda/input";
+import { createEvent } from "@/server/agenda/mutations";
+import { ensureAgendaDefaults, ensurePersonalCalendars } from "@/server/agenda/settings";
 
 const args = new Set(process.argv.slice(2));
 const isProd = process.env.NODE_ENV === "production";
@@ -451,6 +456,163 @@ async function seedDemoAccess() {
   return created > 0;
 }
 
+// ------------------------------------------------------------------- agenda
+/** Categorias e agendas iniciais (a migration 0002 já as cria; aqui só repõe o que faltar) + agendas pessoais. */
+async function seedAgendaDefaults() {
+  return (await ensureAgendaDefaults()) > 0;
+}
+
+async function seedPersonalCalendars() {
+  return (await ensurePersonalCalendars()) > 0;
+}
+
+/** Compromissos de exemplo variados: reunião, gravação com planejamento, série semanal, particular e férias. */
+async function seedDemoAgenda(ctx: { today: string; pedro: number | null; laura: number | null; cafe: number; wedding: number; projectId: number }) {
+  await ensureAgendaDefaults();
+  const categories = new Map((await db.select({ id: agendaCategories.id, slug: agendaCategories.slug }).from(agendaCategories)).map((row) => [row.slug, row.id]));
+  const calendars = await db.select({ id: agendaCalendars.id, slug: agendaCalendars.slug, userId: agendaCalendars.userId }).from(agendaCalendars);
+  const calendar = (slug: string) => calendars.find((row) => row.slug === slug)?.id ?? calendars[0].id;
+  const personal = (userId: number | null) => calendars.find((row) => userId !== null && row.userId === userId)?.id ?? calendar("geral");
+  const category = (slug: string) => categories.get(slug) ?? categories.get("outros") ?? 0;
+  const { today, pedro, laura } = ctx;
+  const author = pedro ?? laura;
+  if (!author) return; // sem contas no banco não há a quem atribuir os compromissos de exemplo
+  const people = (...ids: (number | null)[]) => ids.filter((id): id is number => id !== null);
+  const base: EventInput = {
+    title: "",
+    categoryId: category("reunioes-internas"),
+    calendarId: calendar("geral"),
+    description: "",
+    date: today,
+    endDate: null,
+    startTime: null,
+    endTime: null,
+    location: "",
+    mapUrl: "",
+    meetingUrl: "",
+    clientId: null,
+    projectId: null,
+    priority: "normal",
+    status: "confirmado",
+    visibility: "normal",
+    checklist: [],
+    notes: "",
+    reminders: [],
+    recurrence: null,
+    attachments: [],
+    production: null,
+    responsibleIds: [],
+    participantIds: [],
+    externalPeople: [],
+  };
+
+  await createEvent(
+    {
+      ...base,
+      title: "[Exemplo] Gravação — Café da Praça",
+      categoryId: category("gravacoes"),
+      calendarId: calendar("producoes"),
+      date: addDays(today, 1),
+      startTime: "09:00",
+      endTime: "12:00",
+      location: "Café da Praça",
+      clientId: ctx.cafe,
+      projectId: ctx.projectId,
+      responsibleIds: people(laura),
+      participantIds: people(pedro),
+      reminders: [{ minutes: 1440, channel: "interno" }],
+      production: {
+        address: "Praça central, 100 — endereço de exemplo",
+        crewArrival: "08:30",
+        script: "1. Fachada e movimento da manhã\n2. Preparo do café especial\n3. Depoimento curto do dono",
+        references: "Reels de bastidores do mês passado",
+        equipment: "Câmera principal, lente 35mm, microfone de lapela, luz portátil",
+        contentCount: 6,
+        estimatedMinutes: 180,
+        editDeadline: addDays(today, 3),
+        deliveryDate: addDays(today, 4),
+        prepChecklist: [
+          { id: "a", text: "Carregar baterias", done: true },
+          { id: "b", text: "Formatar cartões", done: false },
+          { id: "c", text: "Confirmar horário com o cliente", done: false },
+        ],
+      },
+    },
+    laura ?? author,
+  );
+  await createEvent(
+    {
+      ...base,
+      title: "[Exemplo] Reunião — Ana & Bruno",
+      categoryId: category("reunioes-clientes"),
+      date: addDays(today, 3),
+      startTime: "19:30",
+      endTime: "20:30",
+      meetingUrl: "https://meet.google.com/",
+      clientId: ctx.wedding,
+      responsibleIds: people(pedro),
+      externalPeople: ["Ana", "Bruno"],
+      status: "a_confirmar",
+    },
+    author,
+  );
+  await createEvent(
+    { ...base, title: "[Exemplo] Entrega de edição — Café da Praça", categoryId: category("entregas"), date: addDays(today, 4), clientId: ctx.cafe, projectId: ctx.projectId, responsibleIds: people(laura) },
+    laura ?? author,
+  );
+  // toda segunda-feira, a partir da segunda desta semana
+  await createEvent(
+    {
+      ...base,
+      title: "[Exemplo] Reunião de pauta da semana",
+      date: addDays(startOfWeek(today), 1),
+      startTime: "10:00",
+      endTime: "11:00",
+      recurrence: { freq: "semanal", interval: 1, weekdays: [1] },
+      responsibleIds: people(pedro),
+      participantIds: people(laura),
+      checklist: [
+        { id: "a", text: "Revisar entregas da semana", done: false },
+        { id: "b", text: "Definir gravações", done: false },
+      ],
+    },
+    author,
+  );
+  await createEvent(
+    {
+      ...base,
+      title: "[Exemplo] Compromisso particular",
+      categoryId: category("pessoais"),
+      calendarId: personal(pedro),
+      date: addDays(today, 2),
+      startTime: "15:00",
+      endTime: "16:00",
+      visibility: "particular",
+      responsibleIds: people(pedro),
+    },
+    author,
+  );
+  await createEvent(
+    {
+      ...base,
+      title: "[Exemplo] Férias",
+      categoryId: category("ferias"),
+      calendarId: personal(laura),
+      date: addDays(today, 20),
+      endDate: addDays(today, 24),
+      responsibleIds: people(laura),
+    },
+    laura ?? author,
+  );
+
+  await db.insert(agendaChecklistTemplates).values({
+    name: "[Exemplo] Gravação externa",
+    categoryId: category("gravacoes"),
+    items: ["Carregar baterias", "Formatar cartões", "Conferir áudio", "Separar lentes e tripé", "Confirmar endereço e horário com o cliente", "Backup ao voltar"],
+    sortOrder: 10,
+  });
+}
+
 // ------------------------------------------------------------ dados de exemplo
 async function seedDemo() {
   if (isProd && !args.has("--force")) throw new Error("--demo em produção exige --force (os dados são fictícios).");
@@ -609,11 +771,7 @@ async function seedDemo() {
     { title: "[Exemplo] Montar orçamento — Dra. Camila", dueDate: addDays(today, 1), ownerId: owner(0), clientId: doctor },
   ]);
 
-  await db.insert(agendaEvents).values([
-    { title: "[Exemplo] Gravação — Café da Praça", kind: "gravacao", date: addDays(today, 1), startTime: "09:00", endTime: "12:00", clientId: cafe, projectId: project.id, ownerId: owner(1) },
-    { title: "[Exemplo] Reunião — Ana & Bruno", kind: "reuniao", date: addDays(today, 3), startTime: "19:30", endTime: "20:30", clientId: wedding, ownerId: owner(0) },
-    { title: "[Exemplo] Entrega de edição — Café da Praça", kind: "entrega", date: addDays(today, 4), clientId: cafe, projectId: project.id, ownerId: owner(1) },
-  ]);
+  await seedDemoAgenda({ today, pedro: pedro?.id ?? null, laura: laura?.id ?? null, cafe, wedding, projectId: project.id });
 
   await db.insert(financeEntries).values([
     { type: "receita", category: "pacote_mensal", description: "[Exemplo] Mensalidade — Café da Praça", amountCents: 150000, dueDate: addDays(today, -5), paidAt: addDays(today, -4), method: "pix", clientId: cafe, projectId: project.id },
@@ -668,8 +826,11 @@ async function main() {
     ["avisos", seedAnnouncements],
     ["modelos de proposta", seedProposalTemplates],
     ["biblioteca da marca", seedBrandAssets],
+    ["agenda: categorias e agendas iniciais", seedAgendaDefaults],
   ];
   if (args.has("--dev")) steps.push(["contas de desenvolvimento", seedDevUsers], ["contas de exemplo dos perfis novos", seedDevRoleUsers]);
+  // depois das contas: quem entra no painel e ainda não tem agenda pessoal ganha a sua
+  steps.push(["agenda: agendas pessoais", seedPersonalCalendars]);
   if (args.has("--demo")) steps.push(["dados de exemplo", seedDemo]);
   if (args.has("--dev") && args.has("--demo")) steps.push(["acessos de exemplo (membros de projeto, cliente vinculado)", seedDemoAccess]);
 

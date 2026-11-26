@@ -11,7 +11,7 @@ import { firstParam, paramId, paramText, parsePage, type PageSearchParams } from
 import { DateText } from "@/components/ui/text";
 import type { AuditLogEntry } from "@/db/schema";
 import { isISODate } from "@/lib/dates";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { auditFilterOptions, listAudit } from "@/server/config/audit";
 import { actionLabel, ACTION_LABELS, entityLabel, ENTITY_LABELS } from "./labels";
 import { PeriodFields } from "./period-fields";
@@ -42,7 +42,7 @@ const columns: DataListColumn<AuditLogEntry>[] = [
 ];
 
 export default async function AuditPage({ searchParams }: { searchParams: PageSearchParams }) {
-  await requireAdmin();
+  await requirePermission("auditoria", "ver");
   const params = await searchParams;
   const options = await auditFilterOptions();
 

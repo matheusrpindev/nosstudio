@@ -81,7 +81,21 @@ const nextConfig: NextConfig = {
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {
-        source: "/:path(login|recuperar-senha|redefinir-senha)",
+        source: "/:path(login|recuperar-senha|redefinir-senha|convite)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      // Troca de senha fora do painel (tela neutra) e os outros dois ambientes privados: Área da Equipe e Área
+      // do Cliente. As rotas /equipe e /cliente ainda não existem; o cabeçalho já fica valendo para quando nascerem.
+      {
+        source: "/conta/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/:area(equipe|cliente)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/:area(equipe|cliente)/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
     ];

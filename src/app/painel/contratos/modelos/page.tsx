@@ -8,7 +8,7 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText } from "@/components/ui/text";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CONTRACT_KIND_LABELS, CONTRACT_KINDS } from "@/lib/domain";
 import { truncate } from "@/lib/format";
 import { listTemplates } from "@/server/contracts/admin";
@@ -22,7 +22,7 @@ export const instant = false;
 const plain = (body: string) => body.replace(/[#*_>`[\]]/g, "").replace(/\s+/g, " ").trim();
 
 export default async function ContractTemplatesPage() {
-  await requireUser();
+  await requirePermission("contratos", "ver");
   const templates = await listTemplates();
   const groups = CONTRACT_KINDS.map((kind) => ({ kind, items: templates.filter((t) => t.kind === kind) })).filter((g) => g.items.length > 0);
 

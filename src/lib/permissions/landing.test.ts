@@ -69,9 +69,9 @@ describe("acesso ao painel: integral × restrito", () => {
 });
 
 describe("destino depois do login", () => {
-  it("HOJE: só o painel existe, e o painel restrito ainda não abriu", () => {
+  it("HOJE: só o painel existe — inteiro e restrito; Área da Equipe e Área do Cliente ainda não", () => {
     expect(ENVIRONMENT_READY).toEqual({ painel: true, equipe: false, cliente: false });
-    expect(RESTRICTED_PANEL_READY).toBe(false);
+    expect(RESTRICTED_PANEL_READY).toBe(true);
   });
 
   it("HOJE: admin, sócio e técnico vão para /painel", () => {
@@ -80,8 +80,16 @@ describe("destino depois do login", () => {
     }
   });
 
-  it("HOJE: gestor, funcionário, freelancer e cliente não têm para onde ir — resposta clara, nunca o painel", () => {
-    for (const role of ["gestor", "funcionario", "freelancer", "cliente"] as const) {
+  it("HOJE: gestor e funcionário entram no painel RESTRITO (o funcionário, enquanto a Área da Equipe não abre)", () => {
+    for (const role of ["gestor", "funcionario"] as const) {
+      expect(panelAccess({ role }), role).toBe("restrito");
+      expect(landingFor({ role }), role).toEqual({ ok: true, environment: "painel", path: "/painel" });
+      expect(availableEnvironments({ role })).toEqual(["painel"]);
+    }
+  });
+
+  it("HOJE: freelancer e cliente não têm para onde ir — resposta clara, nunca o painel", () => {
+    for (const role of ["freelancer", "cliente"] as const) {
       const landing = landingFor({ role });
       expect(landing.ok, role).toBe(false);
       if (!landing.ok) expect(landing.message).toMatch(/ainda não foi liberado/);
@@ -94,8 +102,20 @@ describe("destino depois do login", () => {
     if (!cliente.ok) expect(cliente.message).toContain("Área do Cliente");
   });
 
-  it("HOJE: técnico com negação individual vira restrito e também fica de fora", () => {
-    expect(landingFor({ role: "tecnico", permissions: deny("financeiro:ver") }).ok).toBe(false);
+  it("HOJE: técnico com negação individual vira restrito e continua entrando (só perde o que foi negado)", () => {
+    expect(landingFor({ role: "tecnico", permissions: deny("financeiro:ver") })).toEqual({ ok: true, environment: "painel", path: "/painel" });
+  });
+
+  it("FREIO: com o painel restrito fechado, gestor, funcionário e técnico com negação voltam a ficar de fora", () => {
+    const closed: Readiness = { environments: ENVIRONMENT_READY, restrictedPanel: false };
+    for (const role of ["gestor", "funcionario"] as const) {
+      const landing = landingFor({ role }, closed);
+      expect(landing.ok, role).toBe(false);
+      if (!landing.ok) expect(landing.message).toMatch(/ainda não foi liberado/);
+      expect(canEnterNow({ role }, "painel", closed)).toBe(false);
+    }
+    expect(landingFor({ role: "tecnico", permissions: deny("financeiro:ver") }, closed).ok).toBe(false);
+    expect(landingFor({ role: "admin" }, closed).ok).toBe(true);
   });
 
   it("QUANDO TUDO EXISTIR: cada perfil cai no seu ambiente; o funcionário começa pela Área da Equipe", () => {

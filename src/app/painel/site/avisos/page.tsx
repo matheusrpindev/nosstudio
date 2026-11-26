@@ -5,7 +5,7 @@ import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatDate, nowLocal } from "@/lib/dates";
 import { BRAND_COLOR_HEX } from "@/lib/domain";
 import { announcementStatuses, type AnnouncementStatus } from "@/server/site/admin/announcement-status";
@@ -35,7 +35,7 @@ function period(startsAt: string | null, endsAt: string | null): string {
 }
 
 export default async function AnnouncementsPage() {
-  await requireUser();
+  await requirePermission("site", "ver");
   const rows = await listAnnouncements();
   const statuses = announcementStatuses(rows, nowLocal());
   const live = rows.some((row) => statuses.get(row.id) === "no_ar");

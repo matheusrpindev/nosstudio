@@ -10,13 +10,14 @@ import { ActionForm, Field, SubmitButton } from "@/components/ui/form";
 import { DateInput, Input, Select } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId, type PageSearchParams } from "@/components/ui/search-params";
-import { requireUser } from "@/lib/auth";
+import { canEverywhere } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import {
   getClientOptions,
   getProjectOptions,
   getUserOptions,
 } from "@/server/options";
+import { moduleScope, requireScopedPermission } from "@/server/access";
 import { getClientName, getProjectInfo, listTasks } from "@/server/tasks/admin";
 import { groupTasks } from "@/server/tasks/logic";
 import { createTaskAction } from "./actions";
@@ -30,14 +31,22 @@ export default async function TasksPage({
 }: {
   searchParams: PageSearchParams;
 }) {
-  const user = await requireUser();
+  // Quem vê o módulo inteiro (sócios, gestor) vê tudo; o funcionário, só as tarefas dos projetos em que está.
+  const { user, scope } = await requireScopedPermission("tarefas", "ver");
+  const restricted = scope !== "todos";
   const params = await searchParams;
   const today = todayISO();
-  const [users, clients, projects] = await Promise.all([
+  const [editScope, userOptions, clientOptions, projects] = await Promise.all([
+    moduleScope(user, "tarefas", "editar"),
     getUserOptions(),
     getClientOptions(),
-    getProjectOptions(),
+    getProjectOptions(null, scope),
   ]);
+  // Quem só vê os próprios projetos não recebe a lista de clientes nem a da equipe inteira.
+  const users = restricted ? [{ value: user.id, label: user.name }] : userOptions;
+  const clients = restricted || !canEverywhere(user, "clientes", "ver") ? [] : clientOptions;
+  const editableProjects = editScope === "todos" ? projects : projects.filter((option) => editScope.includes(option.value));
+  const canCreate = editScope === "todos" || editableProjects.length > 0;
 
   // a URL é entrada do usuário: só valem ids que existem
   const ownerParam = paramId(params.responsavel);
@@ -54,7 +63,7 @@ export default async function TasksPage({
     : undefined;
 
   const [{ open, recentDone }, clientName, projectInfo] = await Promise.all([
-    listTasks({ ownerId, clientId, projectId }),
+    listTasks({ ownerId, clientId, projectId }, scope),
     clientId ? getClientName(clientId) : null,
     projectId ? getProjectInfo(projectId) : null,
   ]);
@@ -78,7 +87,11 @@ export default async function TasksPage({
     <>
       <PageHeader
         title="Tarefas"
-        description="O que precisa ser feito, por prazo. Marque a caixa para concluir; a tarefa fica em “Concluídas recentemente” por 14 dias, caso precise desfazer."
+        description={
+          restricted
+            ? "As tarefas dos projetos em que você está, por prazo. Marque a caixa para concluir; a tarefa fica em “Concluídas recentemente” por 14 dias, caso precise desfazer."
+            : "O que precisa ser feito, por prazo. Marque a caixa para concluir; a tarefa fica em “Concluídas recentemente” por 14 dias, caso precise desfazer."
+        }
       />
 
       {clientId || projectId ? (
@@ -105,59 +118,77 @@ export default async function TasksPage({
         </Alert>
       ) : null}
 
-      <Card as="section" aria-labelledby="nova-tarefa-titulo" className="mb-4">
-        <h2 id="nova-tarefa-titulo" className="sr-only">
-          Adicionar tarefa
-        </h2>
-        <ActionForm
-          action={createTaskAction}
-          hidden={{ clientId, projectId }}
-          resetOnSuccess
-          className="grid grid-cols-2 gap-3 space-y-0 sm:grid-cols-[minmax(0,1fr)_10.5rem_11rem_auto] sm:items-end"
-        >
-          <Field
-            name="title"
-            label="Nova tarefa"
-            required
-            className="col-span-2 sm:col-span-1"
+      {canCreate ? (
+        <Card as="section" aria-labelledby="nova-tarefa-titulo" className="mb-4">
+          <h2 id="nova-tarefa-titulo" className="sr-only">
+            Adicionar tarefa
+          </h2>
+          <ActionForm
+            action={createTaskAction}
+            hidden={restricted ? undefined : { clientId, projectId }}
+            resetOnSuccess
+            className={
+              restricted
+                ? "grid grid-cols-2 gap-3 space-y-0 lg:grid-cols-[minmax(0,1fr)_13rem_10.5rem_11rem_auto] lg:items-end"
+                : "grid grid-cols-2 gap-3 space-y-0 sm:grid-cols-[minmax(0,1fr)_10.5rem_11rem_auto] sm:items-end"
+            }
           >
-            <Input
-              autoComplete="off"
-              maxLength={160}
-              placeholder="Ex.: Enviar o roteiro para a Ana"
-            />
-          </Field>
-          <Field name="dueDate" label="Prazo">
-            <DateInput />
-          </Field>
-          <Field name="ownerId" label="Responsável">
-            <Select
-              options={users}
-              placeholder="Ninguém"
-              defaultValue={quickOwner}
-            />
-          </Field>
-          <SubmitButton
-            className="col-span-2 sm:col-span-1"
-            icon={<Plus />}
-            pendingLabel="Adicionando…"
-          >
-            Adicionar
-          </SubmitButton>
-        </ActionForm>
-      </Card>
+            <Field
+              name="title"
+              label="Nova tarefa"
+              required
+              className={restricted ? "col-span-2 lg:col-span-1" : "col-span-2 sm:col-span-1"}
+            >
+              <Input
+                autoComplete="off"
+                maxLength={160}
+                placeholder="Ex.: Enviar o roteiro para a Ana"
+              />
+            </Field>
+            {restricted ? (
+              <Field name="projectId" label="Projeto" required className="col-span-2 lg:col-span-1">
+                <Select
+                  options={editableProjects}
+                  defaultValue={editableProjects.some((option) => option.value === projectId) ? projectId : editableProjects[0]?.value}
+                />
+              </Field>
+            ) : null}
+            <Field name="dueDate" label="Prazo">
+              <DateInput />
+            </Field>
+            <Field name="ownerId" label="Responsável">
+              <Select
+                options={users}
+                placeholder="Ninguém"
+                defaultValue={quickOwner}
+              />
+            </Field>
+            <SubmitButton
+              className={restricted ? "col-span-2 lg:col-span-1" : "col-span-2 sm:col-span-1"}
+              icon={<Plus />}
+              pendingLabel="Adicionando…"
+            >
+              Adicionar
+            </SubmitButton>
+          </ActionForm>
+        </Card>
+      ) : null}
 
       <FilterBar
         search={false}
         preserve={["cliente", "projeto"]}
-        filters={[
-          {
-            name: "responsavel",
-            label: "Responsável",
-            options: users,
-            allLabel: "Toda a equipe",
-          },
-        ]}
+        filters={
+          restricted
+            ? []
+            : [
+                {
+                  name: "responsavel",
+                  label: "Responsável",
+                  options: users,
+                  allLabel: "Toda a equipe",
+                },
+              ]
+        }
       >
         <nav aria-label="Quais tarefas mostrar" className="flex gap-2">
           <Link
@@ -192,7 +223,9 @@ export default async function TasksPage({
           description={
             filtered
               ? "Experimente ver todas as tarefas ou escolher outro responsável."
-              : "Anote acima o que precisa ser feito, com prazo e responsável. As tarefas aparecem aqui, por prazo."
+              : restricted
+                ? "Quando houver tarefas nos projetos em que você está, elas aparecem aqui, por prazo."
+                : "Anote acima o que precisa ser feito, com prazo e responsável. As tarefas aparecem aqui, por prazo."
           }
           action={
             filtered ? (
@@ -212,7 +245,7 @@ export default async function TasksPage({
               variant="card"
               icon={<CheckCheck />}
               title="Tudo em dia"
-              description="Não há tarefas em aberto. Adicione uma nova acima quando surgir algo."
+              description={canCreate ? "Não há tarefas em aberto. Adicione uma nova acima quando surgir algo." : "Não há tarefas em aberto."}
               className="mb-4"
             />
           ) : null}
@@ -220,7 +253,15 @@ export default async function TasksPage({
             groups={groups}
             recentDone={recentDone}
             today={today}
-            options={{ clients, projects, users }}
+            options={{
+              clients,
+              projects: restricted ? editableProjects : projects,
+              users,
+              restricted,
+              editableProjects: editScope === "todos" ? "todos" : editScope,
+              canDelete: canEverywhere(user, "tarefas", "excluir"),
+              linkClients: canEverywhere(user, "clientes", "ver"),
+            }}
           />
         </>
       )}

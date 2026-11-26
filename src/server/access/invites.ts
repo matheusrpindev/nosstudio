@@ -6,7 +6,8 @@
  * retorno de `createInvite`, para montar o link do e-mail) e nunca vai para log ou auditoria.
  *
  * Este arquivo decide, grava, limita tentativas e audita. As Server Actions (./invite-actions.ts) só leem o
- * formulário, identificam quem chama e traduzem o resultado. Ainda não há tela.
+ * formulário, identificam quem chama e traduzem o resultado. Telas: Configurações › Usuários (lista, convidar,
+ * revogar, convidar de novo), ficha do cliente ("Acessos do cliente") e `/convite` (aceite).
  */
 import "server-only";
 import { and, desc, eq, gt, isNull } from "drizzle-orm";
@@ -141,7 +142,7 @@ export async function createInvite(input: InviteInput, actor: InviteActor, now: 
   return { ok: true, invite: toRow(invite, now), token };
 }
 
-/** Link que vai no e-mail. A tela `/convite` ainda não existe (ver docs/permissoes.md). */
+/** Link que vai no e-mail (tela pública de aceite: `src/app/(auth)/convite`). */
 export function inviteLink(token: string): string {
   return `${env.siteUrl}/convite?token=${token}`;
 }
@@ -185,8 +186,26 @@ export async function revokeInvite(id: number, actor: InviteActor, now: Date = n
   return { ok: true, invite: toRow(revoked, now) };
 }
 
+// ------------------------------------------------------------- convidar de novo
+/**
+ * "Reenviar": o token antigo não existe mais em lugar nenhum (o banco só guarda o hash), então reenviar é criar
+ * um convite NOVO com os mesmos dados — `createInvite` revoga o anterior e o link antigo deixa de funcionar.
+ * Vale para convites pendentes, expirados ou revogados; convite já aceito não se reenvia (a conta existe).
+ */
+export async function recreateInvite(id: number, actor: InviteActor, now: Date = new Date()): Promise<CreateInviteResult | { ok: false; error: "not_found" | "already_accepted"; message: string }> {
+  if (!canEverywhere(actor, "usuarios", "editar")) return { ok: false, error: "forbidden", message: "Só administradores e sócios podem convidar pessoas." };
+  const [current] = await db.select().from(userInvites).where(eq(userInvites.id, id));
+  if (!current) return { ok: false, error: "not_found", message: "Este convite não existe mais." };
+  if (current.acceptedAt) return { ok: false, error: "already_accepted", message: "Este convite já foi aceito: a conta já existe." };
+  return createInvite(
+    { email: current.email, name: current.name, role: current.role, clientId: current.clientId, projectId: current.projectId, projectRole: current.projectRole },
+    actor,
+    now,
+  );
+}
+
 // --------------------------------------------------------------------- aceitar
-/** O que a futura tela de aceite pode mostrar a quem abriu o link: só o necessário para preencher o formulário. */
+/** O que a tela de aceite pode mostrar a quem abriu o link: só o necessário para preencher o formulário. */
 export type PendingInvite = { email: string; name: string; role: UserRole; expiresAt: Date };
 
 async function findPending(token: unknown, now: Date): Promise<UserInvite | null> {

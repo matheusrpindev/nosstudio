@@ -1,6 +1,10 @@
 /**
  * Visão geral do painel — só leitura. Consultas diretas (sem cache): a página roda a cada visita.
- * Quem chama deve ter passado por `requireUser()` (e portanto `todayISO()` já é seguro).
+ * Quem chama deve ter passado por `requirePanelUser()` (e portanto `todayISO()` já é seguro).
+ *
+ * PERMISSÕES: a visão geral junta vários módulos, e nem todo mundo vê todos. Cada consulta recebe um
+ * `DashboardAccess` (montado por `dashboardAccess(user)`): o que a pessoa não pode ver NÃO É CONSULTADO e volta
+ * `null`; projetos e tarefas vêm filtrados pelos projetos que ela alcança (o funcionário só vê os dele).
  */
 import "server-only";
 import { and, asc, count, eq, gt, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
@@ -9,58 +13,101 @@ import { agendaEvents, clients, faqs, financeEntries, leads, projects, proposals
 import { smtpConfigured } from "@/lib/env";
 import { addDays, type ISODate } from "@/lib/dates";
 import { CLIENT_ACTIVE_STATUSES, PROJECT_OPEN_STAGES, type AgendaKind, type TaskPriority } from "@/lib/domain";
+import { canEverywhere, canUsePanelModule, isAdminRole } from "@/lib/permissions";
+import { inScope, moduleScope, type AccessUser, type IdScope } from "@/server/access/scope";
 import { getSiteContentForEdit } from "@/server/site/content";
 import { PROPOSAL_SOON_DAYS, sortImportantTasks } from "./logic";
 
 const num = (value: number | null | undefined) => Number(value ?? 0);
 
-// ------------------------------------------------------------------ cartões
-export type DashboardSummary = {
-  newLeads: number;
-  proposals: { waiting: number; overdue: number; soon: number };
-  activeClients: number;
-  deliveries: { pending: number; overdue: number; nextDate: ISODate | null };
-  receivables: { count: number; totalCents: number; overdueCount: number; overdueCents: number };
+// ----------------------------------------------------------------- permissões
+/** O que esta pessoa pode ver na visão geral. `null` em projetos/tarefas = não vê o módulo. */
+export type DashboardAccess = {
+  leads: boolean;
+  proposals: boolean;
+  clients: boolean;
+  finance: boolean;
+  agenda: boolean;
+  site: boolean;
+  admin: boolean;
+  /** Projetos que a pessoa vê: `"todos"`, só os dela, ou `null` (módulo fechado). */
+  projects: IdScope | null;
+  /** Tarefas: idem (pelos projetos). */
+  tasks: IdScope | null;
 };
 
-export async function getSummary(today: ISODate): Promise<DashboardSummary> {
+export async function dashboardAccess(user: AccessUser): Promise<DashboardAccess> {
+  const [projects, tasks] = await Promise.all([
+    canUsePanelModule(user, "projetos", "ver") ? moduleScope(user, "projetos", "ver") : null,
+    canUsePanelModule(user, "tarefas", "ver") ? moduleScope(user, "tarefas", "ver") : null,
+  ]);
+  return {
+    leads: canEverywhere(user, "leads", "ver"),
+    proposals: canEverywhere(user, "propostas", "ver"),
+    clients: canEverywhere(user, "clientes", "ver"),
+    finance: canEverywhere(user, "financeiro", "ver"),
+    agenda: canUsePanelModule(user, "agenda", "ver"),
+    site: canEverywhere(user, "site", "editar"),
+    admin: isAdminRole(user.role),
+    projects,
+    tasks,
+  };
+}
+
+// ------------------------------------------------------------------ cartões
+/** Cada cartão é `null` quando a pessoa não pode ver o módulo dele (e a consulta nem roda). */
+export type DashboardSummary = {
+  newLeads: number | null;
+  proposals: { waiting: number; overdue: number; soon: number } | null;
+  activeClients: number | null;
+  deliveries: { pending: number; overdue: number; nextDate: ISODate | null } | null;
+  receivables: { count: number; totalCents: number; overdueCount: number; overdueCents: number } | null;
+};
+
+export async function getSummary(today: ISODate, access: DashboardAccess): Promise<DashboardSummary> {
   const soonLimit = addDays(today, PROPOSAL_SOON_DAYS);
-  const [[lead], [prop], [client], [deliv], [recv]] = await Promise.all([
-    db.select({ n: count() }).from(leads).where(eq(leads.status, "novo")),
-    db
-      .select({
-        waiting: count(),
-        overdue: sql<number>`coalesce(sum(case when ${proposals.validUntil} < ${today} then 1 else 0 end), 0)`,
-        soon: sql<number>`coalesce(sum(case when ${proposals.validUntil} >= ${today} and ${proposals.validUntil} <= ${soonLimit} then 1 else 0 end), 0)`,
-      })
-      .from(proposals)
-      .where(and(eq(proposals.status, "enviada"), eq(proposals.isTemplate, false))),
-    db.select({ n: count() }).from(clients).where(inArray(clients.status, [...CLIENT_ACTIVE_STATUSES])),
-    db
-      .select({
-        pending: count(),
-        overdue: sql<number>`coalesce(sum(case when ${projects.deliveryDeadline} < ${today} then 1 else 0 end), 0)`,
-        nextDate: sql<string | null>`min(case when ${projects.deliveryDeadline} >= ${today} then ${projects.deliveryDeadline} end)`,
-      })
-      .from(projects)
-      .where(and(inArray(projects.stage, [...PROJECT_OPEN_STAGES]), isNotNull(projects.deliveryDeadline))),
-    db
-      .select({
-        n: count(),
-        total: sql<number>`coalesce(sum(${financeEntries.amountCents}), 0)`,
-        overdueN: sql<number>`coalesce(sum(case when ${financeEntries.dueDate} < ${today} then 1 else 0 end), 0)`,
-        overdueTotal: sql<number>`coalesce(sum(case when ${financeEntries.dueDate} < ${today} then ${financeEntries.amountCents} else 0 end), 0)`,
-      })
-      .from(financeEntries)
-      .where(and(eq(financeEntries.type, "receita"), isNull(financeEntries.paidAt))),
+  const [lead, prop, client, deliv, recv] = await Promise.all([
+    access.leads ? db.select({ n: count() }).from(leads).where(eq(leads.status, "novo")) : null,
+    access.proposals
+      ? db
+          .select({
+            waiting: count(),
+            overdue: sql<number>`coalesce(sum(case when ${proposals.validUntil} < ${today} then 1 else 0 end), 0)`,
+            soon: sql<number>`coalesce(sum(case when ${proposals.validUntil} >= ${today} and ${proposals.validUntil} <= ${soonLimit} then 1 else 0 end), 0)`,
+          })
+          .from(proposals)
+          .where(and(eq(proposals.status, "enviada"), eq(proposals.isTemplate, false)))
+      : null,
+    access.clients ? db.select({ n: count() }).from(clients).where(inArray(clients.status, [...CLIENT_ACTIVE_STATUSES])) : null,
+    access.projects
+      ? db
+          .select({
+            pending: count(),
+            overdue: sql<number>`coalesce(sum(case when ${projects.deliveryDeadline} < ${today} then 1 else 0 end), 0)`,
+            nextDate: sql<string | null>`min(case when ${projects.deliveryDeadline} >= ${today} then ${projects.deliveryDeadline} end)`,
+          })
+          .from(projects)
+          .where(and(inArray(projects.stage, [...PROJECT_OPEN_STAGES]), isNotNull(projects.deliveryDeadline), inScope(projects.id, access.projects)))
+      : null,
+    access.finance
+      ? db
+          .select({
+            n: count(),
+            total: sql<number>`coalesce(sum(${financeEntries.amountCents}), 0)`,
+            overdueN: sql<number>`coalesce(sum(case when ${financeEntries.dueDate} < ${today} then 1 else 0 end), 0)`,
+            overdueTotal: sql<number>`coalesce(sum(case when ${financeEntries.dueDate} < ${today} then ${financeEntries.amountCents} else 0 end), 0)`,
+          })
+          .from(financeEntries)
+          .where(and(eq(financeEntries.type, "receita"), isNull(financeEntries.paidAt)))
+      : null,
   ]);
 
   return {
-    newLeads: num(lead?.n),
-    proposals: { waiting: num(prop?.waiting), overdue: num(prop?.overdue), soon: num(prop?.soon) },
-    activeClients: num(client?.n),
-    deliveries: { pending: num(deliv?.pending), overdue: num(deliv?.overdue), nextDate: deliv?.nextDate ?? null },
-    receivables: { count: num(recv?.n), totalCents: num(recv?.total), overdueCount: num(recv?.overdueN), overdueCents: num(recv?.overdueTotal) },
+    newLeads: lead ? num(lead[0]?.n) : null,
+    proposals: prop ? { waiting: num(prop[0]?.waiting), overdue: num(prop[0]?.overdue), soon: num(prop[0]?.soon) } : null,
+    activeClients: client ? num(client[0]?.n) : null,
+    deliveries: deliv ? { pending: num(deliv[0]?.pending), overdue: num(deliv[0]?.overdue), nextDate: deliv[0]?.nextDate ?? null } : null,
+    receivables: recv ? { count: num(recv[0]?.n), totalCents: num(recv[0]?.total), overdueCount: num(recv[0]?.overdueN), overdueCents: num(recv[0]?.overdueTotal) } : null,
   };
 }
 
@@ -87,7 +134,10 @@ const eventColumns = {
   clientName: clients.name,
 };
 
-/** Compromissos de `from` até `to` (inclusive), por data e horário (dia inteiro primeiro). */
+/**
+ * Compromissos de `from` até `to` (inclusive), por data e horário (dia inteiro primeiro).
+ * Só chame para quem vê a Agenda no módulo inteiro (`access.agenda`): esta consulta não filtra por projeto.
+ */
 export async function listEvents(from: ISODate, to: ISODate, kinds?: AgendaKind[], limit = 60): Promise<DashboardEvent[]> {
   return db
     .select(eventColumns)
@@ -109,7 +159,8 @@ export type DashboardTask = {
   projectId: number | null;
 };
 
-export async function listImportantTasks(today: ISODate, limit = 8): Promise<{ tasks: DashboardTask[]; total: number }> {
+/** Tarefas atrasadas, de hoje e de prioridade alta — só as dos projetos em `scope` (`access.tasks`). */
+export async function listImportantTasks(today: ISODate, scope: IdScope, limit = 8): Promise<{ tasks: DashboardTask[]; total: number }> {
   const rows = await db
     .select({
       id: tasks.id,
@@ -123,7 +174,7 @@ export async function listImportantTasks(today: ISODate, limit = 8): Promise<{ t
     .from(tasks)
     .leftJoin(clients, eq(clients.id, tasks.clientId))
     .leftJoin(projects, eq(projects.id, tasks.projectId))
-    .where(and(eq(tasks.done, false), or(and(isNotNull(tasks.dueDate), lte(tasks.dueDate, today)), eq(tasks.priority, "alta"))))
+    .where(and(eq(tasks.done, false), inScope(tasks.projectId, scope), or(and(isNotNull(tasks.dueDate), lte(tasks.dueDate, today)), eq(tasks.priority, "alta"))))
     .limit(200);
   const sorted = sortImportantTasks(rows, today);
   return { tasks: sorted.slice(0, limit), total: sorted.length };
@@ -137,75 +188,99 @@ export type DashboardIssues = {
   overduePayables: { total: number; totalCents: number; items: { id: number; description: string; supplier: string; amountCents: number; dueDate: ISODate }[] };
 };
 
-export async function getIssues(today: ISODate, perList = 3): Promise<DashboardIssues> {
+const NO_ISSUES = { total: 0, items: [] };
+
+/** Pendências (vencidos e atrasados) só dos módulos que a pessoa vê; os demais voltam vazios sem consultar. */
+export async function getIssues(today: ISODate, access: DashboardAccess, perList = 3): Promise<DashboardIssues> {
   const proposalWhere = and(eq(proposals.status, "enviada"), eq(proposals.isTemplate, false), isNotNull(proposals.validUntil), lt(proposals.validUntil, today));
-  const deliveryWhere = and(inArray(projects.stage, [...PROJECT_OPEN_STAGES]), isNotNull(projects.deliveryDeadline), lt(projects.deliveryDeadline, today));
+  const deliveryWhere = and(
+    inArray(projects.stage, [...PROJECT_OPEN_STAGES]),
+    isNotNull(projects.deliveryDeadline),
+    lt(projects.deliveryDeadline, today),
+    inScope(projects.id, access.projects ?? []),
+  );
   const payableWhere = and(eq(financeEntries.type, "despesa"), isNull(financeEntries.paidAt), lt(financeEntries.dueDate, today));
 
-  const [[pc], pRows, [dc], dRows, [fc], fRows] = await Promise.all([
-    db.select({ n: count() }).from(proposals).where(proposalWhere),
-    db
-      .select({
-        id: proposals.id,
-        number: proposals.number,
-        title: proposals.title,
-        displayName: proposals.clientDisplayName,
-        clientName: clients.name,
-        validUntil: proposals.validUntil,
-      })
-      .from(proposals)
-      .leftJoin(clients, eq(clients.id, proposals.clientId))
-      .where(proposalWhere)
-      .orderBy(asc(proposals.validUntil))
-      .limit(perList),
-    db.select({ n: count() }).from(projects).where(deliveryWhere),
-    db
-      .select({ id: projects.id, title: projects.title, clientName: clients.name, deadline: projects.deliveryDeadline })
-      .from(projects)
-      .leftJoin(clients, eq(clients.id, projects.clientId))
-      .where(deliveryWhere)
-      .orderBy(asc(projects.deliveryDeadline))
-      .limit(perList),
-    db.select({ n: count(), total: sql<number>`coalesce(sum(${financeEntries.amountCents}), 0)` }).from(financeEntries).where(payableWhere),
-    db
-      .select({
-        id: financeEntries.id,
-        description: financeEntries.description,
-        supplier: financeEntries.supplier,
-        amountCents: financeEntries.amountCents,
-        dueDate: financeEntries.dueDate,
-      })
-      .from(financeEntries)
-      .where(payableWhere)
-      .orderBy(asc(financeEntries.dueDate))
-      .limit(perList),
+  const [pc, pRows, dc, dRows, fc, fRows] = await Promise.all([
+    access.proposals ? db.select({ n: count() }).from(proposals).where(proposalWhere) : [],
+    access.proposals
+      ? db
+          .select({
+            id: proposals.id,
+            number: proposals.number,
+            title: proposals.title,
+            displayName: proposals.clientDisplayName,
+            clientName: clients.name,
+            validUntil: proposals.validUntil,
+          })
+          .from(proposals)
+          .leftJoin(clients, eq(clients.id, proposals.clientId))
+          .where(proposalWhere)
+          .orderBy(asc(proposals.validUntil))
+          .limit(perList)
+      : [],
+    access.projects ? db.select({ n: count() }).from(projects).where(deliveryWhere) : [],
+    access.projects
+      ? db
+          .select({ id: projects.id, title: projects.title, clientName: clients.name, deadline: projects.deliveryDeadline })
+          .from(projects)
+          .leftJoin(clients, eq(clients.id, projects.clientId))
+          .where(deliveryWhere)
+          .orderBy(asc(projects.deliveryDeadline))
+          .limit(perList)
+      : [],
+    access.finance ? db.select({ n: count(), total: sql<number>`coalesce(sum(${financeEntries.amountCents}), 0)` }).from(financeEntries).where(payableWhere) : [],
+    access.finance
+      ? db
+          .select({
+            id: financeEntries.id,
+            description: financeEntries.description,
+            supplier: financeEntries.supplier,
+            amountCents: financeEntries.amountCents,
+            dueDate: financeEntries.dueDate,
+          })
+          .from(financeEntries)
+          .where(payableWhere)
+          .orderBy(asc(financeEntries.dueDate))
+          .limit(perList)
+      : [],
   ]);
 
   return {
-    overdueProposals: {
-      total: num(pc?.n),
-      items: pRows.map((r) => ({ id: r.id, number: r.number, title: r.title, clientName: r.displayName || r.clientName || "", validUntil: r.validUntil as ISODate })),
-    },
-    overdueDeliveries: {
-      total: num(dc?.n),
-      items: dRows.map((r) => ({ id: r.id, title: r.title, clientName: r.clientName, deadline: r.deadline as ISODate })),
-    },
-    overduePayables: { total: num(fc?.n), totalCents: num(fc?.total), items: fRows },
+    overdueProposals: access.proposals
+      ? {
+          total: num(pc[0]?.n),
+          items: pRows.map((r) => ({ id: r.id, number: r.number, title: r.title, clientName: r.displayName || r.clientName || "", validUntil: r.validUntil as ISODate })),
+        }
+      : NO_ISSUES,
+    overdueDeliveries: access.projects
+      ? {
+          total: num(dc[0]?.n),
+          items: dRows.map((r) => ({ id: r.id, title: r.title, clientName: r.clientName, deadline: r.deadline as ISODate })),
+        }
+      : NO_ISSUES,
+    overduePayables: access.finance ? { total: num(fc[0]?.n), totalCents: num(fc[0]?.total), items: fRows } : { ...NO_ISSUES, totalCents: 0 },
   };
 }
 
 export type SetupGaps = { whatsapp: boolean; email: boolean; smtp: boolean; faq: boolean };
 
-/** Pendências de configuração (true = falta configurar). */
-export async function getSetupGaps(): Promise<SetupGaps> {
+export const NO_SETUP_GAPS: SetupGaps = { whatsapp: false, email: false, smtp: false, faq: false };
+
+/**
+ * Pendências de configuração (true = falta configurar). Só para quem pode resolvê-las: as do site exigem editar
+ * o Site; a de SMTP leva a Configurações › Notificações, que é só de administradores e sócios.
+ */
+export async function getSetupGaps(access: Pick<DashboardAccess, "site" | "admin">): Promise<SetupGaps> {
+  if (!access.site && !access.admin) return NO_SETUP_GAPS;
   const [general, [faq]] = await Promise.all([
     getSiteContentForEdit("general"),
     db.select({ n: count() }).from(faqs).where(and(eq(faqs.published, true), gt(sql`length(trim(${faqs.answer}))`, 0))),
   ]);
   return {
-    whatsapp: general.whatsapp.trim() === "",
-    email: general.email.trim() === "",
-    smtp: !smtpConfigured(),
-    faq: num(faq?.n) === 0,
+    whatsapp: access.site && general.whatsapp.trim() === "",
+    email: access.site && general.email.trim() === "",
+    smtp: access.admin && !smtpConfigured(),
+    faq: access.site && num(faq?.n) === 0,
   };
 }

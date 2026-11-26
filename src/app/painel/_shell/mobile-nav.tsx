@@ -6,22 +6,23 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Drawer } from "@/components/ui/drawer";
 import { cn } from "@/lib/cn";
-import { ALL_NAV_ITEMS, isNavItemActive, MOBILE_SHORTCUTS, sectionTitle, type NavBadges } from "../nav";
+import { isNavItemActive, mobileShortcuts, sectionTitle, type NavBadges } from "../nav";
 import { NavList } from "./nav-list";
 
 type MobileNavProps = {
   /** `<Logo />` renderizado no servidor (é Server Component). */
   logo: ReactNode;
+  /** Hrefs dos itens do menu que esta pessoa pode abrir (calculado no servidor). */
+  allowed: readonly string[];
   badges: NavBadges;
   /** Bloco da conta (usuário, "Ver site", "Sair"), renderizado no servidor. */
   account: ReactNode;
 };
 
-const shortcuts = MOBILE_SHORTCUTS.map((href) => ALL_NAV_ITEMS.find((item) => item.href === href)).filter((item) => item !== undefined);
-
 /** Navegação do painel abaixo de 1024px: barra superior, barra inferior com atalhos e a gaveta "Mais". */
-export function MobileNav({ logo, badges, account }: MobileNavProps) {
+export function MobileNav({ logo, allowed, badges, account }: MobileNavProps) {
   const pathname = usePathname();
+  const shortcuts = mobileShortcuts(allowed);
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   const inShortcut = shortcuts.some((item) => isNavItemActive(item, pathname));
@@ -49,7 +50,7 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
         aria-label="Atalhos"
         className="border-borda fixed inset-x-0 bottom-0 z-30 border-t bg-superficie/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
-        <ul className="mx-auto grid max-w-lg grid-cols-5">
+        <ul className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${shortcuts.length + 1}, minmax(0, 1fr))` }}>
           {shortcuts.map((item) => {
             const active = isNavItemActive(item, pathname);
             const count = item.badge ? (badges[item.badge] ?? 0) : 0;
@@ -91,7 +92,7 @@ export function MobileNav({ logo, badges, account }: MobileNavProps) {
         <div className="flex min-h-0 flex-1 flex-col">
           <div aria-hidden="true" className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-white/30" />
           <nav aria-label="Menu completo" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-4 pb-4">
-            <NavList badges={badges} onNavigate={close} touch />
+            <NavList allowed={allowed} badges={badges} onNavigate={close} touch />
           </nav>
           {/* links do bloco da conta fecham a gaveta ao navegar */}
           <div

@@ -58,7 +58,7 @@ export const TEAM_FUNCTIONS = [
 
 // ------------------------------------------------------- paleta / aparência
 /** Cores oficiais da marca. Usadas, por exemplo, na barra de avisos (fundo/texto). */
-export const BRAND_COLORS = ["roxo", "lima", "lavanda", "offwhite", "grafite", "branco"] as const;
+export const BRAND_COLORS = ["roxo", "lima", "lavanda", "offwhite", "grafite", "preto", "branco"] as const;
 export type BrandColor = (typeof BRAND_COLORS)[number];
 export const BRAND_COLOR_HEX: Record<BrandColor, string> = {
   roxo: "#3B1F8E",
@@ -66,6 +66,7 @@ export const BRAND_COLOR_HEX: Record<BrandColor, string> = {
   lavanda: "#CFC6FF",
   offwhite: "#F6F4EF",
   grafite: "#1B1B22",
+  preto: "#101014",
   branco: "#FFFFFF",
 };
 export const BRAND_COLOR_LABELS = labels(BRAND_COLORS, {
@@ -74,6 +75,7 @@ export const BRAND_COLOR_LABELS = labels(BRAND_COLORS, {
   lavanda: "Lavanda",
   offwhite: "Off-white",
   grafite: "Grafite",
+  preto: "Preto",
   branco: "Branco",
 });
 
@@ -245,6 +247,11 @@ export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export const TASK_PRIORITY_LABELS = labels(TASK_PRIORITIES, { baixa: "Baixa", normal: "Normal", alta: "Alta" });
 
 // ------------------------------------------------------------------- agenda
+/**
+ * Tipos ANTIGOS da agenda (coluna `agenda_events.kind`). Desde a agenda v2 o que vale é a CATEGORIA
+ * (`agenda_categories`); esta coluna continua gravada só como resumo grosso para as telas que ainda a leem
+ * (visão geral, ficha do cliente, projeto). Não use em telas novas.
+ */
 export const AGENDA_KINDS = ["gravacao", "evento", "reuniao", "entrega", "outro"] as const;
 export type AgendaKind = (typeof AGENDA_KINDS)[number];
 export const AGENDA_KIND_LABELS = labels(AGENDA_KINDS, {
@@ -254,6 +261,210 @@ export const AGENDA_KIND_LABELS = labels(AGENDA_KINDS, {
   entrega: "Entrega",
   outro: "Outro",
 });
+
+/** Tons disponíveis para categorias e agendas (classes `.agenda-tom-*` em globals.css; nunca hex livre). */
+export const AGENDA_COLORS = ["roxo", "lavanda", "lima", "verde", "ciano", "azul", "rosa", "laranja", "amarelo", "vermelho", "cinza"] as const;
+export type AgendaColor = (typeof AGENDA_COLORS)[number];
+export const AGENDA_COLOR_LABELS = labels(AGENDA_COLORS, {
+  roxo: "Roxo",
+  lavanda: "Lavanda",
+  lima: "Lima",
+  verde: "Verde",
+  ciano: "Ciano",
+  azul: "Azul",
+  rosa: "Rosa",
+  laranja: "Laranja",
+  amarelo: "Amarelo",
+  vermelho: "Vermelho",
+  cinza: "Cinza",
+});
+
+/** Ícones disponíveis para categorias (conjunto fechado do lucide; o mapa nome → componente fica na agenda). */
+export const AGENDA_ICONS = [
+  "calendar",
+  "users",
+  "handshake",
+  "megaphone",
+  "phone",
+  "video",
+  "clapperboard",
+  "camera",
+  "mic",
+  "party-popper",
+  "heart",
+  "scissors",
+  "send",
+  "package-check",
+  "circle-check",
+  "file-clock",
+  "banknote",
+  "landmark",
+  "briefcase",
+  "user",
+  "tree-palm",
+  "plane",
+  "map-pin",
+  "star",
+  "flag",
+  "coffee",
+] as const;
+export type AgendaIcon = (typeof AGENDA_ICONS)[number];
+export const AGENDA_ICON_LABELS = labels(AGENDA_ICONS, {
+  calendar: "Calendário",
+  users: "Pessoas",
+  handshake: "Aperto de mão",
+  megaphone: "Megafone",
+  phone: "Telefone",
+  video: "Câmera de vídeo",
+  clapperboard: "Claquete",
+  camera: "Câmera fotográfica",
+  mic: "Microfone",
+  "party-popper": "Festa",
+  heart: "Coração",
+  scissors: "Tesoura",
+  send: "Enviar",
+  "package-check": "Pacote entregue",
+  "circle-check": "Aprovado",
+  "file-clock": "Prazo",
+  banknote: "Dinheiro",
+  landmark: "Banco",
+  briefcase: "Maleta",
+  user: "Pessoa",
+  "tree-palm": "Férias",
+  plane: "Viagem",
+  "map-pin": "Local",
+  star: "Estrela",
+  flag: "Bandeira",
+  coffee: "Café",
+});
+
+/** Tipos de agenda (calendário). `financeira` e `editorial` são camadas derivadas: não recebem compromissos. */
+export const AGENDA_CALENDAR_KINDS = ["geral", "pessoal", "producoes", "comercial", "financeira", "editorial", "colaboradores"] as const;
+export type AgendaCalendarKind = (typeof AGENDA_CALENDAR_KINDS)[number];
+export const AGENDA_CALENDAR_KIND_LABELS = labels(AGENDA_CALENDAR_KINDS, {
+  geral: "Geral",
+  pessoal: "Pessoal",
+  producoes: "Produções",
+  comercial: "Comercial",
+  financeira: "Financeira",
+  editorial: "Editorial",
+  colaboradores: "Colaboradores",
+});
+export const AGENDA_DERIVED_CALENDAR_KINDS: readonly AgendaCalendarKind[] = ["financeira", "editorial"];
+
+/** Camadas somente leitura que podem ser ligadas sobre a agenda. */
+export const AGENDA_LAYERS = ["prazos", "editorial", "financeira"] as const;
+export type AgendaLayer = (typeof AGENDA_LAYERS)[number];
+export const AGENDA_LAYER_LABELS = labels(AGENDA_LAYERS, {
+  prazos: "Prazos de projeto",
+  editorial: "Editorial",
+  financeira: "Financeira",
+});
+/** Ligadas quando a pessoa ainda não escolheu (a financeira fica de fora para não poluir a operação). */
+export const AGENDA_DEFAULT_LAYERS: readonly AgendaLayer[] = ["prazos", "editorial"];
+
+export const AGENDA_VIEWS = ["dia", "semana", "mes", "ano", "lista"] as const;
+export type AgendaView = (typeof AGENDA_VIEWS)[number];
+export const AGENDA_VIEW_LABELS = labels(AGENDA_VIEWS, { dia: "Dia", semana: "Semana", mes: "Mês", ano: "Ano", lista: "Lista" });
+
+export const AGENDA_STATUSES = ["confirmado", "a_confirmar", "cancelado", "concluido"] as const;
+export type AgendaStatus = (typeof AGENDA_STATUSES)[number];
+export const AGENDA_STATUS_LABELS = labels(AGENDA_STATUSES, {
+  confirmado: "Confirmado",
+  a_confirmar: "A confirmar",
+  cancelado: "Cancelado",
+  concluido: "Concluído",
+});
+
+export const AGENDA_PRIORITIES = ["baixa", "normal", "alta"] as const;
+export type AgendaPriority = (typeof AGENDA_PRIORITIES)[number];
+export const AGENDA_PRIORITY_LABELS = labels(AGENDA_PRIORITIES, { baixa: "Baixa", normal: "Normal", alta: "Alta" });
+
+export const AGENDA_VISIBILITIES = ["normal", "particular"] as const;
+export type AgendaVisibility = (typeof AGENDA_VISIBILITIES)[number];
+export const AGENDA_VISIBILITY_LABELS = labels(AGENDA_VISIBILITIES, { normal: "Normal", particular: "Particular" });
+/** Como um compromisso particular aparece para quem não participa dele. */
+export const AGENDA_BUSY_LABEL = "Ocupado";
+
+export const AGENDA_PERSON_ROLES = ["responsavel", "participante", "externo"] as const;
+export type AgendaPersonRole = (typeof AGENDA_PERSON_ROLES)[number];
+export const AGENDA_PERSON_ROLE_LABELS = labels(AGENDA_PERSON_ROLES, {
+  responsavel: "Responsável",
+  participante: "Participante",
+  externo: "Participante externo",
+});
+
+export const AGENDA_REMINDER_CHANNELS = ["interno", "email"] as const;
+export type AgendaReminderChannel = (typeof AGENDA_REMINDER_CHANNELS)[number];
+export const AGENDA_REMINDER_CHANNEL_LABELS = labels(AGENDA_REMINDER_CHANNELS, { interno: "Aviso no painel", email: "E-mail" });
+/** Antecedências prontas, em minutos. Outras entram como "personalizada". */
+export const AGENDA_REMINDER_PRESETS = [
+  { minutes: 15, label: "15 minutos antes" },
+  { minutes: 60, label: "1 hora antes" },
+  { minutes: 1440, label: "1 dia antes" },
+  { minutes: 10080, label: "7 dias antes" },
+] as const;
+export const AGENDA_REMINDER_MAX_MINUTES = 60 * 24 * 60; // 60 dias
+
+/** "Só este", "este e os seguintes", "todos": a quem se aplica a mudança numa série que se repete. */
+export const AGENDA_SERIES_SCOPES = ["este", "seguintes", "todos"] as const;
+export type AgendaSeriesScope = (typeof AGENDA_SERIES_SCOPES)[number];
+export const AGENDA_SERIES_SCOPE_LABELS = labels(AGENDA_SERIES_SCOPES, {
+  este: "Só este",
+  seguintes: "Este e os seguintes",
+  todos: "Todos da série",
+});
+
+export type AgendaCategorySeed = {
+  slug: string;
+  name: string;
+  color: AgendaColor;
+  icon: AgendaIcon;
+  blocksDay?: boolean;
+  isProduction?: boolean;
+  /** Resumo gravado em `agenda_events.kind` para as telas antigas. */
+  legacyKind: AgendaKind;
+};
+/**
+ * Categorias iniciais (o cliente pode renomear, recolorir, criar outras e desativar). A migration
+ * `0002` insere exatamente esta lista — o teste `migration.db.test.ts` confere que as duas batem.
+ */
+export const AGENDA_DEFAULT_CATEGORIES: readonly AgendaCategorySeed[] = [
+  { slug: "reunioes-internas", name: "Reuniões internas", color: "lavanda", icon: "users", legacyKind: "reuniao" },
+  { slug: "reunioes-clientes", name: "Reuniões com clientes", color: "roxo", icon: "handshake", legacyKind: "reuniao" },
+  { slug: "prospeccao", name: "Prospecção comercial", color: "amarelo", icon: "megaphone", legacyKind: "outro" },
+  { slug: "gravacoes", name: "Gravações", color: "lima", icon: "video", isProduction: true, legacyKind: "gravacao" },
+  { slug: "sessoes-fotograficas", name: "Sessões fotográficas", color: "verde", icon: "camera", isProduction: true, legacyKind: "gravacao" },
+  { slug: "eventos", name: "Eventos", color: "laranja", icon: "party-popper", isProduction: true, legacyKind: "evento" },
+  { slug: "casamentos", name: "Casamentos", color: "rosa", icon: "heart", isProduction: true, legacyKind: "evento" },
+  { slug: "edicao", name: "Edição e pós-produção", color: "azul", icon: "scissors", legacyKind: "outro" },
+  { slug: "publicacoes", name: "Publicações", color: "ciano", icon: "send", legacyKind: "outro" },
+  { slug: "entregas", name: "Entregas", color: "verde", icon: "package-check", legacyKind: "entrega" },
+  { slug: "aprovacoes", name: "Aprovações", color: "lavanda", icon: "circle-check", legacyKind: "outro" },
+  { slug: "prazos-contratuais", name: "Prazos contratuais", color: "vermelho", icon: "file-clock", legacyKind: "outro" },
+  { slug: "pagamentos", name: "Pagamentos", color: "amarelo", icon: "banknote", legacyKind: "outro" },
+  { slug: "compromissos-financeiros", name: "Compromissos financeiros", color: "laranja", icon: "landmark", legacyKind: "outro" },
+  { slug: "pessoais", name: "Compromissos pessoais", color: "cinza", icon: "user", legacyKind: "outro" },
+  { slug: "ferias", name: "Férias e indisponibilidade", color: "cinza", icon: "tree-palm", blocksDay: true, legacyKind: "outro" },
+  { slug: "outros", name: "Outros", color: "cinza", icon: "calendar", legacyKind: "outro" },
+];
+/** Categoria de quem não tem categoria (compromisso antigo do tipo "outro", categoria desativada). */
+export const AGENDA_FALLBACK_CATEGORY_SLUG = "outros";
+/** Categoria sugerida ao criar um compromisso. */
+export const AGENDA_DEFAULT_CATEGORY_SLUG = "reunioes-internas";
+
+export type AgendaCalendarSeed = { slug: string; name: string; kind: AgendaCalendarKind; color: AgendaColor };
+/** Agendas iniciais. As pessoais (uma por usuário do painel) são criadas à parte, sob demanda. */
+export const AGENDA_DEFAULT_CALENDARS: readonly AgendaCalendarSeed[] = [
+  { slug: "geral", name: "Agenda geral da NÓS", kind: "geral", color: "roxo" },
+  { slug: "producoes", name: "Produções", kind: "producoes", color: "lima" },
+  { slug: "comercial", name: "Comercial", kind: "comercial", color: "amarelo" },
+  { slug: "financeira", name: "Financeira", kind: "financeira", color: "verde" },
+  { slug: "editorial", name: "Editorial", kind: "editorial", color: "ciano" },
+  { slug: "colaboradores", name: "Colaboradores", kind: "colaboradores", color: "laranja" },
+];
+/** Cores das agendas pessoais, na ordem em que as contas foram criadas. */
+export const AGENDA_PERSONAL_COLORS: readonly AgendaColor[] = ["lavanda", "rosa", "azul", "ciano", "laranja", "verde"];
 
 // ---------------------------------------------------------------- propostas
 export const PROPOSAL_MODALITIES = ["mensal", "diaria_evento", "casamento", "personalizada"] as const;
