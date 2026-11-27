@@ -16,6 +16,7 @@
     "user:create": "tsx --conditions=react-server scripts/create-user.ts",
     "backup": "tsx --conditions=react-server scripts/backup.ts",
     "restore": "tsx scripts/restore.ts",
+    "reminders": "tsx --conditions=react-server scripts/reminders.ts",
     "start:prod": "sh scripts/start.sh"
   },
   "dependencies": {

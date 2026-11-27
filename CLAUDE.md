@@ -84,7 +84,7 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
     módulo inteiro. Ações: `ver`, `editar`, `excluir`, `baixar`, `compartilhar` (páginas de lista/detalhe = `ver`;
     formulários de criar/editar e actions = `editar`; `delete…` = `excluir`).
   - `requireScopedPermission(mod, ação)` (`@/server/access`) — só nos módulos que filtram por projeto
-    (`PROJECT_SCOPED_PANEL_MODULES`: projetos, tarefas). Passa também quem tem a permissão "nos projetos em que
+    (`PROJECT_SCOPED_PANEL_MODULES`: projetos, tarefas, agenda). Passa também quem tem a permissão "nos projetos em que
     está" (funcionário) e devolve o ESCOPO, que é obrigatório usar: listas com `inScope(coluna, scope)`, registros
     com `scopeAllows(scope, projectId LIDO DO BANCO)`.
   - `requireProjectPermission(mod, ação, projectId)` — página de detalhe de um registro de projeto.

@@ -385,7 +385,7 @@ A **Agenda** reúne tudo o que tem dia e hora: gravações, reuniões, eventos, 
 
 #### As visões
 
-No topo, escolha como olhar: **Dia**, **Semana** (a que abre), **Mês**, **Ano** ou **Lista**. As setas andam para trás e para a frente, e **Hoje** volta para o dia atual.
+No topo, escolha como olhar: **Dia**, **Semana** (a que abre), **Mês**, **Ano**, **Lista**, **Disponibilidade** ou **Linha do tempo**. As setas andam para trás e para a frente, e **Hoje** volta para o dia atual.
 
 - **Dia** e **Semana**: grade de horas. Compromissos de dia inteiro ou de vários dias ficam na faixa do topo; os que se sobrepõem aparecem lado a lado.
 - **Mês**: os compromissos de cada dia. No celular, toque no dia para ver a lista dele.
@@ -460,7 +460,46 @@ Esses itens aparecem só com contorno, sem preenchimento. Para mudar a data, toq
 
 #### Lembretes
 
-No bloco **Lembretes** você escolhe a antecedência (15 minutos, 1 hora, 1 dia, 7 dias ou outra) e o canal (aviso no painel ou e-mail). **Por enquanto os lembretes ficam apenas registrados no compromisso: o painel ainda não envia aviso nem e-mail.** O envio entra na próxima etapa da agenda. Até lá, não conte com ele para lembrar de nada.
+No bloco **Lembretes** você escolhe a antecedência (15 minutos, 1 hora, 1 dia, 7 dias ou outra) e o canal. Na hora marcada, os responsáveis e participantes recebem um **aviso no painel** (o sino, no alto da tela). Se o canal for e-mail, vai também um e-mail, desde que o envio de e-mail esteja configurado (veja Configurações › Notificações).
+
+- O lembrete de um compromisso **particular** vai só para quem participa dele.
+- Compromisso **cancelado** não lembra ninguém.
+- Mudou o horário do compromisso? O lembrete vale para o horário novo.
+- Compromisso de dia inteiro conta a partir das 9h.
+
+#### O sino (notificações)
+
+O sino no alto do painel mostra quantos avisos você ainda não leu. Toque para ver a lista, abrir o item ou marcar como lido; **Marcar todas como lidas** limpa o contador. A lista completa fica em **Notificações**. Cada pessoa vê só os próprios avisos.
+
+#### Arrastar para reagendar
+
+No computador, na **Semana** e no **Dia**, arraste o compromisso para outro dia ou horário (de 15 em 15 minutos) e puxe a borda de baixo para mudar a duração. No **Mês**, arrastar muda o dia e mantém o horário. Depois de soltar aparece **Desfazer** por alguns instantes.
+
+- Se o novo horário chocar com outro compromisso da mesma pessoa, o painel avisa e pergunta se é para mover assim mesmo.
+- Em compromisso que se repete, ele pergunta: só este, este e os seguintes, ou todos.
+- No celular, segure o dedo no compromisso por um instante antes de arrastar (deslizar só rola a tela). Se preferir, use **Reagendar** dentro do compromisso.
+- Compromisso cancelado, "Ocupado" de outra pessoa e itens de prazo, financeiro e editorial não arrastam.
+
+#### Disponibilidade da equipe
+
+Em **Disponibilidade** você vê, lado a lado, quando cada pessoa está ocupada, num dia ou na semana. Escolha as pessoas e o painel mostra as **janelas livres em comum** (entre 8h e 20h). Tocar numa janela abre um compromisso novo já com o horário e as pessoas.
+
+Para marcar férias ou um período sem atender, use **Bloquear período**: escolha a pessoa e as datas. Dali em diante, qualquer compromisso marcado para ela nesses dias gera o aviso de conflito.
+
+#### Linha do tempo dos projetos
+
+A **Linha do tempo** mostra uma linha por projeto ativo, com as datas do cadastro (início, evento, prazo de gravação, prazo de entrega) e os compromissos ligados ao projeto. Toque num item para abrir o projeto ou o compromisso. No celular ela vira uma lista por projeto.
+
+#### Imprimir e levar para outro calendário
+
+No menu **Mais ações** (⋮) da agenda:
+
+- **Imprimir esta visão** imprime o que está na tela, em preto sobre branco.
+- **Exportar** baixa um arquivo `.ics`, que pode ser aberto no Google Agenda, no calendário do iPhone ou no Outlook. É uma cópia do momento: mudanças feitas depois no painel não vão sozinhas para lá. Compromisso particular de outra pessoa sai só como "Ocupado".
+
+#### Quem é funcionário
+
+Quem tem perfil de funcionário vê na agenda só os compromissos em que é responsável ou participante e os dos projetos em que está. Pode criar e alterar os próprios, não exclui, e não abre a visão de Disponibilidade.
 
 ### Tarefas
 

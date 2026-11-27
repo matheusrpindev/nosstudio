@@ -212,16 +212,25 @@ export function EventForm({ action, id, values, categories, calendars, clients, 
         </FieldRow>
       </Section>
 
-      <Section id="sec-cliente" title="Cliente e projeto">
-        <FieldRow>
-          <Field name="clientId" label="Cliente" optional>
-            <Select options={clients} placeholder="Nenhum" defaultValue={values.clientId ?? ""} />
-          </Field>
+      {clients.length > 0 ? (
+        <Section id="sec-cliente" title="Cliente e projeto">
+          <FieldRow>
+            <Field name="clientId" label="Cliente" optional>
+              <Select options={clients} placeholder="Nenhum" defaultValue={values.clientId ?? ""} />
+            </Field>
+            <Field name="projectId" label="Projeto" optional>
+              <Select options={projects} placeholder="Nenhum" defaultValue={values.projectId ?? ""} />
+            </Field>
+          </FieldRow>
+        </Section>
+      ) : projects.length > 0 ? (
+        // quem só altera os próprios compromissos não escolhe cliente: ele acompanha o projeto
+        <Section id="sec-cliente" title="Projeto" description="Só os projetos em que você participa com permissão de edição. O cliente acompanha o projeto.">
           <Field name="projectId" label="Projeto" optional>
             <Select options={projects} placeholder="Nenhum" defaultValue={values.projectId ?? ""} />
           </Field>
-        </FieldRow>
-      </Section>
+        </Section>
+      ) : null}
 
       {detached || editingOne ? (
         <section className="card card-pad">

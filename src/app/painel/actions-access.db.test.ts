@@ -44,6 +44,8 @@ const NO_ACCESS = "REDIRECT:/login?aviso=sem-acesso";
 
 /** Ações da PRÓPRIA CONTA (valem em qualquer ambiente): não são barradas por perfil. */
 const ACCOUNT_ACTIONS = new Set(["conta/actions.ts#endOtherSessionsAction"]);
+/** Ações de QUALQUER conta do painel (`requirePanelUser`): só alcançam o que é da própria pessoa (as notificações dela). */
+const PANEL_WIDE_ACTIONS = new Set(["notificacoes/actions.ts#markAllNotificationsReadAction", "notificacoes/actions.ts#markNotificationReadAction"]);
 
 function actionFiles(dir = ROOT): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -126,7 +128,7 @@ describe("Server Actions do painel × perfis", () => {
     expect(await deniedFor("cliente", panelActions)).toEqual([]);
   });
 
-  it("FUNCIONÁRIO: só passam do guarda as ações de andamento de projeto e de tarefas — a lista é fechada", async () => {
+  it("FUNCIONÁRIO: só passam do guarda as ações de andamento de projeto, de tarefas e da agenda — a lista é fechada", async () => {
     // Estas (e só estas) aceitam quem tem a permissão "nos projetos em que está". Com o formulário vazio elas
     // param na validação; com dados de verdade, conferem o projeto do registro no banco — ver
     // funcionario-scope.db.test.ts (projeto alheio, inexistente, só-ver, tarefa sem projeto).
@@ -141,16 +143,48 @@ describe("Server Actions do painel × perfis", () => {
       "tarefas/actions.ts#setTaskDoneAction",
       "tarefas/actions.ts#updateTaskAction",
     ];
-    const passed = await deniedFor("funcionario", actions.filter((action) => !ACCOUNT_ACTIONS.has(action.key)));
-    expect(passed.sort()).toEqual(PROJECT_SCOPED);
+    // Agenda: o funcionário cria e altera OS PRÓPRIOS compromissos (o que ele alcança vem de `agendaAccess`) —
+    // ver src/server/agenda/funcionario.db.test.ts (compromisso alheio, particular alheio, projeto alheio).
+    // Excluir (`deleteEventAction`) e as configurações da agenda continuam só para o módulo inteiro.
+    const AGENDA_SCOPED = [
+      "agenda/actions.ts#blockPeriodAction",
+      "agenda/actions.ts#createEventAction",
+      "agenda/actions.ts#duplicateEventAction",
+      "agenda/actions.ts#ensureCalendarsAction",
+      "agenda/actions.ts#moveEventAction",
+      "agenda/actions.ts#quickCreateEventAction",
+      "agenda/actions.ts#rescheduleEventAction",
+      "agenda/actions.ts#setEventStatusAction",
+      "agenda/actions.ts#toggleChecklistItemAction",
+      "agenda/actions.ts#undoMoveEventAction",
+      "agenda/actions.ts#updateEventAction",
+    ];
+    const passed = await deniedFor("funcionario", actions.filter((action) => !ACCOUNT_ACTIONS.has(action.key) && !PANEL_WIDE_ACTIONS.has(action.key)));
+    expect(passed.sort()).toEqual([...AGENDA_SCOPED, ...PROJECT_SCOPED].sort());
     // …e no código, cada uma delas usa o guarda com escopo E confere o escopo antes de gravar
-    for (const key of PROJECT_SCOPED) {
+    const bodyOf = (key: string) => {
       const [file, name] = key.split("#");
       const source = readFileSync(path.join(ROOT, file), "utf8");
-      const body = source.slice(source.indexOf(`export async function ${name}(`)).split(/^export async function /m)[1];
-      expect(body, key).toMatch(/await requireScopedPermission\(/);
-      expect(body, key).toMatch(/scopeAllows\(|restrictedRefs\(/);
+      return source.slice(source.indexOf(`export async function ${name}(`)).split(/^export async function /m)[1];
+    };
+    for (const key of PROJECT_SCOPED) {
+      expect(bodyOf(key), key).toMatch(/await requireScopedPermission\(/);
+      expect(bodyOf(key), key).toMatch(/scopeAllows\(|restrictedRefs\(/);
     }
+    for (const key of AGENDA_SCOPED) {
+      expect(bodyOf(key), key).toMatch(/await requireScopedPermission\("agenda", "editar"\)/);
+      // só cria agendas pessoais que faltam (idempotente, sem dados de ninguém): não lê nem altera compromisso
+      if (key.endsWith("#ensureCalendarsAction")) continue;
+      expect(bodyOf(key), key).toMatch(/await agendaAccess\(user\)/);
+      expect(bodyOf(key), key).toMatch(/getMutableEvent\(access, |restrictEventInput\(access, |undoMove\(access, |access\.edit !== "todos"/);
+    }
+  });
+
+  it("as ações de notificação valem para qualquer conta do painel — e para mais ninguém", async () => {
+    const list = actions.filter((action) => PANEL_WIDE_ACTIONS.has(action.key));
+    expect(list).toHaveLength(PANEL_WIDE_ACTIONS.size);
+    for (const role of ["admin", "socio", "tecnico", "gestor", "funcionario"] as const) expect((await deniedFor(role, list)).length, role).toBe(list.length);
+    for (const role of ["freelancer", "cliente"] as const) expect(await deniedFor(role, list), role).toEqual([]);
   });
 
   it("GESTOR: nada de financeiro, site, configurações, usuários nem demonstração do kit", async () => {

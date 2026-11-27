@@ -69,7 +69,7 @@ export function AvailabilityView({ availability, everyone, state, today, userId,
             </Link>
           ))}
         </nav>
-        <ul aria-label="Pessoas na consulta" className="flex min-w-0 flex-1 flex-wrap gap-2">
+        <ul aria-label="Pessoas na consulta" className="flex min-w-0 flex-1 flex-wrap gap-2 max-sm:order-last max-sm:w-full max-sm:flex-none">
           {everyone.map((person) => {
             const on = selected.includes(person.id);
             return (
@@ -133,7 +133,7 @@ function DayColumns({ day, people, workday, today, selected, canEdit, returnTo }
 
   return (
     <div className="card agenda-impressao overflow-hidden">
-      <div tabIndex={0} role="group" aria-label={`Disponibilidade em ${title}`} className="agenda-rolagem overflow-x-auto outline-offset-[-2px]">
+      <div tabIndex={0} role="group" aria-label={`Disponibilidade em ${title}`} className="agenda-rolagem relative overflow-x-auto outline-offset-[-2px]">
         <div className="agenda-grade" style={{ "--agenda-dias": columns, gridTemplateColumns: `var(--agenda-regua) repeat(${columns}, minmax(8.75rem, 1fr))` } as CSSProperties}>
           <div className="agenda-grade-topo border-borda border-b bg-superficie">
             <div className="border-borda sticky left-0 z-10 border-r bg-superficie" />
@@ -254,7 +254,7 @@ function WeekRows({ days, people, workday, today, selected, canEdit, returnTo, d
   const template = { gridTemplateColumns: `minmax(6.5rem, 9rem) repeat(${days.length}, minmax(7.5rem, 1fr))` } as CSSProperties;
   return (
     <div className="card agenda-impressao overflow-hidden">
-      <div tabIndex={0} role="group" aria-label="Disponibilidade da semana, por pessoa e dia" className="agenda-rolagem overflow-x-auto outline-offset-[-2px]">
+      <div tabIndex={0} role="group" aria-label="Disponibilidade da semana, por pessoa e dia" className="agenda-rolagem relative overflow-x-auto outline-offset-[-2px]">
         <div role="table" aria-label="Disponibilidade da semana" className="min-w-max sm:min-w-0">
           <div role="row" className="border-borda grid border-b" style={template}>
             <div role="columnheader" className="border-borda text-texto-suave sticky left-0 z-10 flex items-end border-r bg-superficie px-3 py-2 text-xs font-semibold">

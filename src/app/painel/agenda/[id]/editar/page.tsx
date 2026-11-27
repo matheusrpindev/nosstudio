@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { firstParam, type PageSearchParams } from "@/components/ui/search-params";
-import { requirePermission } from "@/lib/auth";
 import { ruleOf } from "@/lib/agenda/expand";
 import { describeRecurrence } from "@/lib/agenda/recurrence";
 import { diffDays, isISODate, todayISO } from "@/lib/dates";
+import { requireScopedPermission } from "@/server/access/guards";
+import { agendaAccess } from "@/server/agenda/access";
 import { getEditableEvent, getEventView } from "@/server/agenda/queries";
 import { getMediaValues } from "@/server/media";
 import { updateEventAction } from "../../actions";
@@ -16,19 +17,20 @@ export const metadata: Metadata = { title: "Editar compromisso" };
 export const instant = false;
 
 export default async function EditEventPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: PageSearchParams }) {
-  const user = await requirePermission("agenda", "editar");
+  const { user } = await requireScopedPermission("agenda", "editar");
+  const access = await agendaAccess(user);
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const dayParam = firstParam((await searchParams).dia);
   const today = todayISO();
-  // particular de outra pessoa: para ela, este compromisso não tem tela de edição
+  // particular de outra pessoa (ou compromisso que não é dela para alterar): não há tela de edição — 404
   const [event, view] = await Promise.all([getEditableEvent(user, id), getEventView(user, id, dayParam && isISODate(dayParam) ? dayParam : null, today)]);
   if (!event || !view) notFound();
 
   const rule = ruleOf(event);
   const occurrence = view.occurrence;
   const span = event.endDate && event.endDate > event.date ? diffDays(event.date, event.endDate) : 0;
-  const [options, attachments] = await Promise.all([loadFormOptions(user.id, { categoryId: event.categoryId, calendarId: event.calendarId }), getMediaValues(event.attachments ?? [])]);
+  const [options, attachments] = await Promise.all([loadFormOptions(access, { categoryId: event.categoryId, calendarId: event.calendarId, projectId: event.projectId }), getMediaValues(event.attachments ?? [])]);
   const detail = `/painel/agenda/${event.id}${rule ? `?dia=${occurrence}` : ""}`;
   const ids = (role: "responsavel" | "participante") => event.people.filter((person) => person.role === role && person.userId).map((person) => person.userId as number);
 

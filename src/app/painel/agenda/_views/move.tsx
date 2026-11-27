@@ -82,12 +82,16 @@ export function MoveProvider({ enabled, children }: { enabled: boolean; children
           return;
         }
         if (result.ok) {
-          // a resposta da action já traz a agenda atualizada: o movimento otimista sai junto, sem piscar
-          place(item.key, null);
-          if (result.data?.undo) {
-            counter.current += 1;
-            setUndo({ token: result.data.undo, text: `Movido para ${describe(placement)}.`, n: counter.current });
-          }
+          // a resposta da action já traz a agenda atualizada: o movimento otimista sai na MESMA transição
+          // (depois de um `await`, a atualização precisa ser marcada de novo como transição), sem piscar
+          const undoToken = result.data?.undo;
+          startTransition(() => {
+            place(item.key, null);
+            if (undoToken) {
+              counter.current += 1;
+              setUndo({ token: undoToken, text: `Movido para ${describe(placement)}.`, n: counter.current });
+            }
+          });
           return;
         }
         if (result.data?.conflicts?.length) {

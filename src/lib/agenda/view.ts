@@ -126,7 +126,9 @@ export function viewRange(view: AgendaView, date: ISODate, options: ViewOptions 
     // começa uma semana antes da semana da data: o que acabou de passar continua à vista
     const from = addDays(startOfWeek(date), -7);
     const to = addDays(from, TIMELINE_WEEKS[options.months ?? 3] * 7 - 1);
-    const title = `${capitalize(formatMonth(from))} – ${formatMonth(to)}`;
+    // "Nov 2026 – fev 2027": curto, para caber ao lado dos controles
+    const short = (iso: ISODate) => `${formatDateShort(iso).split(" ")[1]} ${iso.slice(0, 4)}`;
+    const title = `${capitalize(short(from))} – ${short(to)}`;
     return { from, to, days: [], title, previous: addDays(date, -28), next: addDays(date, 28) };
   }
   if (view === "dia") {

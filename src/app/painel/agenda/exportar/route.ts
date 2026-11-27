@@ -6,7 +6,7 @@
 import { buildCalendar } from "@/lib/agenda/ics";
 import { logAudit } from "@/lib/audit";
 import { addDays, diffDays, isISODate, todayISO } from "@/lib/dates";
-import { authorizeAgenda } from "@/server/agenda/access";
+import { authorizeAgenda } from "@/server/agenda/guard";
 import { listIcsEvents } from "@/server/agenda/export";
 import { listCalendars } from "@/server/agenda/queries";
 import { parseAgendaState } from "../url";

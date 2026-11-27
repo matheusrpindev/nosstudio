@@ -189,8 +189,12 @@ describe("funcionário: escopo (em quais projetos ele pode o quê)", () => {
     expect(await moduleScope(funcionario, "projetos", "baixar")).toEqual([]);
     expect(await moduleScope(funcionario, "projetos", "excluir")).toEqual([]);
     expect(await moduleScope(funcionario, "tarefas", "excluir")).toEqual([]);
+    // agenda: os projetos em que é membro (o alcance completo — compromissos em que participa — é de `agendaAccess`)
+    expect(await moduleScope(funcionario, "agenda", "ver")).toEqual([MEU, SO_VER].sort((a, b) => a - b));
+    expect(await moduleScope(funcionario, "agenda", "editar")).toEqual([MEU]);
+    expect(await moduleScope(funcionario, "agenda", "excluir")).toEqual([]);
     // módulos que as telas ainda não filtram por projeto: nada (falha fechada), mesmo com "(P)" na matriz
-    for (const mod of ["agenda", "conteudo", "marca", "arquivos"] as const) expect(await moduleScope(funcionario, mod, "ver"), mod).toEqual([]);
+    for (const mod of ["conteudo", "marca", "arquivos"] as const) expect(await moduleScope(funcionario, mod, "ver"), mod).toEqual([]);
     // módulos fora do perfil
     for (const mod of ["financeiro", "clientes", "leads", "propostas", "contratos", "usuarios"] as const) expect(await moduleScope(funcionario, mod, "ver"), mod).toEqual([]);
     expect(await moduleScope(gestor, "projetos", "ver")).toBe("todos");

@@ -8,13 +8,14 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { DescriptionList } from "@/components/ui/description-list";
 import { PageHeader } from "@/components/ui/page-header";
 import { firstParam, type PageSearchParams } from "@/components/ui/search-params";
-import { canEverywhere, requirePermission } from "@/lib/auth";
+import { canEverywhere } from "@/lib/auth";
 import { ruleOf } from "@/lib/agenda/expand";
 import { describeRecurrence } from "@/lib/agenda/recurrence";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateLong, formatWeekday, isISODate, todayISO, type ISODate } from "@/lib/dates";
 import { AGENDA_PRIORITY_LABELS, AGENDA_REMINDER_CHANNEL_LABELS, AGENDA_STATUS_LABELS } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";
+import { requireScopedPermission } from "@/server/access/guards";
 import { getEventView } from "@/server/agenda/queries";
 import { getMediaValues } from "@/server/media";
 import { CategoryIcon } from "../icons";
@@ -51,7 +52,7 @@ function External({ href, children }: { href: string; children: ReactNode }) {
 const Text = ({ children }: { children: string }) => <p className="text-texto text-sm leading-relaxed break-words whitespace-pre-line">{children}</p>;
 
 export default async function EventPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: PageSearchParams }) {
-  const user = await requirePermission("agenda", "ver");
+  const { user } = await requireScopedPermission("agenda", "ver");
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const dayParam = firstParam((await searchParams).dia);
@@ -85,9 +86,13 @@ export default async function EventPage({ params, searchParams }: { params: Prom
   }
 
   const rule = ruleOf(event);
-  const canEdit = canEverywhere(user, "agenda", "editar");
+  // quem só vê a agenda "nos projetos em que está" altera apenas os próprios compromissos — e, nos dos outros,
+  // não recebe observações internas, anexos nem os links para clientes e projetos que não abre
+  const { canEdit, fullAccess } = view;
   const canDelete = canEverywhere(user, "agenda", "excluir");
-  const attachments = await getMediaValues(event.attachments ?? []);
+  const seesInternals = fullAccess || canEdit;
+  const attachments = seesInternals ? await getMediaValues(event.attachments ?? []) : [];
+  const clientLink = canEverywhere(user, "clientes", "ver");
   const responsible = event.people.filter((person) => person.role === "responsavel").map((person) => person.name);
   const participants = event.people.filter((person) => person.role === "participante").map((person) => person.name);
   const externals = event.people.filter((person) => person.role === "externo").map((person) => person.name);
@@ -185,9 +190,13 @@ export default async function EventPage({ params, searchParams }: { params: Prom
                 {
                   label: "Cliente",
                   value: event.clientId ? (
-                    <Link href={`/painel/clientes/${event.clientId}`} className="link">
-                      {event.clientName}
-                    </Link>
+                    clientLink ? (
+                      <Link href={`/painel/clientes/${event.clientId}`} className="link">
+                        {event.clientName}
+                      </Link>
+                    ) : (
+                      event.clientName
+                    )
                   ) : null,
                 },
                 {
@@ -245,7 +254,7 @@ export default async function EventPage({ params, searchParams }: { params: Prom
             </Card>
           ) : null}
 
-          {event.notes ? (
+          {event.notes && seesInternals ? (
             <Card as="section" aria-labelledby="notas-titulo">
               <CardHeader id="notas-titulo" title="Observações internas" />
               <Text>{event.notes}</Text>

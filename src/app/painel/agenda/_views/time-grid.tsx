@@ -37,20 +37,20 @@ type Live = { key: string; placement: DragPlacement } | null;
 
 function AllDayChip({ item, day, draggable }: { item: AgendaItem; day: ISODate; draggable: boolean }) {
   const continues = item.date < day;
-  const drag = useDraggable({ id: `faixa|${item.key}|${day}`, data: { item, day, kind: "faixa" } satisfies DragData, disabled: !draggable });
-  const style: CSSProperties | undefined = drag.transform ? { transform: `translate3d(${drag.transform.x}px, 0, 0)`, zIndex: 40 } : undefined;
+  const { setNodeRef, listeners, transform, isDragging } = useDraggable({ id: `faixa|${item.key}|${day}`, data: { item, day, kind: "faixa" } satisfies DragData, disabled: !draggable });
+  const style: CSSProperties | undefined = transform ? { transform: `translate3d(${transform.x}px, 0, 0)`, zIndex: 40 } : undefined;
   return (
     <Link
-      ref={drag.setNodeRef}
-      {...(draggable ? drag.listeners : {})}
+      ref={setNodeRef}
+      {...(draggable ? listeners : {})}
       href={item.href}
       draggable={false}
       title={itemSummary(item, timeLabel(item))}
       {...itemDataProps(item)}
       data-arrastavel={draggable ? "" : undefined}
-      data-arrastando={drag.isDragging ? "" : undefined}
+      data-arrastando={isDragging ? "" : undefined}
       style={style}
-      className={cn("agenda-evento relative flex min-h-6 items-center gap-1 px-2 py-0.5 text-xs font-semibold", TONE_CLASS[item.color])}
+      className={cn("agenda-evento relative flex min-h-6 items-center gap-1 px-2 py-0.5 text-xs font-semibold max-sm:min-h-10", TONE_CLASS[item.color])}
     >
       {item.source !== "event" ? <span aria-hidden="true">{LAYER_MARK[item.source]}</span> : null}
       {item.masked ? <Lock aria-hidden="true" className="size-3 shrink-0" /> : null}
@@ -78,9 +78,9 @@ function GridBlock({ item, day, segment, place, live, enabled, onResizeStart }: 
   // o trecho "continuação" (depois da meia-noite) não arrasta: quem move é o início
   const draggable = enabled && canDrag(item) && !segment.continued;
   const resizable = enabled && canResize(item);
-  const drag = useDraggable({ id: `bloco|${item.key}|${day}`, data: { item, day, kind: "bloco" } satisfies DragData, disabled: !draggable });
+  const { setNodeRef, listeners, transform, isDragging } = useDraggable({ id: `bloco|${item.key}|${day}`, data: { item, day, kind: "bloco" } satisfies DragData, disabled: !draggable });
   const moving = live?.key === item.key ? live.placement : null;
-  const resizing = moving !== null && !drag.isDragging;
+  const resizing = moving !== null && !isDragging;
   const height = resizing && moving.endTime ? Math.max(timeToMinutes(moving.endTime) - segment.startMinutes, DRAG_STEP_MIN) : place.height;
   const compact = Math.max(height, resizing ? 0 : place.height) < COMPACT_BELOW;
   const time = moving ? timeLabel(moving) : timeLabel(item);
@@ -89,20 +89,20 @@ function GridBlock({ item, day, segment, place, live, enabled, onResizeStart }: 
     height: `calc(var(--agenda-hora) * ${height / 60} - 2px)`,
     left: `calc(${(place.column / place.columns) * 100}% + 1px)`,
     width: `calc(${100 / place.columns}% - 3px)`,
-    ...(drag.transform ? { transform: `translate3d(${drag.transform.x}px, ${drag.transform.y}px, 0)`, zIndex: 40, width: "calc(100% - 3px)", left: "1px" } : null),
+    ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 40, width: "calc(100% - 3px)", left: "1px" } : null),
     ...(resizing ? { zIndex: 40 } : null),
   };
   return (
     <li className="contents">
       <Link
-        ref={drag.setNodeRef}
-        {...(draggable ? drag.listeners : {})}
+        ref={setNodeRef}
+        {...(draggable ? listeners : {})}
         href={item.href}
         draggable={false}
         title={itemSummary(item, timeLabel(item))}
         {...itemDataProps(item)}
         data-arrastavel={draggable ? "" : undefined}
-        data-arrastando={drag.isDragging || resizing ? "" : undefined}
+        data-arrastando={isDragging || resizing ? "" : undefined}
         data-evento={item.key}
         onContextMenu={(event) => {
           // toque longo é "pegar para arrastar": sem o menu do navegador por cima
@@ -356,7 +356,7 @@ export function TimeGrid({ days, items: serverItems, today, selected, dayHrefs }
                 <span className="text-right">dia inteiro</span>
               </div>
               {columns.map(({ day, allDay }) => (
-                <div key={day} className="border-borda relative min-h-8 space-y-0.5 border-t border-r p-0.5 last:border-r-0">
+                <div key={day} className="border-borda relative min-h-8 space-y-0.5 border-t border-r p-0.5 last:border-r-0 max-sm:min-h-11">
                   <SlotButton date={day} label={`Novo compromisso de dia inteiro em ${formatDateLong(day)}`} className="absolute inset-0 cursor-cell rounded-sm focus-visible:outline-offset-[-2px]" />
                   {allDay.slice(0, MAX_ALL_DAY).map((item) => (
                     <div key={item.key} className="relative">

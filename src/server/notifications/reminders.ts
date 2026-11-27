@@ -21,7 +21,7 @@ import { and, eq, inArray, lt, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { agendaEvents, agendaReminderDeliveries, users } from "@/db/schema";
 import { expandEvent } from "@/lib/agenda/expand";
-import { leadText, occurrenceStart, reminderIsDue } from "@/lib/agenda/reminders";
+import { occurrenceStart, reminderIsDue } from "@/lib/agenda/reminders";
 import { addDays, formatDate, formatWeekday, nowLocal, type ISODate } from "@/lib/dates";
 import { AGENDA_ALL_DAY_REMINDER_TIME, AGENDA_REMINDER_MAX_MINUTES } from "@/lib/domain";
 import { env } from "@/lib/env";
@@ -79,7 +79,7 @@ async function deliver(record: EventRecord, occurrence: { date: ISODate; recurri
       text: [
         `Olá, ${person.name.split(" ")[0]}.`,
         "",
-        `Lembrete da agenda da NÓS (${leadText(minutes)}):`,
+        "Lembrete da agenda da NÓS:",
         "",
         record.title,
         `Quando: ${when}${record.startTime && record.endTime ? ` – ${record.endTime}` : ""}`,

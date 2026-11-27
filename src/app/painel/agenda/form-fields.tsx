@@ -233,7 +233,7 @@ const UNITS = [
   { value: 1440, label: "dias" },
 ] as const;
 
-/** Lembretes: antecedências prontas ou personalizada + canal. Nesta etapa só a configuração é gravada. */
+/** Lembretes: antecedências prontas ou personalizada + canal. Quem envia é o despachante (`src/server/notifications/reminders.ts`). */
 export function RemindersField({ defaultValue }: { defaultValue: Reminder[] }) {
   const uid = useId();
   const [items, setItems] = useState<Reminder[]>(defaultValue);

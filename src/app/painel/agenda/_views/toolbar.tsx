@@ -55,13 +55,13 @@ export function Toolbar({ state, today, title, previous, next, canEdit, newHref,
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
         <div className="flex min-w-0 items-center gap-1 max-sm:w-full">
-          <ButtonLink href={agendaHref(state, { date: today }, today)} variant="secondary" aria-current={state.date === today ? "date" : undefined} className="print:hidden">
+          <ButtonLink href={agendaHref(state, { date: today }, today)} variant="secondary" aria-current={state.date === today ? "date" : undefined} className="shrink-0 print:hidden">
             Hoje
           </ButtonLink>
-          <Link href={agendaHref(state, { date: previous }, today)} aria-label={`Anterior (${PERIOD[state.view]})`} title="Anterior" className="btn btn-ghost btn-icon print:hidden">
+          <Link href={agendaHref(state, { date: previous }, today)} aria-label={`Anterior (${PERIOD[state.view]})`} title="Anterior" className="btn btn-ghost btn-icon shrink-0 print:hidden">
             <ChevronLeft aria-hidden="true" className="size-5" />
           </Link>
-          <Link href={agendaHref(state, { date: next }, today)} aria-label={`Próximo (${PERIOD[state.view]})`} title="Próximo" className="btn btn-ghost btn-icon print:hidden">
+          <Link href={agendaHref(state, { date: next }, today)} aria-label={`Próximo (${PERIOD[state.view]})`} title="Próximo" className="btn btn-ghost btn-icon shrink-0 print:hidden">
             <ChevronRight aria-hidden="true" className="size-5" />
           </Link>
           <h2 aria-live="polite" className="text-texto ml-1 min-w-0 truncate text-lg font-bold sm:text-xl print:ml-0 print:text-base">
@@ -129,7 +129,7 @@ export function Toolbar({ state, today, title, previous, next, canEdit, newHref,
 /** Busca no topo da visão Lista (visível em qualquer largura). */
 export function ListSearch({ state }: { state: AgendaState }) {
   return (
-    <form action={AGENDA_PATH} method="get" role="search" className="mb-4 flex gap-2">
+    <form action={AGENDA_PATH} method="get" role="search" className="mb-4 flex gap-2 print:hidden">
       <input type="hidden" name="vista" value="lista" />
       {preserved(state).map(([key, value]) => (
         <input key={key} type="hidden" name={key} value={value} />

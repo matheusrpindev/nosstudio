@@ -117,6 +117,7 @@ const PAGES: Record<string, string> = {
   "ajuda/page.tsx": "painel",
   "conta/page.tsx": "painel",
   "conta/senha/page.tsx": "painel",
+  "notificacoes/page.tsx": "painel",
   "kit/page.tsx": "integral",
   "kit/widgets/page.tsx": "integral",
 
@@ -329,9 +330,10 @@ describe("páginas do painel: a tabela página → guarda", () => {
     expect(await count("cliente")).toBe(0);
     expect(await count("admin")).toBe(total);
     expect(await count("socio")).toBe(total);
-    // funcionário: visão geral, não-encontrada, ajuda, conta, troca de senha, lista de projetos e tarefas
-    // (o detalhe de um projeto só abre para os projetos DELE — aqui o id não existe)
-    expect(await count("funcionario")).toBe(7);
+    // funcionário: visão geral, não-encontrada, ajuda, conta, troca de senha, notificações, lista de projetos e
+    // tarefas (o detalhe de um projeto só abre para os projetos DELE — aqui o id não existe). As páginas da
+    // agenda ficam fora desta tabela: o alcance dele lá é testado em src/server/agenda/funcionario.db.test.ts
+    expect(await count("funcionario")).toBe(8);
     const tecnico = await count("tecnico");
     const gestor = await count("gestor");
     expect(tecnico).toBeLessThan(total);

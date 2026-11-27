@@ -68,11 +68,15 @@ Seções sem conteúdo publicado (portfólio, depoimentos, FAQ sem resposta) nã
 - **Tema escuro** — painel e telas de acesso em preto, grafite, roxo e lima.
 - **Agenda nova** — a da tabela acima. Fora da tela da Agenda (visão geral, ficha do cliente, projeto, exportações,
   anexos) vale a mesma regra de privacidade: compromisso particular de outra pessoa é só "Ocupado", ou não aparece.
-  **Os lembretes ainda só ficam registrados no compromisso; o envio (aviso no painel e e-mail) é a próxima etapa.**
+  Lembretes enviados pelo próprio servidor (aviso no sino do painel e, com SMTP, e-mail), arrastar e soltar,
+  disponibilidade da equipe, linha do tempo dos projetos, impressão e exportação `.ics`.
+- **Lembretes em produção** — um temporizador dentro do servidor confere a cada minuto (`src/instrumentation.ts`).
+  `REMINDERS_TIMER=off` desliga; a alternativa é um cron chamando `npm run reminders` a cada minuto. Os dois juntos
+  não duplicam envios.
 
 **Próximas etapas do briefing v2** — Área da Equipe (`/equipe`) e Área do Cliente (`/cliente`), que hoje não
-existem (freelancer e cliente têm conta, mas o login avisa que o acesso ainda não foi liberado); envio dos lembretes
-da agenda; agenda, conteúdo, marca e arquivos "só nos projetos da pessoa" para o funcionário. Detalhes e pendências
+existem (freelancer e cliente têm conta, mas o login avisa que o acesso ainda não foi liberado); conteúdo, marca e
+arquivos "só nos projetos da pessoa" para o funcionário (a agenda já funciona assim). Detalhes e pendências
 em `docs/permissoes.md`, seção 10.
 
 ## Tecnologia

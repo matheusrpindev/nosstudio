@@ -26,7 +26,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
     countNotifications(user.id, unreadOnly),
     countUnread(user.id),
   ]);
-  const now = Date.now();
+  const now = new Date().getTime();
 
   return (
     <div className="max-w-3xl">

@@ -36,15 +36,3 @@ export function reminderIsDue(start: string, minutes: number, now: string, notBe
   if (current < due || current > startMin + REMINDER_GRACE_MIN) return false;
   return !notBefore || due >= wallMinutes(notBefore);
 }
-
-/** "em 15 minutos", "em 1 hora", "em 1 dia", "em 3 dias", "agora". */
-export function leadText(minutes: number): string {
-  if (minutes <= 0) return "agora";
-  if (minutes < 60) return `em ${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
-  if (minutes < 1440) {
-    const hours = Math.round(minutes / 60);
-    return `em ${hours} ${hours === 1 ? "hora" : "horas"}`;
-  }
-  const days = Math.round(minutes / 1440);
-  return `em ${days} ${days === 1 ? "dia" : "dias"}`;
-}

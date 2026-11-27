@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { firstParam, paramId, type PageSearchParams } from "@/components/ui/search-params";
-import { requirePermission } from "@/lib/auth";
 import { minutesToTime, timeToMinutes } from "@/lib/agenda/conflicts";
 import { isISODate, isTime, todayISO } from "@/lib/dates";
 import { AGENDA_DEFAULT_CATEGORY_SLUG } from "@/lib/domain";
+import { requireScopedPermission } from "@/server/access/guards";
+import { agendaAccess } from "@/server/agenda/access";
 import { getProjectClientId } from "@/server/agenda/queries";
 import { createEventAction } from "../actions";
 import { EventForm } from "../event-form";
@@ -18,7 +19,8 @@ export const instant = false;
 const safeReturn = (value: string | undefined) => (value && /^\/painel\/agenda(\?[^\\\s]*)?$/.test(value) ? value : undefined);
 
 export default async function NewEventPage({ searchParams }: { searchParams: PageSearchParams }) {
-  const user = await requirePermission("agenda", "editar");
+  const { user } = await requireScopedPermission("agenda", "editar");
+  const access = await agendaAccess(user);
   const params = await searchParams;
   const dateParam = firstParam(params.data);
   const date = dateParam && isISODate(dateParam) ? dateParam : todayISO();
@@ -30,7 +32,16 @@ export default async function NewEventPage({ searchParams }: { searchParams: Pag
   const projectId = paramId(params.projeto) ?? null;
   // Vindo de um projeto sem ?cliente=, aproveita o cliente do projeto.
   const clientId = paramId(params.cliente) ?? (projectId ? await getProjectClientId(projectId) : null);
-  const options = await loadFormOptions(user.id);
+  const options = await loadFormOptions(access);
+  // "marcar neste horário" (disponibilidade): as pessoas já vêm escolhidas — quem está criando é responsável, as demais participam
+  const invited = (firstParam(params.pessoas) ?? "")
+    .split("-")
+    .map(Number)
+    .filter((personId, index, list) => Number.isInteger(personId) && personId > 0 && list.indexOf(personId) === index && options.people.some((option) => option.value === personId))
+    .slice(0, 20);
+  const selfListed = options.people.some((option) => option.value === user.id);
+  const responsibleIds = invited.length > 0 ? (invited.includes(user.id) || access.edit !== "todos" ? [user.id] : []) : selfListed ? [user.id] : [];
+  const participantIds = invited.filter((personId) => !responsibleIds.includes(personId));
   const returnTo = safeReturn(firstParam(params.voltar));
   const wantedCategory = paramId(params.categoria);
   const wantedCalendar = paramId(params.agenda);
@@ -69,8 +80,8 @@ export default async function NewEventPage({ searchParams }: { searchParams: Pag
           notes: "",
           reminders: [],
           recurrence: null,
-          responsibleIds: options.people.some((option) => option.value === user.id) ? [user.id] : [],
-          participantIds: [],
+          responsibleIds,
+          participantIds,
           externalPeople: [],
           production: null,
         }}

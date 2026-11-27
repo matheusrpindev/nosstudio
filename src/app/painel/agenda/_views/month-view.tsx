@@ -22,16 +22,16 @@ type DragData = { item: AgendaItem; day: ISODate };
 function MonthChip({ item, day, draggable }: { item: AgendaItem; day: ISODate; draggable: boolean }) {
   const filled = item.startTime === null || item.endDate > item.date || item.masked;
   const time = timeLabel(item);
-  const drag = useDraggable({ id: `${item.key}|${day}`, data: { item, day } satisfies DragData, disabled: !draggable });
-  const style: CSSProperties | undefined = drag.transform ? { transform: `translate3d(${drag.transform.x}px, ${drag.transform.y}px, 0)`, zIndex: 40 } : undefined;
+  const { setNodeRef, listeners, transform, isDragging } = useDraggable({ id: `${item.key}|${day}`, data: { item, day } satisfies DragData, disabled: !draggable });
+  const style: CSSProperties | undefined = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 40 } : undefined;
   const common = {
-    ref: drag.setNodeRef,
-    ...(draggable ? drag.listeners : {}),
+    ref: setNodeRef,
+    ...(draggable ? listeners : {}),
     href: item.href,
     draggable: false,
     title: itemSummary(item, time),
     "data-arrastavel": draggable ? "" : undefined,
-    "data-arrastando": drag.isDragging ? "" : undefined,
+    "data-arrastando": isDragging ? "" : undefined,
     "data-evento": item.key,
     style,
   };
@@ -65,9 +65,9 @@ function MonthChip({ item, day, draggable }: { item: AgendaItem; day: ISODate; d
 
 /** Célula de um dia: recebe compromissos arrastados (o destino fica destacado). */
 function DayCell({ day, className, children }: { day: ISODate; className: string; children: ReactNode }) {
-  const drop = useDroppable({ id: day });
+  const { setNodeRef, isOver } = useDroppable({ id: day });
   return (
-    <div ref={drop.setNodeRef} data-dia={day} className={cn(className, drop.isOver && "agenda-destino")}>
+    <div ref={setNodeRef} data-dia={day} className={cn(className, isOver && "agenda-destino")}>
       {children}
     </div>
   );
@@ -138,7 +138,7 @@ export function MonthView({ month, today, selected, items: serverItems, dayHrefs
                   key={day}
                   day={day}
                   className={cn(
-                    "group/dia border-borda relative min-h-14 min-w-0 border-r p-1 last:border-r-0 sm:min-h-[7.25rem]",
+                    "agenda-celula group/dia border-borda relative min-h-14 min-w-0 border-r p-1 last:border-r-0 sm:min-h-[7.25rem]",
                     outside && "bg-fundo/40",
                     day === selected && "max-sm:bg-detalhe-suave/50",
                   )}

@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { dayOffset, spanInWindow, type Milestone, type MilestoneKind } from "@/lib/agenda/timeline";
 import { TIMELINE_WEEKS, timeLabel } from "@/lib/agenda/view";
 import { cn } from "@/lib/cn";
-import { addDays, addMonths, diffDays, endOfMonth, formatDate, formatDateShort, startOfMonth, type ISODate } from "@/lib/dates";
+import { addMonths, diffDays, endOfMonth, formatDate, formatDateShort, startOfMonth, type ISODate } from "@/lib/dates";
 import { PROJECT_STAGE_LABELS, type AgendaColor } from "@/lib/domain";
 import type { TimelineRow } from "@/server/agenda/timeline";
 import { itemDataProps, itemSummary, TONE_CLASS } from "../ui";
@@ -60,7 +60,8 @@ export function TimelineView({ rows, from, to, today, months, scaleHrefs, filter
             </Link>
           ))}
         </nav>
-        <ul aria-label="Legenda" className="text-texto-suave flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+        {/* no celular a linha do tempo é uma lista com os nomes por extenso: dispensa a legenda */}
+        <ul aria-label="Legenda" className="text-texto-suave flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-xs max-sm:hidden">
           {(Object.keys(MILESTONE_TONE) as MilestoneKind[]).map((kind) => (
             <li key={kind} className="inline-flex items-center gap-1.5">
               <span aria-hidden="true" className={cn("agenda-marco", TONE_CLASS[MILESTONE_TONE[kind]])} />
@@ -93,14 +94,15 @@ export function TimelineView({ rows, from, to, today, months, scaleHrefs, filter
         <>
           {/* faixa (a partir de 640px) */}
           <div className="card agenda-impressao overflow-hidden max-sm:hidden print:!block">
-            <div tabIndex={0} role="group" aria-label="Linha do tempo dos projetos" className="agenda-rolagem overflow-x-auto outline-offset-[-2px]">
+            <div tabIndex={0} role="group" aria-label="Linha do tempo dos projetos" className="agenda-rolagem relative overflow-x-auto outline-offset-[-2px]">
               <div className="min-w-max lg:min-w-0">
                 <div className="border-borda grid border-b" style={template}>
                   <div className="border-borda text-texto-suave sticky left-0 z-20 flex items-end border-r bg-superficie px-3 py-2 text-xs font-bold tracking-wide uppercase">Projeto</div>
                   <div className="relative h-10" aria-hidden="true">
                     {monthSpans.map((month) => (
                       <span key={month.key} className="border-borda text-texto-suave absolute inset-y-0 flex items-center border-l px-2 text-xs font-bold tracking-wide uppercase" style={{ left: `${month.left}%`, width: `${month.width}%` }}>
-                        <span className="truncate">{month.label}</span>
+                        {/* mês com poucos dias na janela: sem rótulo (não cabe) */}
+                        {month.width >= 6 ? <span className="truncate">{month.label}</span> : null}
                       </span>
                     ))}
                     {todayLeft !== null ? (
@@ -124,6 +126,7 @@ export function TimelineView({ rows, from, to, today, months, scaleHrefs, filter
                             <span className="truncate">{row.clientName ?? "Sem cliente"}</span>
                             <span aria-hidden="true">·</span>
                             <span className="shrink-0">{PROJECT_STAGE_LABELS[row.stage]}</span>
+                            {row.milestones.some((mark) => mark.late) ? <span className="text-perigo shrink-0 font-bold">· entrega atrasada</span> : null}
                           </p>
                         </div>
                         <div className="relative h-[3.75rem]" style={weekLines}>
