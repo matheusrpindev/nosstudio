@@ -58,13 +58,17 @@ só devolve o conteúdo: **um `<PageHeader>` (o único `<h1>`)**, uma sequência
 
 ## Regras de dados (as páginas ficam ESTÁTICAS)
 
-- Leia dados **só** pelas funções de `src/server/site/queries.ts` (`getSiteContent`, `getSiteImages`,
-  `getServices`, `getPackages`, `getFaqs`, `getPortfolio`, `getTestimonials`, `getSiteNav`). Todas são
-  `"use cache"` com a tag `site`; o painel atualiza com `invalidateSite()`.
+- Leia dados **só** pelas funções de `src/server/site/queries.ts` (`getSiteContent`, `getHomeLayout`, `getSiteImages`,
+  `getServices`, `getServiceBySlug`, `getPackages`, `getFaqs`, `getPortfolio`, `getTestimonials`, `getSiteNav`,
+  `getLeadOriginNames`). Todas são `"use cache"` com a tag `site`; o painel atualiza com `invalidateSite()`.
+- Caminhos das páginas: `SITE_PATHS` / `servicePath(slug)` em `src/lib/site/paths.ts` (não escreva `/planos` à mão).
+- Página inicial: a ordem e a visibilidade das seções vêm de `getHomeLayout()` (painel › Editar site › Página
+  inicial). Seção nova = um id em `src/lib/site/home-layout.ts` + um bloco em `src/app/(site)/page.tsx`.
 - Nada de `cookies()`, `headers()`, `searchParams`, `new Date()`, `Math.random()` nem acesso direto ao banco no
   caminho de renderização. Precisa de algo da URL? Leia no navegador (o `<LeadForm>` já faz isso para
   `?servico=` e `?pacote=`). Precisa de data atual? Função `"use cache"` (veja `currentYear` em `site-shell.tsx`).
-- Em rota dinâmica (`/portfolio/[slug]`), exporte `generateStaticParams` para a página continuar pré-renderizada.
+- Em rota dinâmica (`/portfolio/[slug]`, `/servicos/[slug]`), exporte `generateStaticParams` para a página continuar
+  pré-renderizada.
 - **Toda copy vem de `getSiteContent()`** (modelo em `src/lib/site/content.ts`). No JSX só ficam rótulos de
   interface ("Abrir menu", "Investimento", "(opcional)").
 - **Bloco sem conteúdo publicado não renderiza** — nem título, nem link. Padrão:
@@ -80,7 +84,7 @@ só devolve o conteúdo: **um `<PageHeader>` (o único `<h1>`)**, uma sequência
 | `<Grid>` | 12 colunas a partir de 1024px. Filhos com `lg:col-span-4`, `lg:col-start-5`, `lg:col-[5/-1]`. |
 | `<Section number label tone spaceTop bleed>` | Seção com o fio e a numeração. `tone="roxo" \| "grafite" \| "lavanda"` vira bloco de cor chapada. `bleed` recebe conteúdo de largura total (ex.: `<StatementBanner spaceTop />`); a seção seguinte, se for no papel, usa `spaceTop="lg"`. |
 | `<SectionHeader title lead id>` | Título grande (`h2`) à esquerda + texto de apoio à direita. |
-| `<PageHeader eyebrow title lead text actions meta>` | Abertura das páginas internas, com o `<h1>`. |
+| `<PageHeader eyebrow title lead text actions meta sentences>` | Abertura das páginas internas, com o `<h1>`. `sentences`: título de duas frases, cada uma na sua linha. |
 | `<Display as size accent>` | Título gigante. `size="d0"` para fechamentos. `accent="tail"` destaca as duas últimas palavras; `accent="marked"` só o trecho marcado. |
 | `<Heading as size>` | `size="h2" \| "h3" \| "h4"` (desenho) independente de `as` (semântica). |
 | `<Accented text>` | O "sinal" lima num trecho do título. |
@@ -142,28 +146,35 @@ link que não for de YouTube/Vimeo não renderiza nada.
 
 | Componente | Uso |
 | --- | --- |
-| `<ServicePanels items>` | Painéis de cor contíguos com enquadramento por proporção. `items: { title, text, href }[]`. |
+| `<ServicePanels items looks>` | Painéis de cor contíguos com enquadramento por proporção. `items: { title, text, href }[]`; `looks` troca cor/motivo de cada painel. |
 | `<ValuesList items>` | Valores em colunas, com o acento do logo. |
-| `<Steps items action stairs>` | Passos numerados; no desktop viram "escada" (3 a 8 passos). `stairs={false}` = grade simples. |
+| `<Steps items action stairs>` | Passos numerados; no desktop viram "escada" (3 a 8 passos). `stairs={false}` = grade simples. Sem texto nos passos, os nomes crescem. |
 | `<StatementBanner text>` | Frase de impacto em largura total. Duas frases → duas metades (lavanda + roxo) com o play na emenda. |
 | `<FaqAccordion items name>` | `<details>` nativo (funciona sem JS), uma resposta aberta por vez; respostas em markdown leve. Passe só perguntas publicadas (`getFaqs()` já filtra). |
 | `<ContactChannels channels>` | Linhas de WhatsApp/Instagram/e-mail. Canal com `href` vazio some sozinho. |
 | `<CtaBand title text cta secondaryCta tone>` | Faixa de fechamento das páginas internas. |
-| `<PackageBoard packages recommendedLabel detail>` | Planos. `detail="full"` (em /pacotes) mostra inclusos, captação e revisões. Preço sempre conforme `priceMode`; quantidades só quando preenchidas. Avulsos: `<PackageBoard packages={standalone} compact />`. |
+| `<PackageBoard packages recommendedLabel priceOnRequestLabel detail>` | Planos. `detail="full"` (em /planos) mostra inclusos ("Tudo do plano-base, mais:"), captação, revisões e opcionais. Valor sempre conforme `priceMode`: sem valor publicado entra `priceOnRequestLabel`; quantidades só quando preenchidas. |
+| `<PlanComparison plans caption>` | Tabela comparativa montada do "Inclui" de cada plano (`src/lib/site/plans.ts`). Rola na horizontal no celular. |
+| `<ServiceIndex services>` | Índice tipográfico dos serviços (home, "outros serviços"): a linha inteira leva a `/servicos/<slug>`. |
+| `<DifferentialsList items>` | Grade numerada (diferenciais, benefícios de um serviço). O texto de cada item é opcional. |
+| `<StandaloneIndex packages>` | Serviços avulsos em linhas curtas (home); cada uma leva ao formulário com o serviço escolhido. |
+| `<LegalPage>` | Páginas legais (privacidade, termos, cookies): markdown com índice lateral. |
 | `<PackagePrice pkg>` | Só o preço formatado ("Sob consulta", "A partir de R$ …"). |
 | `<PortfolioGrid projects>` / `<PortfolioCard>` | Cartões de projeto (capa ou estado vazio). |
 | `<TestimonialGrid testimonials>` / `<TestimonialCard>` | Depoimento em texto, print (com descrição acessível) ou vídeo. |
 | `<HomeHero>` | O hero da home (título cruzando o campo de cor). |
 
-O botão de cada pacote aponta para `/contato?servico=…&pacote=…#formulario` (`packageContactHref`); para serviços,
-`serviceContactHref(service.interest)`. **A página de contato deve colocar `id="formulario"` no `<LeadForm>`.**
+O botão de cada plano aponta para `/contato?servico=…&pacote=…#formulario` (`packageContactHref`); a página de cada
+serviço tem o próprio formulário (`#servico-orcamento`, já com o serviço e a origem preenchidos). **A página de
+contato deve colocar `id="formulario"` no `<LeadForm>`.** `?pacote=` só vale para nomes publicados
+(`getLeadOriginNames()`).
 
 ## Formulário de contato — `lead-form.tsx`
 
 ```tsx
 <LeadForm
   id="formulario"
-  variant="full"                               // "compact" (home) | "full" (contato) | "event" (casamentos/eventos)
+  variant="full"                               // "compact" (home) | "full" (contato, página de serviço) | "event" (Eventos e Casamentos)
   originPath="/contato"
   consentText={content.contactPage.consentText}
   submitLabel={content.contactPage.submitLabel}
@@ -173,6 +184,12 @@ O botão de cada pacote aponta para `/contato?servico=…&pacote=…#formulario`
   bordered                                     // contorno fino quando o formulário está sobre o papel
 />
 ```
+
+A variante "full" é o formulário "inteligente": além de nome, empresa, WhatsApp, e-mail, serviço, objetivo e
+observações, mostra os campos do TIPO do serviço escolhido (marketing → segmento e perfil; audiovisual → tipo e
+previsão; evento → data e local) — a regra está em `leadFieldGroup` (`src/lib/domain.ts`) e o servidor só grava os
+campos do tipo (`buildLeadRecord`). A variante "event" tem tipo, data, horário, cidade, local, convidados e
+serviços; o tipo de evento decide o interesse gravado. O envio vira lead; nunca cria compromisso na agenda.
 
 Já resolve: Server Action (`submitLeadAction`), erros por campo com `aria-describedby`, foco no primeiro campo
 inválido, máscara de telefone, campo-isca e tempo mínimo (anti-spam), estado de envio e tela de sucesso com foco
@@ -193,7 +210,7 @@ animação; hover e transições ficam no CSS.
 
 - Um `<h1>` por página (`PageHeader` ou `HomeHero`); `h2` nas seções; `h3` nos cartões. Ligue `Section labelledBy`
   ao `id` do título.
-- `id`s com o nome da página na frente (`sobre-valores`, `casamentos-faq`): o Next 16 mantém a página anterior
+- `id`s com o nome da página na frente (`sobre-valores`, `eventos-faq`): o Next 16 mantém a página anterior
   oculta no DOM depois de uma navegação, então `id`s repetidos entre páginas podem colidir em âncoras.
 - O WhatsApp flutuante se recolhe sozinho sobre `.s-hero__actions`, `.s-pagehead__actions` e `.s-form` — use o
   slot `actions` do `PageHeader` e o `<LeadForm>` em vez de recriar esses blocos.

@@ -150,12 +150,20 @@ export function leadRequestSummary(lead: Lead): string {
   const lines = [
     `Primeiro contato recebido em ${formatDateTime(lead.createdAt)} (origem: ${CONTACT_SOURCE_LABELS[lead.source]}).`,
     `Interesse: ${SERVICE_INTEREST_LABELS[lead.serviceInterest]}.`,
-    details.packageName ? `Pacote/serviço de origem: ${details.packageName}.` : "",
-    lead.eventDate ? `Data do evento: ${formatDate(lead.eventDate)}.` : "",
+    details.packageName ? `Plano/serviço de origem: ${details.packageName}.` : "",
+    details.company ? `Empresa: ${details.company}.` : "",
+    details.objective ? `Objetivo: ${details.objective}.` : "",
+    details.segment ? `Segmento: ${details.segment}.` : "",
+    details.profile ? `Perfil da marca: ${details.profile}.` : "",
+    details.productionType ? `Tipo de produção: ${details.productionType}.` : "",
+    details.timeframe ? `Previsão: ${details.timeframe}.` : "",
     details.eventType ? `Tipo de evento: ${details.eventType}.` : "",
+    lead.eventDate ? `Data do evento: ${formatDate(lead.eventDate)}.` : "",
+    details.startTime || details.endTime ? `Horário: ${[details.startTime, details.endTime].filter(Boolean).join("–")}.` : "",
+    lead.city ? `Cidade: ${lead.city}.` : "",
     details.eventLocation ? `Local: ${details.eventLocation}.` : "",
     details.guests ? `Convidados: ${details.guests}.` : "",
-    details.startTime || details.endTime ? `Horário: ${details.startTime ?? "?"}–${details.endTime ?? "?"}.` : "",
+    details.services ? `Serviços desejados: ${details.services}.` : "",
     details.coverage ? `Cobertura: ${details.coverage}.` : "",
     details.storymaker ? `Storymaker: ${details.storymaker}.` : "",
     lead.message.trim() ? `Mensagem: “${lead.message.trim()}”` : "",
@@ -174,11 +182,15 @@ export async function convertLeadToClient(leadId: number, userId: number): Promi
     const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
     if (!lead) return { ok: false, reason: "not_found" } as const;
     if (lead.clientId) return { ok: true, clientId: lead.clientId, created: false } as const;
+    const company = (lead.details?.company ?? "").trim();
 
     const [client] = await tx
       .insert(clients)
       .values({
-        name: lead.name,
+        // pedido em nome de uma empresa: ela vira o cliente e quem escreveu, a pessoa de contato
+        name: company || lead.name,
+        contactName: company ? lead.name : "",
+        kind: company ? "pj" : "pf",
         whatsapp: lead.whatsapp,
         email: lead.email ?? "",
         city: lead.city ?? "",

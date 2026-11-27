@@ -2,7 +2,9 @@
  * Cartões de pacote (planos mensais e serviços avulsos).
  *
  * Regras dos sócios aplicadas aqui:
- * - preço conforme `priceMode` — "Sob consulta" por padrão; valor só aparece em "a partir de" / "fixo";
+ * - preço conforme `priceMode` — valor oculto por padrão (no lugar entra o texto de
+ *   `packagesPage.priceOnRequestLabel`); o valor só aparece em "a partir de" / "fixo";
+ * - plano com plano-base mostra "Tudo do <base>, mais:" antes das entregas próprias;
  * - quantidades (`deliverables`), duração de captação e limite de revisões só aparecem quando preenchidos;
  * - o plano recomendado ganha o bloco roxo e a etiqueta lima.
  */
@@ -16,14 +18,29 @@ import { LevelMark } from "./marks";
 import { revealProps } from "./reveal";
 import { packageContactHref } from "./text";
 
-/** Preço público de um pacote, já no formato de exibição. */
-export function PackagePrice({ pkg }: { pkg: Pick<PublicPackage, "priceMode" | "priceCents" | "priceSuffix"> }) {
-  if (pkg.priceMode === "sob_consulta" || pkg.priceCents == null) return <>{PRICE_MODE_LABELS.sob_consulta}</>;
+/** O pacote tem valor publicado? (Sem valor, o site mostra o texto de `priceOnRequestLabel`.) */
+export function hasPublicPrice(pkg: Pick<PublicPackage, "priceMode" | "priceCents">): boolean {
+  return pkg.priceMode !== "sob_consulta" && pkg.priceCents != null;
+}
+
+/**
+ * Preço público de um pacote, já no formato de exibição. Sem valor publicado, mostra `onRequestLabel`
+ * ("Investimento personalizado para o seu negócio.") — e nada, se o texto estiver vazio.
+ */
+export function PackagePrice({
+  pkg,
+  onRequestLabel = "",
+}: {
+  pkg: Pick<PublicPackage, "priceMode" | "priceCents" | "priceSuffix" | "discountNote">;
+  onRequestLabel?: string;
+}) {
+  if (!hasPublicPrice(pkg) || pkg.priceCents == null) return <span className="s-price__text">{onRequestLabel}</span>;
   return (
     <>
       {pkg.priceMode === "a_partir" ? <small>{PRICE_MODE_LABELS.a_partir} </small> : null}
       {formatBRL(pkg.priceCents)}
       {pkg.priceSuffix ? <small> {pkg.priceSuffix}</small> : null}
+      {pkg.discountNote ? <span className="s-price__note">{pkg.discountNote}</span> : null}
     </>
   );
 }
@@ -34,6 +51,8 @@ type PackageCardProps = {
   level?: { index: number; total: number };
   /** Texto da etiqueta do recomendado (content.packagesPage.recommendedLabel). */
   recommendedLabel?: string;
+  /** Texto no lugar do valor não publicado (content.packagesPage.priceOnRequestLabel). */
+  priceOnRequestLabel?: string;
   /** "summary" (home): posicionamento + preço. "full" (/pacotes): também o que inclui, captação e revisões. */
   detail?: "summary" | "full";
   /** Cartão menor, para serviços avulsos. */
@@ -48,6 +67,7 @@ export function PackageCard({
   pkg,
   level,
   recommendedLabel,
+  priceOnRequestLabel = "",
   detail = "summary",
   compact = false,
   href,
@@ -80,10 +100,11 @@ export function PackageCard({
             <dd>{pkg.description}</dd>
           </div>
         ) : null}
-        {full && pkg.includes.length > 0 ? (
+        {full && (pkg.includes.length > 0 || pkg.base) ? (
           <div>
             <dt>Inclui</dt>
             <dd>
+              {pkg.base ? <p className="s-plan__base">Tudo do {pkg.base.name}, mais:</p> : null}
               <ul>
                 {pkg.includes.map((item, i) => (
                   <li key={i}>{item}</li>
@@ -119,12 +140,26 @@ export function PackageCard({
             <dd>{pkg.revisionLimit}</dd>
           </div>
         ) : null}
-        <div className="s-plan__price">
-          <dt>Investimento</dt>
-          <dd>
-            <PackagePrice pkg={pkg} />
-          </dd>
-        </div>
+        {full && pkg.optionals.length > 0 ? (
+          <div>
+            <dt>Opcionais</dt>
+            <dd>
+              <ul>
+                {pkg.optionals.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        ) : null}
+        {hasPublicPrice(pkg) || priceOnRequestLabel ? (
+          <div className="s-plan__price">
+            <dt>Investimento</dt>
+            <dd>
+              <PackagePrice pkg={pkg} onRequestLabel={priceOnRequestLabel} />
+            </dd>
+          </div>
+        ) : null}
       </dl>
       {target ? (
         <SiteButtonLink
@@ -148,6 +183,7 @@ export function PackageCard({
 export function PackageBoard({
   packages,
   recommendedLabel,
+  priceOnRequestLabel,
   detail,
   compact = false,
   showLevels = true,
@@ -157,6 +193,7 @@ export function PackageBoard({
 }: {
   packages: PublicPackage[];
   recommendedLabel?: string;
+  priceOnRequestLabel?: string;
   detail?: "summary" | "full";
   compact?: boolean;
   /** Mostra o indicador de nível (1 de 3, 2 de 3…) — faz sentido para planos em escada. */
@@ -180,6 +217,7 @@ export function PackageBoard({
           pkg={pkg}
           level={showLevels && !compact && packages.length <= 6 ? { index: i, total: packages.length } : undefined}
           recommendedLabel={recommendedLabel}
+          priceOnRequestLabel={priceOnRequestLabel}
           detail={detail}
           compact={compact}
           href={hrefFor ? hrefFor(pkg) : undefined}

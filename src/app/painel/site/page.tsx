@@ -33,7 +33,7 @@ export default async function SiteOverviewPage() {
     <>
       <PageHeader
         title="Editar site"
-        description="Tudo o que o público vê no site é editado aqui: textos, imagens, avisos, serviços, pacotes e mais. Sem precisar de programador."
+        description="Tudo o que o público vê no site é editado aqui: a ordem da página inicial, textos, imagens, avisos, serviços, planos e mais. Sem precisar de programador."
         actions={
           <ButtonLink href="/" external variant="secondary" icon={<ExternalLink />}>
             Ver o site
@@ -94,16 +94,16 @@ export default async function SiteOverviewPage() {
         <StatCard
           label="Serviços"
           value={counts.servicesVisible}
-          caption={`${plural(counts.servicesVisible, "visível", "visíveis")} de ${counts.servicesTotal}`}
+          caption={`${plural(counts.servicesVisible, "publicado", "publicados")} de ${counts.servicesTotal} · cada um com página própria`}
           href="/painel/site/servicos"
         />
         <StatCard
-          label="Pacotes"
+          label="Planos e avulsos"
           value={counts.packagesVisible}
           caption={
             counts.packagesWithPrice === 0
-              ? `${plural(counts.packagesVisible, "visível", "visíveis")} · todos “Sob consulta”`
-              : `${plural(counts.packagesVisible, "visível", "visíveis")} · ${counts.packagesWithPrice} com valor`
+              ? `${plural(counts.packagesVisible, "visível", "visíveis")} · nenhum valor publicado`
+              : `${plural(counts.packagesVisible, "visível", "visíveis")} · ${counts.packagesWithPrice} com valor publicado`
           }
           href="/painel/site/pacotes"
         />
@@ -118,9 +118,12 @@ export default async function SiteOverviewPage() {
       </div>
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <p className="text-texto-suave text-sm">Quer ligar ou desligar uma página inteira (Portfólio, Casamentos…)?</p>
+        <p className="text-texto-suave text-sm">Quer mudar a ordem da página inicial ou desligar uma página inteira (Portfólio, Planos…)?</p>
+        <ButtonLink href="/painel/site/inicio" variant="secondary">
+          Abrir “Página inicial”
+        </ButtonLink>
         <ButtonLink href="/painel/site/textos/visibility" variant="secondary">
-          Abrir “Visibilidade das seções”
+          Abrir “Páginas visíveis”
         </ButtonLink>
       </div>
     </>

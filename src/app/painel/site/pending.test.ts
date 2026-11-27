@@ -11,6 +11,13 @@ const READY: LaunchSnapshot = {
   coupleMediaId: 3,
   publishedFaqs: 4,
   privacyIsBaseText: false,
+  termsIsBaseText: false,
+  cookiesIsBaseText: false,
+  biosUnreviewed: false,
+  visiblePlans: 3,
+  plansWithIncludes: 3,
+  visibleServices: 9,
+  servicesWithoutDescription: 0,
   packagesWithPrice: 2,
   visiblePackages: 3,
 };
@@ -33,11 +40,32 @@ describe("pendências de lançamento", () => {
       coupleMediaId: null,
       publishedFaqs: 0,
       privacyIsBaseText: true,
+      termsIsBaseText: true,
+      cookiesIsBaseText: true,
+      biosUnreviewed: true,
+      visiblePlans: 3,
+      plansWithIncludes: 3,
+      visibleServices: 9,
+      servicesWithoutDescription: 9,
       packagesWithPrice: 0,
       visiblePackages: 3,
     };
     const list = computeLaunchPending(empty);
-    expect(list.map((p) => p.id)).toEqual(["whatsapp", "email", "founders-photos", "couple-photo", "faq", "privacy", "packages-prices"]);
+    expect(list.map((p) => p.id)).toEqual([
+      "whatsapp",
+      "email",
+      "founders-photos",
+      "couple-photo",
+      "bios",
+      "faq",
+      "privacy",
+      "terms",
+      "cookies",
+      "services-descriptions",
+      "packages-prices",
+    ]);
+    // o que depende de decisão dos sócios (e não impede o lançamento) é só lembrete
+    expect(list.filter((p) => p.tone === "info").map((p) => p.id)).toEqual(["services-descriptions", "packages-prices"]);
     for (const item of list) expect(item.href).toMatch(/^\/painel\/site\//);
     expect(list.find((p) => p.id === "packages-prices")?.tone).toBe("info");
     expect(list.find((p) => p.id === "founders-photos")?.description).toContain("Pedro, Laura");
@@ -52,6 +80,22 @@ describe("pendências de lançamento", () => {
     expect(list).toHaveLength(1);
     expect(list[0].title).toBe("Falta a foto de um fundador");
     expect(list[0].description).toContain("Laura");
+  });
+
+  it("briefing v2: biografias a validar e termos/cookies a revisar saem da lista quando resolvidos", () => {
+    expect(ids({ ...READY, biosUnreviewed: true })).toEqual(["bios"]);
+    expect(ids({ ...READY, termsIsBaseText: true })).toEqual(["terms"]);
+    expect(ids({ ...READY, cookiesIsBaseText: true })).toEqual(["cookies"]);
+    const bios = computeLaunchPending({ ...READY, biosUnreviewed: true })[0];
+    expect(bios.href).toBe("/painel/site/textos/about#bloco-fundadores");
+  });
+
+  it("planos sem entregas e serviços sem descrição são lembretes", () => {
+    expect(ids({ ...READY, plansWithIncludes: 2 })).toEqual(["plans-includes"]);
+    expect(ids({ ...READY, visiblePlans: 0, plansWithIncludes: 0 })).toEqual([]);
+    const one = computeLaunchPending({ ...READY, servicesWithoutDescription: 1 })[0];
+    expect(one.title).toBe("Um serviço ainda sem descrição");
+    expect(one.tone).toBe("info");
   });
 
   it("pacotes: só lembra dos valores se houver pacote visível e nenhum com valor", () => {

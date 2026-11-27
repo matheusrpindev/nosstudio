@@ -106,10 +106,26 @@ export type LeadDetails = {
   endTime?: string;
   coverage?: string; // foto, vídeo, foto + vídeo
   storymaker?: string; // sim / não / talvez
-  /** Pacote ou serviço avulso de origem, quando o visitante veio de um card. */
+  /** Plano, serviço avulso ou serviço de origem, quando o visitante veio de um botão do site. */
   packageName?: string;
+  // ---- captação comercial (briefing v2, seção 10)
+  company?: string;
+  objective?: string;
+  /** Marketing: segmento do negócio e perfil (Instagram ou site). */
+  segment?: string;
+  profile?: string;
+  /** Audiovisual: tipo de produção e previsão de quando acontece. */
+  productionType?: string;
+  timeframe?: string;
+  /** Evento: serviços desejados (lista escolhida no formulário de Eventos e Casamentos). */
+  services?: string;
   extras?: Record<string, string>;
 };
+
+/** Benefício de um serviço (página do serviço). */
+export type ServiceBenefit = { title: string; text: string };
+/** Pergunta frequente de um serviço (página do serviço). Só aparece com pergunta E resposta. */
+export type ServiceFaq = { question: string; answer: string };
 
 // ============================================================== AUTENTICAÇÃO
 export const users = sqliteTable("users", {
@@ -297,8 +313,14 @@ export const services = sqliteTable("services", {
   coverMediaId: integer("cover_media_id").references(() => media.id, { onDelete: "set null" }),
   gallery: text("gallery", { mode: "json" }).$type<number[]>().notNull().default([]), // ids de media
   videoUrl: text("video_url"),
-  /** Página própria (ex.: /casamentos) em vez de âncora em /servicos. */
+  /** Página temática além da página do serviço (ex.: /eventos-e-casamentos): vira um segundo botão. */
   pagePath: text("page_path"),
+  /** Benefícios (página do serviço). Vazio = o bloco não aparece. */
+  benefits: text("benefits", { mode: "json" }).$type<ServiceBenefit[]>().notNull().default([]),
+  /** Perguntas frequentes do serviço. Vazio = o bloco não aparece. */
+  faq: text("faq", { mode: "json" }).$type<ServiceFaq[]>().notNull().default([]),
+  /** Projetos do portfólio relacionados (ids). Só aparecem os publicados. */
+  relatedProjectIds: text("related_project_ids", { mode: "json" }).$type<number[]>().notNull().default([]),
   visible: bool("visible", true),
   sortOrder: sortOrder(),
   createdAt: createdAt(),
@@ -323,6 +345,12 @@ export const packages = sqliteTable("packages", {
   /** Complemento do preço (ex.: "/mês", "por diária"). */
   priceSuffix: text("price_suffix").notNull().default(""),
   recommended: bool("recommended", false),
+  /** Plano em que este se apoia ("tudo do plano X, mais…"). Vale no cartão e na tabela comparativa. */
+  basePackageId: integer("base_package_id"),
+  /** Opcionais que podem ser acrescentados ao plano. Vazio = não exibe. */
+  optionals: text("optionals", { mode: "json" }).$type<string[]>().notNull().default([]),
+  /** Condição de desconto (ex.: "10% no contrato semestral"). Só aparece junto de um valor publicado. */
+  discountNote: text("discount_note").notNull().default(""),
   ctaLabel: text("cta_label").notNull().default("Solicitar orçamento"),
   visible: bool("visible", true),
   sortOrder: sortOrder(),

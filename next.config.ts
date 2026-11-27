@@ -60,6 +60,16 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  /**
+   * Rotas do site antigo (briefing v1) → rotas novas. Permanentes (308): buscadores e links salvos seguem para a
+   * página nova. A query string (ex.: ?pacote=…) é preservada pelo Next.
+   */
+  async redirects() {
+    return [
+      { source: "/pacotes", destination: "/planos", permanent: true },
+      { source: "/casamentos", destination: "/eventos-e-casamentos", permanent: true },
+    ];
+  },
   async headers() {
     return [
       // Tudo, exceto os arquivos enviados (que têm política própria logo abaixo).

@@ -13,6 +13,7 @@ import { todayISO } from "@/lib/dates";
 import { BRAND_COLOR_HEX, type BrandColor } from "@/lib/domain";
 import { env } from "@/lib/env";
 import { instagramLink, safeHref, safeUrl, whatsAppLink } from "@/lib/format";
+import { SITE_PATHS } from "@/lib/site/paths";
 import { getAnnouncements, getSiteContent, getSiteNav, type PublicAnnouncement } from "@/server/site/queries";
 import { AnnouncementBar, type AnnouncementView } from "./announcement-bar";
 import { OrganizationJsonLd } from "./json-ld";
@@ -57,11 +58,18 @@ export async function SiteShell({ children }: { children: ReactNode }) {
     getAnnouncements(),
     currentYear(),
   ]);
-  const { general, home, contactPage, visibility } = content;
+  const { general, navigation, contactPage, visibility, privacyPage, termsPage, cookiesPage } = content;
 
   // Sem rótulo no painel, o botão do cabeçalho some (em vez de uma caixa lima vazia).
-  const ctaLabel = home.closing.cta.label.trim();
-  const cta = ctaLabel ? { label: ctaLabel, href: safeHref(home.closing.cta.href) || "/contato" } : null;
+  const ctaLabel = navigation.cta.label.trim();
+  const cta = ctaLabel ? { label: ctaLabel, href: safeHref(navigation.cta.href) || SITE_PATHS.contact } : null;
+  // "Área do Cliente": leva ao login, que encaminha cada conta ao seu ambiente. Rótulo vazio = o link some.
+  const clientArea = navigation.clientArea.trim() ? { label: navigation.clientArea.trim(), href: SITE_PATHS.clientArea } : null;
+  const legal = [
+    { label: privacyPage.title, href: SITE_PATHS.privacy },
+    { label: termsPage.title, href: SITE_PATHS.terms },
+    { label: cookiesPage.title, href: SITE_PATHS.cookies },
+  ].filter((link) => link.label.trim() !== "");
   const instagram = instagramLink(general.instagram);
   const whatsapp = whatsAppLink(general.whatsapp, general.whatsappMessage);
   const social = general.socialLinks
@@ -86,6 +94,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         brandName={general.brandName}
         items={nav}
         cta={cta}
+        account={clientArea}
         extra={instagram ? { label: `Instagram — ${general.instagram}`, href: instagram, external: true } : null}
       />
 
@@ -98,9 +107,12 @@ export async function SiteShell({ children }: { children: ReactNode }) {
           <div className="s-footer__grid">
             <div className="s-footer__brand">
               <Logo variant="completo" tone="branco" label={general.brandName} className="h-auto w-full" />
+              {general.tagline ? <p className="s-footer__slogan">{general.tagline}</p> : null}
             </div>
-            <nav className="s-footer__col s-footer__col--nav" id="rodape-nav" aria-label="Rodapé">
-              <h2 className="s-meta">Navegação</h2>
+            <nav className="s-footer__col s-footer__col--nav" id="rodape-nav" aria-labelledby="rodape-nav-titulo">
+              <h2 className="s-meta" id="rodape-nav-titulo">
+                Navegação
+              </h2>
               <ul>
                 {nav.map((item) => (
                   <li key={item.href}>
@@ -115,6 +127,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
                 {whatsapp ? (
                   <li>
                     <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                      <Icon name="whatsapp" />
                       WhatsApp
                     </a>
                   </li>
@@ -122,35 +135,68 @@ export async function SiteShell({ children }: { children: ReactNode }) {
                 {instagram ? (
                   <li>
                     <a href={instagram} target="_blank" rel="noopener noreferrer">
-                      Instagram — {general.instagram}
+                      <Icon name="instagram" />
+                      {general.instagram}
                     </a>
                   </li>
                 ) : null}
                 {general.email ? (
                   <li>
-                    <a href={`mailto:${general.email}`}>{general.email}</a>
+                    <a href={`mailto:${general.email}`}>
+                      <Icon name="mail" />
+                      {general.email}
+                    </a>
                   </li>
                 ) : null}
                 {social.map((link) => (
                   <li key={link.href}>
                     <a href={link.href} target="_blank" rel="noopener noreferrer">
+                      <Icon name="arrow-ne" />
                       {link.label}
                     </a>
                   </li>
                 ))}
-                <li>
-                  <Link href="/privacidade">Política de Privacidade</Link>
-                </li>
+                {general.serviceArea ? (
+                  <li>
+                    <p className="s-footer__place">
+                      <Icon name="pin" />
+                      <span>
+                        <span className="sr-only">Localização: </span>
+                        {general.serviceArea}
+                      </span>
+                    </p>
+                  </li>
+                ) : null}
               </ul>
             </div>
+            <nav className="s-footer__col s-footer__col--legal" aria-labelledby="rodape-inst-titulo">
+              <h2 className="s-meta" id="rodape-inst-titulo">
+                Institucional
+              </h2>
+              <ul>
+                {clientArea ? (
+                  <li>
+                    <Link href={clientArea.href} prefetch={false}>
+                      <Icon name="user" />
+                      {clientArea.label}
+                    </Link>
+                  </li>
+                ) : null}
+                {legal.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href}>{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
 
           <div className="s-footer__base">
             <p className="s-footer__sign">
-              © {year} {home.closing.signature}
-              {general.serviceArea ? ` ${general.serviceArea}.` : ""}
+              © {year} {general.brandName}
+              {general.copyright ? ` — ${general.copyright}` : ""}
             </p>
-            <p className="s-footer__slogan">{general.tagline}</p>
+            {general.descriptor ? <p className="s-footer__desc">{general.descriptor}</p> : <span />}
             <a className="s-footer__top" href="#conteudo">
               Voltar ao topo <Icon name="arrow-down" />
             </a>

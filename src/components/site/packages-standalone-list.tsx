@@ -5,7 +5,7 @@
  */
 import type { PublicPackage } from "@/server/site/queries";
 import { SiteButtonLink } from "./button";
-import { PackagePrice } from "./package-card";
+import { hasPublicPrice, PackagePrice } from "./package-card";
 import { revealProps } from "./reveal";
 import { packageContactHref, pad2 } from "./text";
 
@@ -33,6 +33,7 @@ export function PackagesStandaloneList({
             : null,
           pkg.recordingDuration ? { label: "Captação", value: pkg.recordingDuration } : null,
           pkg.revisionLimit ? { label: "Revisões", value: pkg.revisionLimit } : null,
+          pkg.optionals.length > 0 ? { label: "Opcionais", value: pkg.optionals.join(" · ") } : null,
         ].filter((detail): detail is { label: string; value: string } => detail !== null);
         return (
           <li key={pkg.id} className="packages__row" {...revealProps(i % 3)}>
@@ -54,10 +55,15 @@ export function PackagesStandaloneList({
                 </dl>
               ) : null}
             </div>
-            <p className="packages__row-price">
-              <span className="sr-only">Investimento: </span>
-              <PackagePrice pkg={pkg} />
-            </p>
+            {/* Sem valor publicado a linha não repete o texto padrão: ele aparece uma vez, na nota da seção. */}
+            {hasPublicPrice(pkg) ? (
+              <p className="packages__row-price">
+                <span className="sr-only">Investimento: </span>
+                <PackagePrice pkg={pkg} />
+              </p>
+            ) : (
+              <span className="packages__row-price" />
+            )}
             <SiteButtonLink
               href={packageContactHref(pkg)}
               variant="secondary"

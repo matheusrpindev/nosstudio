@@ -122,11 +122,11 @@ describe("formulário → seção", () => {
   });
 
   it("limite de itens da lista", () => {
-    const form = encode("home", defaultSiteContent.home);
-    const item = { title: "a", text: "b", href: "/" };
-    form.set("highlights.items", JSON.stringify(Array.from({ length: 7 }, () => item)));
-    const result = parseSectionForm("home", form);
-    expect(!result.ok && result.errors["highlights.items"]).toBe("Máximo de 6 itens.");
+    const form = encode("differentials", defaultSiteContent.differentials);
+    const item = { title: "a", text: "b" };
+    form.set("items", JSON.stringify(Array.from({ length: 9 }, () => item)));
+    const result = parseSectionForm("differentials", form);
+    expect(!result.ok && result.errors.items).toBe("Máximo de 8 itens.");
   });
 
   it("lista corrompida não derruba nada", () => {

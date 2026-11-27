@@ -1,6 +1,7 @@
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -8,7 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { paramId } from "@/components/ui/search-params";
 import { requirePermission } from "@/lib/auth";
 import { getMediaValue, getMediaValues } from "@/server/media";
-import { getService } from "@/server/site/admin/services";
+import { getService, listRelatedProjectOptions } from "@/server/site/admin/services";
 import { deleteServiceAction, saveServiceAction } from "../actions";
 import { ServiceForm } from "../form";
 
@@ -20,19 +21,22 @@ export default async function EditServicePage({ params }: { params: Promise<{ id
   const id = paramId((await params).id);
   const service = id ? await getService(id) : null;
   if (!service) notFound();
-  const [cover, gallery] = await Promise.all([getMediaValue(service.coverMediaId), getMediaValues(service.gallery)]);
+  const [cover, gallery, projects] = await Promise.all([getMediaValue(service.coverMediaId), getMediaValues(service.gallery), listRelatedProjectOptions()]);
 
   return (
     <div className="max-w-3xl">
       <PageHeader
         title={service.title}
-        description="Edite o serviço. As mudanças aparecem no site assim que você salvar."
+        description="As mudanças aparecem no site assim que você salvar. Cada serviço publicado tem a sua página, com descrição, entregas, benefícios, perguntas e formulário de orçamento."
+        badge={service.visible ? <Badge tone="sucesso">Publicado</Badge> : <Badge tone="neutral">Rascunho</Badge>}
         back={{ href: "/painel/site/servicos", label: "Serviços do site" }}
         actions={
           <>
-            <ButtonLink href={service.pagePath ?? "/servicos"} external variant="secondary" icon={<ExternalLink />}>
-              Ver no site
-            </ButtonLink>
+            {service.visible ? (
+              <ButtonLink href={`/servicos/${service.slug}`} external variant="secondary" icon={<ExternalLink />}>
+                Ver a página
+              </ButtonLink>
+            ) : null}
             <ConfirmDialog
               trigger={
                 <Button variant="danger-ghost" icon={<Trash2 />}>
@@ -49,7 +53,7 @@ export default async function EditServicePage({ params }: { params: Promise<{ id
         }
       />
       <Card>
-        <ServiceForm action={saveServiceAction} service={service} cover={cover} gallery={gallery} />
+        <ServiceForm action={saveServiceAction} service={service} cover={cover} gallery={gallery} projects={projects} />
       </Card>
     </div>
   );

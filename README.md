@@ -23,11 +23,12 @@ Para os sócios: [`docs/manual-do-painel.md`](docs/manual-do-painel.md) (manual 
 
 | Página | Caminho | Observações |
 | --- | --- | --- |
-| Início | `/` | Hero, serviços em destaque, fundadores, como funciona, pacotes, FAQ e formulário |
-| Quem Somos | `/sobre` | História do casal, fundadores, propósito, valores |
-| Serviços | `/servicos` | Fotografia, vídeo, marketing, eventos, casamentos |
-| Pacotes | `/pacotes` | Começo, Presença, Destaque e serviços avulsos ("Sob consulta" até os sócios definirem valores) |
-| Casamentos | `/casamentos` | Abordagem, o que a cobertura pode incluir, formulário de evento |
+| Início | `/` | Hero, serviços, portfólio em destaque, diferenciais, fundadores, processo, planos, avulsos, eventos, depoimentos, FAQ e formulário — ordem e visibilidade editáveis no painel |
+| Sobre a NÓS | `/sobre` | Abertura, fundadores, missão, visão e valores |
+| Serviços | `/servicos`, `/servicos/[slug]` | As nove áreas do briefing v2; cada serviço publicado tem página própria (criada/ocultada pelo painel) |
+| Planos | `/planos` | Plano Essencial, Integrado e Estratégico, tabela comparativa e serviços avulsos (sem valores até os sócios publicarem). `/pacotes` redireciona para cá |
+| Eventos e Casamentos | `/eventos-e-casamentos` | Eventos corporativos e sociais, casamentos, formatos de cobertura e formulário de disponibilidade. `/casamentos` redireciona para cá |
+| Legais | `/privacidade`, `/termos`, `/cookies` | Textos-base editáveis no painel (precisam de revisão jurídica) |
 | Portfólio | `/portfolio` | Oculto no lançamento; aparece quando houver projetos publicados |
 | Contato | `/contato` | Formulário de orçamento com consentimento (LGPD), WhatsApp e Instagram |
 | Privacidade | `/privacidade` | Texto-base editável (revisar com assessoria jurídica) |
@@ -50,7 +51,7 @@ Seções sem conteúdo publicado (portfólio, depoimentos, FAQ sem resposta) nã
 | Contratos | `/painel/contratos` | Modelos com campos automáticos (`{{cliente}}`, `{{valor_total}}`…), documentos, arquivo assinado (privado) |
 | Conteúdo | `/painel/conteudo` | Calendário editorial: ideia → roteiro → gravação → edição → aprovação → publicado |
 | Marca | `/painel/marca` | Logos, paleta, fontes e links dos materiais |
-| Editar site | `/painel/site` | Textos, fotos, avisos, serviços, pacotes, FAQ, portfólio, depoimentos, visibilidade, SEO |
+| Editar site | `/painel/site` | Ordem da página inicial, textos, fotos, avisos, serviços, planos, FAQ, portfólio, depoimentos, visibilidade, SEO |
 | Configurações | `/painel/config` | Usuários (perfis, convites e permissões por pessoa), notificações, padrões de proposta, exportação de dados, auditoria |
 
 > **Regra de segurança do PDF:** custos internos, margem, notas internas e descontos não aprovados nunca saem do
@@ -110,8 +111,10 @@ npm run dev
 ```
 
 - Site: <http://localhost:3000> · Painel: <http://localhost:3000/login>
-- `db:setup` cria o banco (`data/nos.db`) e o conteúdo inicial (serviços, pacotes, FAQ em rascunho, avisos, modelos
-  de proposta). Pode rodar quantas vezes quiser: só preenche o que está vazio.
+- `db:setup` cria o banco (`data/nos.db`) e o conteúdo inicial (serviços, planos, FAQ em rascunho, avisos, modelos
+  de proposta). Pode rodar quantas vezes quiser: só preenche o que está vazio. Em bancos criados antes do briefing
+  v2, o mesmo comando atualiza serviços e planos para os nomes novos — só os registros que ninguém editou
+  (`src/server/site/upgrade-v2.ts`).
 - `db:seed -- --dev --demo` é **só para desenvolvimento**: cria as contas `pedro@nos.local` e `laura@nos.local`
   (senha `nosstudio-dev-2026`) e dados marcados como `[Exemplo]` para testar os fluxos.
 
@@ -325,7 +328,7 @@ banco real, mesmo quando o build roda sem acesso a ele.
 
 - Número de WhatsApp, e-mail comercial e domínio.
 - Fotos reais de Pedro e Laura (individuais e do casal). Até lá, o site usa composições gráficas da marca.
-- Quantidades, limites e valores dos pacotes (hoje "Sob consulta", como combinado).
+- Quantidades, limites e valores dos planos (hoje sem valor publicado, como combinado).
 - Respostas da FAQ sobre pagamento, prazo, alterações, cancelamento e atendimento fora da cidade.
 - Revisão jurídica da Política de Privacidade e dos modelos de contrato.
 - Projetos e depoimentos autorizados, para ligar o portfólio.

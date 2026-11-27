@@ -74,10 +74,13 @@ const PANEL_LOOKS: { tone: SiteTone; kind: RatioKind }[] = [
 export function ServicePanels({
   items,
   headingLevel = 3,
+  looks = PANEL_LOOKS,
   className,
 }: {
   items: ServicePanelItem[];
   headingLevel?: 2 | 3;
+  /** Cor e motivo de cada painel, em sequência (padrão: roxo/play, lavanda/acento, grafite/anéis). */
+  looks?: { tone: SiteTone; kind: RatioKind }[];
   className?: string;
 }) {
   if (items.length === 0) return null;
@@ -86,7 +89,7 @@ export function ServicePanels({
   return (
     <ul className={cn("s-panels", className)} style={{ "--cols": cols } as CSSProperties}>
       {items.map((item, i) => {
-        const look = PANEL_LOOKS[i % PANEL_LOOKS.length];
+        const look = looks[i % looks.length] ?? PANEL_LOOKS[0];
         const href = safeHref(item.href);
         return (
           <li key={i} className="s-panel" data-tone={look.tone} {...revealProps(i % 3)}>
@@ -128,7 +131,8 @@ export function ValuesList({ items, className }: { items: { title: string; text:
 // ------------------------------------------------------------------ passos
 /**
  * Passos numerados. No desktop, com `stairs`, viram uma escada que cruza o grid (até 8 passos);
- * `action` (um botão) ocupa o canto inferior esquerdo, sob a escada.
+ * `action` (um botão) ocupa o canto inferior esquerdo, sob a escada. Quando nenhum passo tem texto (só os
+ * nomes das etapas), os títulos crescem: a palavra passa a ser o conteúdo do degrau.
  */
 export function Steps({
   items,
@@ -149,7 +153,7 @@ export function Steps({
   // quantas colunas cada degrau avança para a escada terminar na última coluna
   const shift = useStairs ? Math.max(1, Math.floor(8 / (items.length - 1))) : 0;
   return (
-    <div className={cn("s-stairs", className)} data-stairs={useStairs ? "true" : undefined}>
+    <div className={cn("s-stairs", className)} data-stairs={useStairs ? "true" : undefined} data-plain={items.every((item) => !item.text) ? "true" : undefined}>
       <ol className="s-steps" style={{ "--shift": shift } as CSSProperties}>
         {items.map((item, i) => (
           <li

@@ -14,7 +14,7 @@ import { MoveButtons, RowSwitch } from "../_colecoes/row-controls";
 import { movePackageAction, togglePackageAction } from "./actions";
 import { PricingNotice } from "./notice";
 
-export const metadata: Metadata = { title: "Pacotes do site" };
+export const metadata: Metadata = { title: "Planos do site" };
 export const instant = false;
 
 function priceText(pkg: Package): string {
@@ -30,20 +30,21 @@ export default async function PackagesPage() {
     return [
       {
         key: "pacote",
-        header: "Pacote",
+        header: "Plano ou serviço",
         primary: true,
         cell: (pkg) => (
           <>
             <span className="flex flex-wrap items-center gap-2 break-words">
               {pkg.name}
-              {pkg.recommended ? <Badge tone="lima">Recomendado</Badge> : null}
+              {pkg.recommended ? <Badge tone="lima">Destaque</Badge> : null}
             </span>
             {pkg.tagline ? <span className="text-texto-suave line-clamp-2 block text-[0.8125rem] font-normal">{pkg.tagline}</span> : null}
           </>
         ),
       },
-      { key: "preco", header: "Preço no site", cell: (pkg) => priceText(pkg) },
-      { key: "entregas", header: "Entregas com quantidade", hideOnMobile: true, cell: (pkg) => (pkg.deliverables.length > 0 ? `${pkg.deliverables.length}` : <span className="text-texto-suave">Não exibe</span>) },
+      { key: "preco", header: "Valor no site", cell: (pkg) => priceText(pkg) },
+      { key: "inclui", header: "Entregas", hideOnMobile: true, cell: (pkg) => (pkg.includes.length > 0 ? `${pkg.includes.length}` : <span className="text-texto-suave">—</span>) },
+      { key: "entregas", header: "Com quantidade", hideOnMobile: true, cell: (pkg) => (pkg.deliverables.length > 0 ? `${pkg.deliverables.length}` : <span className="text-texto-suave">Não exibe</span>) },
       { key: "visivel", header: "No site", interactive: true, cell: (pkg) => <RowSwitch id={pkg.id} checked={pkg.visible} label={`Mostrar “${pkg.name}” no site`} action={togglePackageAction} /> },
       {
         key: "ordem",
@@ -65,15 +66,18 @@ export default async function PackagesPage() {
   return (
     <>
       <PageHeader
-        title="Pacotes do site"
-        description="Planos mensais e serviços avulsos mostrados em Pacotes e na página inicial."
+        title="Planos do site"
+        description="Planos mensais e serviços avulsos mostrados em Planos e na página inicial. O plano marcado como destaque ganha o bloco roxo; a tabela comparativa é montada com as entregas de cada plano."
         actions={
           <>
-            <ButtonLink href="/pacotes" external variant="secondary" icon={<ExternalLink />}>
+            <ButtonLink href="/planos" external variant="secondary" icon={<ExternalLink />}>
               Ver no site
             </ButtonLink>
+            <ButtonLink href="/painel/site/pacotes/novo?tipo=avulso" variant="secondary" icon={<Plus />}>
+              Novo avulso
+            </ButtonLink>
             <ButtonLink href="/painel/site/pacotes/novo" icon={<Plus />}>
-              Novo pacote
+              Novo plano
             </ButtonLink>
           </>
         }
@@ -101,7 +105,7 @@ export default async function PackagesPage() {
                     description="O site não mostra este bloco enquanto não houver nada publicado."
                     action={
                       <ButtonLink href={`/painel/site/pacotes/novo?tipo=${kind}`} icon={<Plus />}>
-                        Novo pacote
+                        {kind === "avulso" ? "Novo serviço avulso" : "Novo plano"}
                       </ButtonLink>
                     }
                   />

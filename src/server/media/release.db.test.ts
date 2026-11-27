@@ -76,6 +76,9 @@ const service = (over: Partial<ServiceInput>): ServiceInput => ({
   gallery: [],
   videoUrl: null,
   pagePath: null,
+  benefits: [],
+  faq: [],
+  relatedProjectIds: [],
   visible: true,
   ...over,
 });

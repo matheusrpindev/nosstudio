@@ -197,6 +197,67 @@
     color: var(--color-lima);
   }
 
+  /* ---- missão e visão: duas afirmações grandes lado a lado ---- */
+  .about__purpose {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem var(--s-gutter);
+    margin-top: var(--s-head);
+  }
+  .about__purpose-item dt {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 1px solid var(--s-line);
+    color: var(--s-soft);
+  }
+  .about__purpose-item dt::before {
+    content: "";
+    width: 0.8125rem;
+    height: 0.5rem;
+    background: var(--color-lima);
+    clip-path: polygon(45% 0, 100% 0, 55% 100%, 0 100%);
+  }
+  .about__purpose-item dd {
+    margin-top: 1.25rem;
+    font-size: clamp(1.5rem, 1.1rem + 1.7vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .about__values-wrap {
+    margin-top: var(--s-cab);
+  }
+  .about__purpose + .about__values-wrap {
+    margin-top: clamp(3.5rem, 2rem + 6vw, 6.5rem);
+  }
+  .about__values-title {
+    margin-bottom: 0.875rem;
+    color: var(--s-soft);
+  }
+  @media (min-width: 768px) {
+    .about__purpose[data-count="2"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .about__purpose[data-count="2"] {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .about__purpose[data-count="2"] > :first-child {
+      grid-column: 1 / 7;
+      padding-right: var(--s-gutter);
+    }
+    .about__purpose[data-count="2"] > :last-child {
+      grid-column: 7 / -1;
+    }
+    .about__purpose[data-count="1"] {
+      max-width: 60rem;
+    }
+  }
+
   /* ---- valores ---- */
   .about__values {
     border-bottom: 1px solid var(--s-line-strong);
@@ -248,6 +309,38 @@
       grid-column: 8 / -1;
       margin-top: 0;
       font-size: 1.0625rem;
+    }
+  }
+
+  /* valores sem frase (só o nome): viram uma grade — a palavra é o conteúdo. O corpo é calculado para a
+     palavra mais comprida do briefing ("Comprometimento") caber inteira na coluna em qualquer largura. */
+  .about__values[data-plain="true"] .about__value-title {
+    font-size: clamp(1.625rem, 0.9rem + 3vw, 2.125rem);
+    letter-spacing: -0.04em;
+  }
+  @media (min-width: 640px) {
+    .about__values[data-plain="true"] {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+    }
+    .about__values[data-plain="true"] .about__value {
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      column-gap: 0.75rem;
+      align-items: baseline;
+    }
+    .about__values[data-plain="true"] .about__value-n {
+      grid-column: 1;
+      padding-top: 0;
+    }
+    .about__values[data-plain="true"] .about__value-title {
+      grid-column: 2;
+      font-size: clamp(1.5rem, 0.8rem + 1.5vw, 2.125rem);
+    }
+  }
+  @media (min-width: 1280px) {
+    .about__values[data-plain="true"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 

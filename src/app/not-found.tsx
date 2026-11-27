@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteButtonLink } from "@/components/site/button";
-import { Icon } from "@/components/site/marks";
+import { Icon, PlayMark, ViewfinderFrame } from "@/components/site/marks";
 import { SiteShell } from "@/components/site/site-shell";
-import { getSiteNav } from "@/server/site/queries";
+import { getSiteContent, getSiteNav } from "@/server/site/queries";
 import "./(site)/site.css";
 
 export const metadata: Metadata = {
@@ -11,31 +11,33 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** 404 com a cara do site: mesma moldura (cabeçalho e rodapé) e atalhos para as páginas que existem. */
+/**
+ * 404 com a cara do site (briefing v2, seção 31): "Esse take saiu do roteiro. Mas toda boa história tem uma
+ * segunda tomada." — o texto vem de Editar site › Textos › Página não encontrada. Mesma moldura (cabeçalho e
+ * rodapé), a claquete "TAKE 404" no visor e atalhos para as páginas que existem.
+ */
 export default async function NotFound() {
-  const nav = await getSiteNav();
+  const [nav, { notFoundPage: page }] = await Promise.all([getSiteNav(), getSiteContent()]);
   return (
     <SiteShell>
       <div className="s-404">
         <div className="s-wrap">
           <div className="s-pagehead__meta">
-            <p className="s-meta">Erro 404</p>
+            <p className="s-meta">{page.eyebrow}</p>
           </div>
           <div className="s-404__grid">
             <div className="s-404__main">
-              <p className="s-404__code" aria-hidden="true">
-                404
-              </p>
-              <h1 className="s-h2 mt-8">Essa página saiu de quadro.</h1>
-              <p className="s-lead s-muted mt-5 max-w-xl">
-                O endereço pode ter mudado ou nunca ter existido. Volte para o início ou escolha um caminho ao lado.
-              </p>
-              <div className="mt-8 grid gap-3 sm:flex">
-                <SiteButtonLink href="/">Voltar para o início</SiteButtonLink>
-                <SiteButtonLink href="/contato" variant="secondary">
-                  Falar com a gente
-                </SiteButtonLink>
+              <h1 className="s-d1 s-404__title">{page.title}</h1>
+              {page.text ? <p className="s-lead s-404__text">{page.text}</p> : null}
+              <div className="s-404__actions">
+                <SiteButtonLink href={page.cta.href || "/"}>{page.cta.label}</SiteButtonLink>
               </div>
+            </div>
+            <div className="s-404__take" data-tone="roxo" aria-hidden="true">
+              <ViewfinderFrame />
+              <span className="s-rec s-404__rec">Take</span>
+              <span className="s-404__code">404</span>
+              <PlayMark className="s-404__play" />
             </div>
             <nav className="s-404__nav" aria-label="Páginas do site">
               <h2 className="s-meta mb-3">Páginas do site</h2>

@@ -34,33 +34,32 @@ export function DeliverablesField({ defaultValue }: { defaultValue: Deliverable[
 }
 
 /** Modo do preço + valor + complemento, com a frase final como o visitante vai ler. */
-export function PriceFields({ mode: initialMode, priceCents, suffix }: { mode: PriceMode; priceCents: number | null; suffix: string }) {
+export function PriceFields({ mode: initialMode, priceCents, suffix, discount }: { mode: PriceMode; priceCents: number | null; suffix: string; discount: string }) {
   const [mode, setMode] = useState<PriceMode>(initialMode);
   const [cents, setCents] = useState<number | null>(priceCents);
   const [complement, setComplement] = useState(suffix);
 
   const preview =
     mode === "sob_consulta"
-      ? "Sob consulta"
+      ? "o texto padrão (“Investimento personalizado para o seu negócio.”), sem valor"
       : `${mode === "a_partir" ? "A partir de " : ""}${cents ? formatBRL(cents) : "R$ —"}${complement ? ` ${complement}` : ""}`;
 
   return (
     <div className="space-y-4">
       <FieldRow cols={3}>
-        <Field name="priceMode" label="Como o preço aparece" required>
+        <Field name="priceMode" label="Como o valor aparece" required hint="“Valor oculto” guarda o valor aqui sem mostrá-lo no site.">
           <Select options={PRICE_MODE_LABELS} value={mode} onChange={(event) => setMode(event.target.value as PriceMode)} />
         </Field>
-        {mode !== "sob_consulta" ? (
-          <Field name="price" label="Valor" required>
-            <MoneyInput value={cents} onValueChange={setCents} />
-          </Field>
-        ) : null}
-        {mode !== "sob_consulta" ? (
-          <Field name="priceSuffix" label="Complemento" optional hint="Ex.: /mês, por diária">
-            <Input maxLength={40} value={complement} onChange={(event) => setComplement(event.target.value)} />
-          </Field>
-        ) : null}
+        <Field name="price" label="Valor" required={mode !== "sob_consulta"} optional={mode === "sob_consulta"}>
+          <MoneyInput value={cents} onValueChange={setCents} />
+        </Field>
+        <Field name="priceSuffix" label="Complemento" optional hint="Ex.: /mês, por diária">
+          <Input maxLength={40} value={complement} onChange={(event) => setComplement(event.target.value)} />
+        </Field>
       </FieldRow>
+      <Field name="discountNote" label="Desconto ou condição" optional hint="Ex.: “10% no contrato semestral”. Aparece logo abaixo do valor — e só quando o valor está publicado.">
+        <Input maxLength={160} defaultValue={discount} />
+      </Field>
       <p className="text-texto-suave text-sm" aria-live="polite">
         No site aparece: <strong className="text-texto">{preview}</strong>
       </p>

@@ -12,13 +12,16 @@ type SiteHeaderProps = {
   logo: ReactNode;
   brandName: string;
   items: HeaderLink[];
-  /** Botão destacado ("Vamos conversar" → /contato). `null` = sem rótulo no painel, o botão não aparece. */
+  /** Botão destacado ("Solicitar proposta" → /contato). `null` = sem rótulo no painel, o botão não aparece. */
   cta: HeaderLink | null;
+  /** "Área do Cliente" (→ login). `null` = sem rótulo no painel, o link não aparece. */
+  account?: HeaderLink | null;
   /** Link extra no rodapé do menu móvel (ex.: Instagram). */
   extra?: (HeaderLink & { external?: boolean }) | null;
 };
 
-const DESKTOP = "(min-width: 1024px)";
+/** A navegação em linha precisa de espaço para oito itens e o botão: abaixo disso vale o menu de tela cheia. */
+const DESKTOP = "(min-width: 1200px)";
 
 function isCurrent(pathname: string, href: string): boolean {
   if (!pathname) return false;
@@ -42,7 +45,7 @@ function HeaderWithPath(props: SiteHeaderProps) {
   return <HeaderView {...props} pathname={usePathname() ?? ""} />;
 }
 
-function HeaderView({ logo, brandName, items, cta, extra, pathname }: SiteHeaderProps & { pathname: string }) {
+function HeaderView({ logo, brandName, items, cta, account, extra, pathname }: SiteHeaderProps & { pathname: string }) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const headerRef = useRef<HTMLElement>(null);
@@ -121,6 +124,12 @@ function HeaderView({ logo, brandName, items, cta, extra, pathname }: SiteHeader
             ))}
           </ul>
           <div className="s-nav__base">
+            {account ? (
+              <Link href={account.href} prefetch={false} className="s-nav__account" onClick={() => close(false)}>
+                <Icon name="user" />
+                <span>{account.label}</span>
+              </Link>
+            ) : null}
             {cta ? (
               <Link href={cta.href} className="s-btn s-btn--primary" onClick={() => close(false)}>
                 <span>{cta.label}</span>
@@ -139,6 +148,12 @@ function HeaderView({ logo, brandName, items, cta, extra, pathname }: SiteHeader
           </div>
         </nav>
 
+        {account ? (
+          <Link href={account.href} prefetch={false} className="s-header__account">
+            <Icon name="user" />
+            <span>{account.label}</span>
+          </Link>
+        ) : null}
         {cta ? (
           <>
             <Link href={cta.href} className="s-btn s-btn--primary s-btn--sm s-header__cta--d">

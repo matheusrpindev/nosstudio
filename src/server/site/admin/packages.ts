@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { packages, type Deliverable, type Package } from "@/db/schema";
 import type { PackageKind, PriceMode } from "@/lib/domain";
@@ -15,9 +15,15 @@ export type PackageInput = {
   recordingDuration: string;
   revisionLimit: string;
   priceMode: PriceMode;
-  /** Só vale quando `priceMode` não é "sob_consulta". */
+  /** Fica guardado mesmo com o valor oculto (`sob_consulta`): o site só o mostra nos outros modos. */
   priceCents: number | null;
   priceSuffix: string;
+  /** Condição de desconto (texto). Só aparece no site junto de um valor publicado. */
+  discountNote: string;
+  /** Opcionais que podem ser acrescentados. */
+  optionals: string[];
+  /** Plano em que este se apoia ("tudo do plano X, mais…"). Só entre planos mensais; nunca ele mesmo. */
+  basePackageId: number | null;
   recommended: boolean;
   ctaLabel: string;
   visible: boolean;
@@ -32,8 +38,23 @@ export async function getPackage(id: number): Promise<Package | null> {
   return row ?? null;
 }
 
+/** Planos mensais que podem servir de base para `exceptId` (todos os outros planos). */
+export async function listBasePlanOptions(exceptId?: number): Promise<{ id: number; name: string }[]> {
+  return db
+    .select({ id: packages.id, name: packages.name })
+    .from(packages)
+    .where(exceptId === undefined ? eq(packages.kind, "plano") : and(eq(packages.kind, "plano"), ne(packages.id, exceptId)))
+    .orderBy(asc(packages.sortOrder), asc(packages.id));
+}
+
 export async function savePackage(id: number | null, input: PackageInput): Promise<Package | null> {
-  const values = { ...input, priceCents: input.priceMode === "sob_consulta" ? null : input.priceCents };
+  // plano-base: só para planos mensais, só outro plano existente — e sem laço direto (A apoia-se em B e B em A)
+  let basePackageId: number | null = null;
+  if (input.kind === "plano" && input.basePackageId !== null && input.basePackageId !== id) {
+    const [base] = await db.select().from(packages).where(and(eq(packages.id, input.basePackageId), eq(packages.kind, "plano")));
+    if (base && (id === null || base.basePackageId !== id)) basePackageId = base.id;
+  }
+  const values = { ...input, basePackageId };
   if (id === null) {
     const [row] = await db.insert(packages).values({ ...values, sortOrder: await nextSortOrder(packages) }).returning();
     return row;
@@ -56,5 +77,7 @@ export async function movePackage(id: number, direction: MoveDirection): Promise
 
 export async function deletePackage(id: number): Promise<Package | null> {
   const [row] = await db.delete(packages).where(eq(packages.id, id)).returning();
+  // quem se apoiava neste plano deixa de ter plano-base
+  if (row) await db.update(packages).set({ basePackageId: null }).where(eq(packages.basePackageId, id));
   return row ?? null;
 }

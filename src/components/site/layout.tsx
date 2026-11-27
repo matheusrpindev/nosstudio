@@ -5,7 +5,7 @@
 import type { CSSProperties, ElementType, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { revealProps } from "./reveal";
-import { parseAccent, type SiteTone } from "./text";
+import { parseAccent, splitStatement, type SiteTone } from "./text";
 
 /** Largura máxima + margens laterais do site. */
 export function Container({
@@ -190,6 +190,7 @@ export function PageHeader({
   actions,
   meta,
   accent,
+  sentences,
   tone,
   children,
 }: {
@@ -204,10 +205,16 @@ export function PageHeader({
   /** Conteúdo à direita do rótulo (ex.: versão da política, link do Instagram). */
   meta?: ReactNode;
   accent?: "tail" | "marked";
+  /**
+   * Título de duas frases ("Existem momentos que passam. E histórias que permanecem."): no desktop cada frase
+   * começa na sua linha, em vez de a quebra cair no meio de uma delas.
+   */
+  sentences?: boolean;
   tone?: SiteTone;
   /** Conteúdo extra abaixo (ex.: um <PhotoSlot /> ou um <Grid>). */
   children?: ReactNode;
 }) {
+  const lines = sentences ? splitStatement(title).filter((line): line is string => Boolean(line)) : [];
   return (
     <header className="s-pagehead" data-tone={tone}>
       <div className="s-wrap s-pagehead__stage">
@@ -217,9 +224,19 @@ export function PageHeader({
             {meta ? <div className="s-meta">{meta}</div> : null}
           </div>
         ) : null}
-        <Display as="h1" accent={accent} className="s-pagehead__title">
-          {title}
-        </Display>
+        {lines.length > 1 ? (
+          <h1 className="s-d1 s-pagehead__title s-pagehead__title--lines">
+            {lines.map((line, i) => (
+              <span key={i}>
+                <Accented text={line} />{" "}
+              </span>
+            ))}
+          </h1>
+        ) : (
+          <Display as="h1" accent={accent} className="s-pagehead__title">
+            {title}
+          </Display>
+        )}
         {lead || text || actions ? (
           <div className="s-pagehead__body">
             <div className="s-pagehead__lead">

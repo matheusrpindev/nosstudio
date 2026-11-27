@@ -593,8 +593,19 @@
   .s-nav__list a {
     text-decoration: none;
   }
-  /* Menu — no celular vira um campo roxo de tela cheia; no desktop, linha no grid. */
-  @media (max-width: 1023.98px) {
+  /* "Área do Cliente": só no desktop aparece no cabeçalho; no celular entra na base do menu de tela cheia. */
+  .s-header__account {
+    display: none;
+  }
+  .s-nav__account svg,
+  .s-header__account svg {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+  }
+  /* Menu — abaixo de 1200px vira um campo roxo de tela cheia; acima, linha no cabeçalho.
+     (O ponto de troca é o mesmo de `DESKTOP` em site-header.tsx: oito itens + botão precisam de espaço.) */
+  @media (max-width: 1199.98px) {
     .s-nav {
       position: fixed;
       left: 0;
@@ -630,10 +641,10 @@
       display: flex;
       align-items: baseline;
       gap: 1rem;
-      padding: 0.875rem 0;
-      min-height: 3.75rem;
+      padding: 0.6875rem 0;
+      min-height: 3.25rem;
       border-bottom: 1px solid var(--s-rule-light);
-      font-size: clamp(1.75rem, 8.4vw, 2.75rem);
+      font-size: clamp(1.5rem, 6.6vw, 2.5rem);
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 1.05;
@@ -665,13 +676,43 @@
       color: var(--color-lavanda);
       text-underline-offset: 0.3em;
     }
+    .s-nav__account {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.625rem;
+      min-height: 3rem;
+      margin-bottom: 0.25rem;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+    }
+    .s-nav__account:hover {
+      color: var(--color-lima);
+    }
   }
-  @media (min-width: 1024px) {
+  @media (min-width: 1200px) {
     .s-header__brand {
       margin-right: 0;
     }
     .s-header__in {
-      gap: 1.5rem;
+      gap: clamp(0.75rem, 1.4vw, 1.5rem);
+    }
+    .s-header__account {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.75rem;
+      padding-left: clamp(0.75rem, 1.4vw, 1.5rem);
+      border-left: 1px solid var(--s-rule);
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .s-header__account:hover {
+      color: var(--color-roxo);
     }
     .s-header__cta--m,
     .s-header__menu,
@@ -694,7 +735,7 @@
     }
     .s-nav__list {
       display: flex;
-      gap: clamp(0.875rem, 2.1vw, 2.125rem);
+      gap: clamp(0.875rem, 1.75vw, 2rem);
     }
     .s-nav__list a {
       position: relative;
@@ -737,27 +778,6 @@
       font-weight: 700;
     }
   }
-  @media (min-width: 1280px) {
-    .s-header__in {
-      display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      column-gap: var(--s-gutter);
-    }
-    .s-header__brand {
-      grid-column: 1 / 4;
-      justify-self: start;
-    }
-    .site .s-nav[data-tone] {
-      grid-column: 5 / 11;
-      margin: 0;
-    }
-    .s-header__cta--d {
-      grid-column: 11 / 13;
-      justify-self: end;
-      max-width: 100%; /* rótulo longo: reticências dentro das duas colunas, sem invadir o menu */
-    }
-  }
-
   /* ---------- 8. Hero (home) --------------------------------------------- */
   .s-hero {
     position: relative;
@@ -1049,6 +1069,14 @@
     .s-pagehead__actions {
       grid-column: 9 / -1;
       grid-template-columns: 1fr;
+    }
+  }
+
+  /* título de duas frases: no desktop cada frase começa na sua linha */
+  @media (min-width: 1024px) {
+    .s-pagehead__title--lines > span {
+      display: block;
+      text-wrap: balance;
     }
   }
 
@@ -1650,6 +1678,16 @@
     line-height: 1.55;
     text-wrap: pretty;
   }
+  /* etapas só com o nome (sem frase): o nome ganha corpo de título */
+  .s-stairs[data-plain="true"] .s-step {
+    align-items: baseline;
+  }
+  .s-stairs[data-plain="true"] .s-step h3 {
+    font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.375rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
   .s-stairs__cta {
     margin-top: 0.5rem;
     padding-top: 1.5rem;
@@ -1685,6 +1723,9 @@
     }
     .s-step h3 {
       font-size: clamp(1.25rem, 1.75vw, 1.5rem);
+    }
+    .s-stairs[data-plain="true"] .s-step h3 {
+      font-size: clamp(1.75rem, 2.5vw, 2.375rem);
     }
     .s-stairs:not([data-stairs]) .s-step {
       grid-column: span 4;
@@ -1933,6 +1974,15 @@
   @media (min-width: 1024px) {
     .s-plans[data-layout="grid"] {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    /* Lado a lado, o nome do plano escala com a largura do cartão (largura útil ÷ nº de colunas − respiro):
+       "Estratégico" cabe inteiro com três cartões a 1024px. (Sem container queries: elas desligam o subgrid
+       que alinha as linhas dos cartões.) */
+    .s-plans[data-layout="board"] .s-plan__name {
+      font-size: clamp(1.75rem, calc((var(--s-wrap) / var(--cols, 3) - 4rem) / 5.9), 3.75rem);
+    }
+    .s-plans[data-layout="grid"] .s-plan:not(.s-plan--compact) .s-plan__name {
+      font-size: clamp(1.75rem, calc((var(--s-wrap) / 3 - 4rem) / 5.9), 3.75rem);
     }
     /* até 3 planos: quadro contínuo, o recomendado "fura" o quadro 1.5rem para cima e para baixo */
     .s-plans[data-layout="board"] {
@@ -2636,13 +2686,22 @@
   .s-footer__brand {
     max-width: 17.5rem;
   }
+  .s-footer__slogan {
+    margin-top: 1.5rem;
+    font-size: var(--s-fs-lead);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
   .s-footer__col h2 {
     margin-bottom: 0.5rem;
     color: var(--color-lavanda);
   }
-  .s-footer__col a {
+  .s-footer__col a,
+  .s-footer__place {
     display: inline-flex;
     align-items: center;
+    gap: 0.625rem;
     min-height: 2.75rem;
     font-size: 1.0625rem;
     font-weight: 600;
@@ -2654,6 +2713,23 @@
   .s-footer__col a:hover {
     color: var(--color-lima);
   }
+  .s-footer__col svg {
+    flex: none;
+    width: 1.0625rem;
+    height: 1.0625rem;
+    color: var(--color-lavanda);
+  }
+  .s-footer__col a:hover svg {
+    color: inherit;
+  }
+  .s-footer__place {
+    align-items: flex-start;
+    padding-block: 0.5625rem;
+    line-height: 1.4;
+  }
+  .s-footer__place svg {
+    margin-top: 0.1875rem;
+  }
   .s-footer__base {
     display: grid;
     gap: 0.5rem;
@@ -2663,7 +2739,7 @@
     font-size: var(--s-fs-meta);
     font-weight: 500;
   }
-  .s-footer__slogan {
+  .s-footer__desc {
     color: var(--color-lavanda);
   }
   .s-footer__top {
@@ -2687,21 +2763,30 @@
   .s-footer__top:hover svg {
     transform: rotate(180deg) translateY(3px);
   }
+  @media (min-width: 640px) {
+    .s-footer__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .s-footer__brand {
+      grid-column: 1 / -1;
+    }
+  }
   @media (min-width: 768px) {
     .s-footer__grid {
       grid-template-columns: repeat(12, minmax(0, 1fr));
     }
     .s-footer__brand {
-      grid-column: 1 / 7;
+      grid-column: 1 / -1;
+      max-width: 22rem;
     }
     .s-footer__col--nav {
-      grid-column: 7 / 10;
+      grid-column: 1 / 5;
     }
     .s-footer__col--contact {
-      grid-column: 10 / -1;
+      grid-column: 5 / 9;
     }
-    .s-footer__brand {
-      max-width: 24rem;
+    .s-footer__col--legal {
+      grid-column: 9 / -1;
     }
     .s-footer__base {
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -2711,7 +2796,7 @@
     .s-footer__sign {
       grid-column: 1 / 7;
     }
-    .s-footer__slogan {
+    .s-footer__desc {
       grid-column: 7 / 10;
     }
     .s-footer__top {
@@ -2720,25 +2805,26 @@
   }
   @media (min-width: 1024px) {
     .s-footer__brand {
-      grid-column: 1 / 6;
-    }
-    .s-footer__brand {
-      max-width: 30rem;
+      grid-column: 1 / 5;
+      max-width: 24rem;
     }
     .s-footer__col--nav {
-      grid-column: 7 / 9;
+      grid-column: 6 / 8;
     }
     .s-footer__col--contact {
-      grid-column: 10 / -1;
+      grid-column: 8 / 11;
+    }
+    .s-footer__col--legal {
+      grid-column: 11 / -1;
     }
     .s-footer__sign {
-      grid-column: 1 / 7;
+      grid-column: 1 / 6;
     }
-    .s-footer__slogan {
-      grid-column: 7 / 10;
+    .s-footer__desc {
+      grid-column: 6 / 11;
     }
     .s-footer__top {
-      grid-column: 10 / -1;
+      grid-column: 11 / -1;
     }
   }
 
@@ -2794,6 +2880,7 @@
   }
 
   /* ---------- 22. 404 ----------------------------------------------------- */
+  /* "Esse take saiu do roteiro": a frase no papel, a claquete TAKE 404 no visor roxo e os atalhos. */
   .s-404 {
     padding-block: 1rem var(--s-sec);
   }
@@ -2802,12 +2889,49 @@
     gap: 2.5rem;
     margin-top: var(--s-head);
   }
+  .s-404__title {
+    max-width: 9em;
+  }
+  .s-404__text {
+    margin-top: 1.5rem;
+    max-width: 24em;
+  }
+  .s-404__actions {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+  .s-404__take {
+    position: relative;
+    display: grid;
+    align-content: end;
+    min-height: 15rem;
+    padding: 1.75rem 1.5rem 1.25rem;
+    overflow: hidden;
+    container-type: inline-size;
+  }
+  .s-404__take .s-frame {
+    inset: 0.875rem;
+  }
+  .s-404__rec {
+    position: absolute;
+    top: 1.75rem;
+    left: 1.75rem;
+    text-transform: uppercase;
+  }
   .s-404__code {
-    font-size: clamp(7rem, 2rem + 30vw, 22rem);
+    font-size: clamp(6rem, 46cqw, 15rem);
     font-weight: 900;
-    line-height: 0.8;
+    line-height: 0.78;
     letter-spacing: -0.06em;
-    color: var(--color-roxo);
+    color: var(--color-lavanda);
+  }
+  .s-404__play {
+    position: absolute;
+    top: 1.75rem;
+    right: 1.75rem;
+    width: 1.5rem;
+    color: var(--color-lima);
   }
   .s-404__links {
     border-top: 1px solid var(--s-line-strong);
@@ -2836,18 +2960,587 @@
   .s-404__links a:hover svg {
     transform: translateX(4px);
   }
+  @media (min-width: 640px) {
+    .s-404__actions {
+      display: flex;
+    }
+  }
   @media (min-width: 1024px) {
     .s-404__grid {
       grid-template-columns: repeat(12, minmax(0, 1fr));
       column-gap: var(--s-gutter);
-      align-items: end;
+      row-gap: clamp(3rem, 5vw, 4.5rem);
+      align-items: stretch;
     }
     .s-404__main {
       grid-column: 1 / 8;
+      align-self: end;
+    }
+    .s-404__take {
+      grid-column: 8 / -1;
+      min-height: 22rem;
     }
     .s-404__nav {
-      grid-column: 9 / -1;
+      grid-column: 1 / -1;
     }
+    .s-404__links {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      border-top: 0;
+    }
+    .s-404__links a {
+      border-top: 1px solid var(--s-line-strong);
+    }
+  }
+
+  /* ---------- 22b. Blocos do briefing v2 ---------------------------------- */
+  /* Índice de serviços (home e "outros serviços"): uma linha por serviço; a linha inteira é o link e, no
+     hover/foco, vira um campo roxo — o "olhar" passando pela lista. */
+  .s-index {
+    border-bottom: 1px solid var(--s-line-strong);
+  }
+  .s-index__row {
+    border-top: 1px solid var(--s-line-strong);
+  }
+  .s-index__link {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) 1.5rem;
+    column-gap: 0.75rem;
+    row-gap: 0.375rem;
+    align-items: baseline;
+    padding: 1.125rem 0 1.25rem;
+    text-decoration: none;
+    transition:
+      background-color 0.25s,
+      color 0.25s,
+      padding 0.3s var(--s-ease);
+  }
+  .s-index__n {
+    font-size: var(--s-fs-meta);
+    font-weight: 700;
+    color: var(--s-idx);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.25s;
+  }
+  .s-index__title {
+    font-size: clamp(1.5rem, 1.1rem + 1.9vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+  .s-index__text {
+    grid-column: 2 / -1;
+    max-width: 34rem;
+    font-size: var(--s-fs-sm);
+    line-height: 1.5;
+    color: var(--s-fg-2);
+    text-wrap: pretty;
+    transition: color 0.25s;
+  }
+  .s-index__arrow {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    color: var(--s-idx);
+    transition:
+      transform 0.3s var(--s-ease),
+      color 0.25s;
+  }
+  @media (hover: hover) {
+    .s-index__link:hover {
+      background: var(--color-roxo);
+      color: var(--color-offwhite);
+      padding-inline: 1rem;
+    }
+    .s-index__link:hover .s-index__n {
+      color: var(--color-lavanda);
+    }
+    .s-index__link:hover .s-index__text {
+      color: var(--s-paper-2);
+    }
+    .s-index__link:hover .s-index__arrow {
+      color: var(--color-lima);
+      transform: translateX(4px);
+    }
+  }
+  @media (min-width: 1024px) {
+    .s-index__link {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      padding: 1.5rem 0 1.625rem;
+    }
+    .s-index__n {
+      grid-column: 1;
+    }
+    .s-index__title {
+      grid-column: 2 / 8;
+    }
+    .s-index__text {
+      grid-column: 8 / 12;
+      grid-row: 1;
+      align-self: center;
+    }
+    .s-index__arrow {
+      grid-column: 12;
+      justify-self: end;
+    }
+    @media (hover: hover) {
+      .s-index__link:hover {
+        padding-inline: 0;
+        box-shadow:
+          -1.25rem 0 0 var(--color-roxo),
+          1.25rem 0 0 var(--color-roxo);
+      }
+    }
+  }
+
+  /* Diferenciais / benefícios: grade numerada com fios; o acento do logo marca cada título. */
+  .s-diffs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border-bottom: 1px solid var(--s-line);
+  }
+  .s-diff {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
+    align-content: start;
+    padding: 1.25rem 0 1.5rem;
+    border-top: 1px solid var(--s-line);
+  }
+  .s-diff__n {
+    padding-top: 0.4em;
+    font-size: var(--s-fs-meta);
+    font-weight: 700;
+    color: var(--s-idx);
+    font-variant-numeric: tabular-nums;
+  }
+  .s-diff__title {
+    font-size: clamp(1.375rem, 1.1rem + 1.2vw, 2.125rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .s-diff__text {
+    grid-column: 2;
+    max-width: 28rem;
+    font-size: var(--s-fs-sm);
+    line-height: 1.55;
+    color: var(--s-fg-2);
+    text-wrap: pretty;
+  }
+  @media (min-width: 640px) {
+    .s-diffs {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+    }
+  }
+  @media (min-width: 1024px) {
+    .s-diffs {
+      grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+      border-bottom: 0;
+    }
+    .s-diff {
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 11.5rem;
+      padding: 1.125rem 0 2.25rem;
+      border-top-color: var(--s-line-strong);
+    }
+    .s-diff__n {
+      padding-top: 0;
+      margin-bottom: clamp(2rem, 3.4vw, 3.25rem);
+    }
+    .s-diff__text {
+      grid-column: 1;
+    }
+    .s-diff__title {
+      max-width: 9.5em;
+    }
+  }
+  /* no escuro, o número ganha o sinal lima (>10:1) */
+  .site [data-tone="grafite"] .s-diff__n,
+  .site [data-tone="roxo"] .s-diff__n {
+    color: var(--color-lima);
+  }
+
+  /* Serviços avulsos (home): linhas curtas em grade; cada uma leva ao formulário com o serviço escolhido. */
+  .s-solo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: var(--s-gutter);
+    border-bottom: 1px solid var(--s-line-strong);
+  }
+  .s-solo__item {
+    border-top: 1px solid var(--s-line-strong);
+  }
+  .s-solo__link {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) 1.25rem;
+    column-gap: 0.75rem;
+    align-items: center;
+    min-height: 4rem;
+    padding: 0.875rem 0;
+    text-decoration: none;
+  }
+  .s-solo__n {
+    font-size: var(--s-fs-meta);
+    font-weight: 700;
+    color: var(--s-idx);
+    font-variant-numeric: tabular-nums;
+  }
+  .s-solo__name {
+    font-size: clamp(1.1875rem, 1.05rem + 0.6vw, 1.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+  .s-solo__arrow {
+    width: 1.125rem;
+    height: 1.125rem;
+    transition: transform 0.3s var(--s-ease);
+  }
+  .s-solo__link:hover .s-solo__name {
+    color: var(--s-link-hover);
+  }
+  .s-solo__link:hover .s-solo__arrow {
+    transform: translate(3px, -3px);
+  }
+  @media (min-width: 640px) {
+    .s-solo {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .s-solo {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .s-solo__link {
+      min-height: 5rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .s-solo {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* Eventos e casamentos (home): a chamada em duas linhas (uma frase em cada), as duas portas de entrada e,
+     no pé, texto + botão. */
+  .s-events__title {
+    margin-top: var(--s-head);
+    margin-bottom: var(--s-cab);
+    font-size: clamp(2.25rem, 1.1rem + 4.75vw, 5.25rem);
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    overflow-wrap: break-word;
+  }
+  .s-events__title > span {
+    text-wrap: balance;
+  }
+  .s-events__foot {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 1.75rem;
+    justify-items: start;
+  }
+  .s-events__foot .s-lead {
+    max-width: 34rem;
+  }
+  @media (max-width: 479.98px) {
+    .s-events__foot .s-btn {
+      width: 100%;
+    }
+  }
+  @media (min-width: 1024px) {
+    .s-events__title > span {
+      display: block;
+    }
+    .s-events__foot {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      align-items: center;
+    }
+    .s-events__foot > :first-child {
+      grid-column: 1 / 8;
+    }
+    .s-events__foot > .s-btn {
+      grid-column: 8 / -1;
+      justify-self: end;
+    }
+  }
+
+  /* Preço: texto no lugar do valor (planos sem valor publicado) e condição de desconto. */
+  .s-price__text {
+    display: block;
+    font-size: var(--s-fs-sm);
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .s-price__note {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: var(--s-fs-meta);
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--s-fg-2);
+  }
+  .s-plan__base {
+    margin-bottom: 0.375rem;
+    font-weight: 700;
+  }
+  .s-plan__data ul > li {
+    position: relative;
+    padding-left: 1.125rem;
+  }
+  .s-plan__data ul > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 0.625rem;
+    height: 0.39rem;
+    background: var(--s-idx);
+    clip-path: polygon(45% 0, 100% 0, 55% 100%, 0 100%);
+  }
+  .s-plan[data-tone="roxo"] .s-plan__data ul > li::before {
+    background: var(--color-lima);
+  }
+
+  /* Tabela comparativa dos planos. No celular rola na horizontal dentro da região (primeira coluna fixa). */
+  .s-compare {
+    /* `relative`: os textos só para leitor de tela (posição absoluta) dentro da tabela ficam presos a esta
+       região — senão, ao rolar a tabela no celular, eles alargariam a página inteira. */
+    position: relative;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-top: 1px solid var(--s-line-strong);
+    border-bottom: 1px solid var(--s-line-strong);
+  }
+  .s-compare__table {
+    width: 100%;
+    min-width: calc(9rem + var(--cols, 3) * 7rem);
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  /* aviso de rolagem: só enquanto a tabela não cabe (telas estreitas) */
+  .s-compare__hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--s-fg-2);
+  }
+  .s-compare__hint svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+  /* no celular os botões já estão nos cartões dos planos, logo acima: a linha de botões da tabela não repete */
+  @media (max-width: 767.98px) {
+    .s-compare__actions {
+      display: none;
+    }
+    /* a etiqueta do plano em destaque precisa caber na coluna estreita */
+    .s-compare__tag {
+      max-width: 100%;
+      padding: 0.35rem 0.4rem 0.3rem;
+      font-size: 0.5625rem;
+      letter-spacing: 0.06em;
+    }
+    .s-compare__table tbody tr:last-child > * {
+      border-bottom: 0;
+    }
+  }
+  @media (min-width: 768px) {
+    .s-compare__hint {
+      display: none;
+    }
+  }
+  .s-compare__table th,
+  .s-compare__table td {
+    padding: 0.875rem 0.75rem;
+    border-bottom: 1px solid var(--s-line);
+    text-align: center;
+    vertical-align: middle;
+  }
+  .s-compare__table thead th,
+  .s-compare__table thead td {
+    vertical-align: bottom;
+    padding-block: 1.25rem 1rem;
+    border-bottom-color: var(--s-line-strong);
+  }
+  .s-compare__table tr > :first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 9rem;
+    padding-left: 0;
+    background: var(--color-offwhite);
+    text-align: left;
+    font-size: var(--s-fs-sm);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  .s-compare__plan {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+  .s-compare__tag {
+    display: inline-block;
+    margin-bottom: 0.625rem;
+  }
+  .s-compare__table [data-rec] {
+    background: var(--color-roxo);
+    color: var(--color-offwhite);
+    border-bottom-color: var(--s-rule-light);
+  }
+  .s-compare__check {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-inline: auto;
+    color: var(--color-roxo);
+  }
+  .s-compare__table [data-rec] .s-compare__check {
+    color: var(--color-lima);
+  }
+  .s-compare__dash {
+    display: block;
+    width: 0.75rem;
+    height: 1.5px;
+    margin-inline: auto;
+    background: currentColor;
+    opacity: 0.35;
+  }
+  .s-compare__table tfoot td,
+  .s-compare__table tfoot th {
+    border-bottom: 0;
+  }
+  .s-compare__price {
+    font-size: var(--s-fs-sm);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .s-compare__price small {
+    font-size: var(--s-fs-meta);
+    font-weight: 600;
+  }
+  .s-compare__cta {
+    padding-block: 1rem 1.25rem !important;
+  }
+  .s-compare__cta .s-btn {
+    justify-content: center;
+    text-align: center;
+  }
+  .s-compare__table [data-rec] .s-btn--primary {
+    --s-btn-primary-bd: var(--color-lima);
+    --s-btn-hover-fg: var(--color-grafite);
+  }
+  @media (min-width: 768px) {
+    .s-compare__table tr > :first-child {
+      width: 34%;
+      font-size: 1rem;
+    }
+    .s-compare__table th,
+    .s-compare__table td {
+      padding: 1rem 1.25rem;
+    }
+    .s-compare__plan {
+      font-size: var(--s-fs-h3);
+    }
+  }
+
+  /* Formulário: opções de múltipla escolha (serviços do evento) em "fichas" de 44px. */
+  .s-form__group[hidden] {
+    display: none;
+  }
+  .s-choices {
+    display: grid;
+    gap: 0.625rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+  .s-choices legend {
+    padding: 0;
+    font-size: var(--s-fs-meta);
+    font-weight: 700;
+  }
+  .s-choices legend small {
+    font-size: inherit;
+    font-weight: 500;
+    color: var(--s-fg-2);
+  }
+  .s-choices__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.375rem;
+  }
+  .s-choice {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+  }
+  .s-choice input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .s-choice span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--color-grafite);
+    border-radius: 2px;
+    font-size: var(--s-fs-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+  }
+  .s-choice span::before {
+    content: "";
+    width: 0.625rem;
+    height: 0.39rem;
+    background: var(--color-roxo);
+    clip-path: polygon(45% 0, 100% 0, 55% 100%, 0 100%);
+    opacity: 0.35;
+    transition: opacity 0.2s;
+  }
+  .s-choice input:hover + span {
+    box-shadow: inset 0 0 0 1px var(--color-grafite);
+  }
+  .s-choice input:checked + span {
+    background: var(--color-grafite);
+    color: var(--color-offwhite);
+  }
+  .s-choice input:checked + span::before {
+    background: var(--color-lima);
+    opacity: 1;
+  }
+  .s-choice input:focus-visible + span {
+    outline: 2px solid var(--color-roxo);
+    outline-offset: 2px;
   }
 
   /* ---------- 23. Movimento ---------------------------------------------- */

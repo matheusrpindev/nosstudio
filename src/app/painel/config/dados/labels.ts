@@ -17,7 +17,7 @@ export const TABLE_LABELS: Record<string, string> = {
   finance_entries: "Financeiro: lançamentos",
   leads: "Leads",
   media: "Arquivos enviados (cadastro)",
-  packages: "Site: pacotes",
+  packages: "Site: planos e serviços avulsos",
   portfolio_projects: "Site: portfólio",
   project_members: "Projetos: equipe (membros)",
   projects: "Projetos",

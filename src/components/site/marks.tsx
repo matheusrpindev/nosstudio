@@ -14,7 +14,9 @@ export type IconName =
   | "check"
   | "whatsapp"
   | "instagram"
-  | "mail";
+  | "mail"
+  | "user"
+  | "pin";
 
 const STROKE = {
   fill: "none",
@@ -47,6 +49,18 @@ const ICONS: Record<IconName, React.ReactNode> = {
     <>
       <rect x="3" y="5" width="18" height="14" fill="none" stroke="currentColor" strokeWidth={2} />
       <path d="M3.5 6l8.5 7 8.5-7" {...STROKE} />
+    </>
+  ),
+  user: (
+    <>
+      <rect x="8" y="3.5" width="8" height="8" fill="none" stroke="currentColor" strokeWidth={2} />
+      <path d="M4 21v-5h16v5" {...STROKE} />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M12 21 5.5 12.5V4h13v8.5z" {...STROKE} />
+      <rect x="10" y="7" width="4" height="4" fill="currentColor" />
     </>
   ),
 };

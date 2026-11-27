@@ -342,7 +342,7 @@ como a tabela manda; página nova sem linha na tabela do teste faz o teste falha
 | `/painel/conteudo`, `/conteudo/[id]` · `/conteudo/novo` | `conteudo:ver` · `conteudo:editar` |
 | `/painel/financeiro`, `/financeiro/[id]` · `/novo`, `/novo/parcelas` | `financeiro:ver` · `financeiro:editar` |
 | `/painel/marca`, `/marca/[id]` · `/marca/novo` | `marca:ver` · `marca:editar` |
-| `/painel/site/**` (listas) · `/novo`, `/[id]`, `/textos/[secao]` | `site:ver` · `site:editar` |
+| `/painel/site/**` (listas, inclusive `/site/inicio` — ordem e visibilidade das seções da página inicial) · `/novo`, `/[id]`, `/textos/[secao]` | `site:ver` · `site:editar` (em `/site/inicio` a lista abre para quem vê; setas, arrastar, chave e "restaurar" só aparecem para quem edita, e as actions de `site/inicio/actions.ts` exigem `site:editar`) |
 | `/painel/config`, `/config/propostas` | `config:ver` |
 | `/painel/config/notificacoes` | `requireAdmin()` |
 | `/painel/config/usuarios`, `/config/usuarios/[id]` (permissões) | `usuarios:ver` (botões e actions: `usuarios:editar`) |

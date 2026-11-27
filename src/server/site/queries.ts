@@ -8,6 +8,7 @@
  */
 import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import type { ServiceBenefit, ServiceFaq } from "@/db/schema";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import {
@@ -28,6 +29,8 @@ import {
 } from "@/db/schema";
 import { toPublicImage, type PublicImage } from "@/lib/media";
 import { defaultSiteContent, resolveSiteContent, SITE_CONTENT_KEYS, type SiteContent } from "@/lib/site/content";
+import { SITE_PATHS } from "@/lib/site/paths";
+import { defaultHomeLayout, HOME_LAYOUT_KEY, resolveHomeLayout, type HomeLayout } from "@/lib/site/home-layout";
 import { announcementCacheLife, secondsToNextAnnouncementChange, servableAnnouncements } from "./admin/announcement-status";
 import { SITE_TAG } from "./cache";
 
@@ -65,6 +68,17 @@ export async function getSiteContent(): Promise<SiteContent> {
     const result = {} as Record<string, unknown>;
     for (const key of SITE_CONTENT_KEYS) result[key] = resolveSiteContent(key, stored.get(key));
     return result as SiteContent;
+  });
+}
+
+/** Ordem e visibilidade das seções da página inicial (padrão: a ordem do briefing, tudo ligado). */
+export async function getHomeLayout(): Promise<HomeLayout> {
+  "use cache";
+  cacheTag(SITE_TAG);
+  cacheLife("site");
+  return safely("ordem da página inicial", defaultHomeLayout, async () => {
+    const [row] = await db.select().from(siteContent).where(eq(siteContent.key, HOME_LAYOUT_KEY));
+    return resolveHomeLayout(row?.value);
   });
 }
 
@@ -161,7 +175,15 @@ export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
 export type PublicService = Pick<
   Service,
   "id" | "slug" | "title" | "summary" | "description" | "items" | "ctaLabel" | "interest" | "videoUrl" | "pagePath"
-> & { cover: PublicImage | null; gallery: PublicImage[] };
+> & {
+  cover: PublicImage | null;
+  gallery: PublicImage[];
+  /** Só benefícios com título. */
+  benefits: ServiceBenefit[];
+  /** Só perguntas com pergunta E resposta. */
+  faq: ServiceFaq[];
+  relatedProjectIds: number[];
+};
 
 export async function getServices(): Promise<PublicService[]> {
   "use cache";
@@ -187,8 +209,31 @@ export async function getServices(): Promise<PublicService[]> {
       pagePath: row.pagePath,
       cover: row.coverMediaId ? (images.get(row.coverMediaId) ?? null) : null,
       gallery: row.gallery.map((id) => images.get(id)).filter((image): image is PublicImage => Boolean(image)),
+      benefits: (row.benefits ?? []).filter((item) => item.title?.trim()),
+      faq: (row.faq ?? []).filter((item) => item.question?.trim() && item.answer?.trim()),
+      relatedProjectIds: row.relatedProjectIds ?? [],
     }));
   });
+}
+
+/** Um serviço publicado pelo slug, com os vizinhos da lista e os projetos relacionados que estão publicados. */
+export async function getServiceBySlug(slug: string): Promise<{
+  service: PublicService;
+  index: number;
+  total: number;
+  others: PublicService[];
+  related: PublicPortfolioProject[];
+} | null> {
+  const [all, portfolio] = await Promise.all([getServices(), getPortfolio()]);
+  const index = all.findIndex((service) => service.slug === slug);
+  if (index === -1) return null;
+  const service = all[index];
+  const related = service.relatedProjectIds
+    .map((id) => portfolio.find((project) => project.id === id))
+    .filter((project): project is PublicPortfolioProject => Boolean(project));
+  // os demais serviços, começando pelo seguinte (a lista "dá a volta")
+  const others = [...all.slice(index + 1), ...all.slice(0, index)];
+  return { service, index, total: all.length, others, related };
 }
 
 // ------------------------------------------------------------------ pacotes
@@ -207,8 +252,14 @@ export type PublicPackage = Pick<
   | "priceCents"
   | "priceSuffix"
   | "recommended"
+  | "optionals"
   | "ctaLabel"
->;
+> & {
+  /** Plano em que este se apoia ("tudo do plano X, mais…") — só quando esse plano também está publicado. */
+  base: { id: number; name: string } | null;
+  /** Condição de desconto — só sai do banco junto de um valor publicado. */
+  discountNote: string;
+};
 
 export async function getPackages(): Promise<{ plans: PublicPackage[]; standalone: PublicPackage[] }> {
   "use cache";
@@ -220,6 +271,11 @@ export async function getPackages(): Promise<{ plans: PublicPackage[]; standalon
       .from(packages)
       .where(eq(packages.visible, true))
       .orderBy(asc(packages.sortOrder), asc(packages.id));
+    const hidden = (row: Package) => row.priceMode === "sob_consulta" || row.priceCents == null;
+    const baseOf = (row: Package) => {
+      const base = row.kind === "plano" && row.basePackageId ? rows.find((other) => other.id === row.basePackageId && other.kind === "plano" && other.id !== row.id) : undefined;
+      return base ? { id: base.id, name: base.name } : null;
+    };
     const toPublic = (row: Package): PublicPackage => ({
       id: row.id,
       kind: row.kind,
@@ -231,10 +287,13 @@ export async function getPackages(): Promise<{ plans: PublicPackage[]; standalon
       recordingDuration: row.recordingDuration,
       revisionLimit: row.revisionLimit,
       priceMode: row.priceMode,
-      // Preço só sai do banco quando o modo de exibição pede — "sob consulta" nunca expõe valor.
-      priceCents: row.priceMode === "sob_consulta" ? null : row.priceCents,
-      priceSuffix: row.priceMode === "sob_consulta" ? "" : row.priceSuffix,
+      // Preço (e desconto) só saem do banco quando o modo de exibição pede — "valor oculto" nunca expõe valor.
+      priceCents: hidden(row) ? null : row.priceCents,
+      priceSuffix: hidden(row) ? "" : row.priceSuffix,
+      discountNote: hidden(row) ? "" : row.discountNote,
       recommended: row.recommended,
+      optionals: row.optionals ?? [],
+      base: baseOf(row),
       ctaLabel: row.ctaLabel,
     });
     return {
@@ -242,6 +301,15 @@ export async function getPackages(): Promise<{ plans: PublicPackage[]; standalon
       standalone: rows.filter((row) => row.kind === "avulso").map(toPublic),
     };
   });
+}
+
+/**
+ * Nomes aceitos como "plano/serviço de origem" de um pedido (`?pacote=…`): planos, avulsos e serviços publicados.
+ * Qualquer outro texto na URL é ignorado (ver `knownPackageName`).
+ */
+export async function getLeadOriginNames(): Promise<string[]> {
+  const [pkgs, serviceList] = await Promise.all([getPackages(), getServices()]);
+  return [...new Set([...pkgs.plans, ...pkgs.standalone].map((pkg) => pkg.name).concat(serviceList.map((service) => service.title)))];
 }
 
 // ---------------------------------------------------------------------- FAQ
@@ -379,22 +447,25 @@ export async function getPublishedMediaIds(): Promise<number[]> {
 // ---------------------------------------------------------------- navegação
 export type SiteNavItem = { label: string; href: string };
 
-/** Itens do menu principal, já respeitando a visibilidade das seções e a existência de conteúdo. */
+/**
+ * Itens do menu principal (briefing v2, seção 03), já respeitando a visibilidade das páginas e a existência de
+ * conteúdo: Planos só com planos/avulsos publicados; Portfólio só com projetos publicados; item com rótulo vazio
+ * some. A "Área do Cliente" não entra aqui (é um link à parte, para o login) — ver `SiteShell`.
+ */
 export async function getSiteNav(): Promise<SiteNavItem[]> {
   "use cache";
   cacheTag(SITE_TAG);
   cacheLife("site");
-  const [content, pkgs, portfolio] = await Promise.all([getSiteContent(), getPackages(), getPortfolio()]);
+  const [content, pkgs, portfolio, serviceList] = await Promise.all([getSiteContent(), getPackages(), getPortfolio(), getServices()]);
+  const { navigation: labels, visibility } = content;
   const items: SiteNavItem[] = [
-    { label: "Início", href: "/" },
-    { label: "Quem Somos", href: "/sobre" },
-    { label: "Serviços", href: "/servicos" },
+    { label: labels.home, href: SITE_PATHS.home },
+    { label: labels.about, href: SITE_PATHS.about },
   ];
-  if (content.visibility.packages && pkgs.plans.length + pkgs.standalone.length > 0) {
-    items.push({ label: "Pacotes", href: "/pacotes" });
-  }
-  if (content.visibility.weddings) items.push({ label: "Casamentos", href: "/casamentos" });
-  if (content.visibility.portfolio && portfolio.length > 0) items.push({ label: "Portfólio", href: "/portfolio" });
-  items.push({ label: "Contato", href: "/contato" });
-  return items;
+  if (serviceList.length > 0) items.push({ label: labels.services, href: SITE_PATHS.services });
+  if (visibility.packages && pkgs.plans.length + pkgs.standalone.length > 0) items.push({ label: labels.plans, href: SITE_PATHS.plans });
+  if (visibility.portfolio && portfolio.length > 0) items.push({ label: labels.portfolio, href: SITE_PATHS.portfolio });
+  if (visibility.weddings) items.push({ label: labels.events, href: SITE_PATHS.events });
+  items.push({ label: labels.contact, href: SITE_PATHS.contact });
+  return items.filter((item) => item.label.trim() !== "");
 }

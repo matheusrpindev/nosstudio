@@ -2,8 +2,8 @@
  * Modelo do conteúdo editável do site público.
  *
  * Cada chave de `siteContentSchemas` é uma "seção" guardada na tabela `site_content` (JSON) e editada no
- * painel em /painel/site. `defaultSiteContent` traz a copy original do briefing dos sócios — é o que o site
- * mostra enquanto ninguém editou nada.
+ * painel em /painel/site. `defaultSiteContent` traz a copy dos briefings dos sócios (o v2 onde ele redefine o
+ * texto; o v1 onde continua valendo) — é o que o site mostra enquanto ninguém editou nada.
  *
  * Arquivo puro (sem acesso a banco): pode ser importado no servidor e no cliente.
  * Leitura no servidor: `getSiteContent()` em src/server/site/queries.ts.
@@ -34,18 +34,36 @@ const general = z.object({
   socialLinks: z.array(link).max(8),
   /** Cidade/região de atendimento (texto livre). Vazio = não exibe. */
   serviceArea: text(160),
+  /** Linha de direitos autorais do rodapé, depois de "© ano marca". */
+  copyright: text(160),
+});
+
+// =============================================================== NAVEGAÇÃO
+/** Rótulos do menu (cabeçalho e rodapé) e o botão de destaque. Item com rótulo vazio some do menu. */
+const navigation = z.object({
+  home: text(40),
+  about: text(40),
+  services: text(40),
+  plans: text(40),
+  portfolio: text(40),
+  events: text(40),
+  contact: text(40),
+  /** Link para o login das áreas privadas. */
+  clientArea: text(40),
+  cta: link,
 });
 
 // ============================================================= VISIBILIDADE
-/** Liga/desliga seções e itens do menu. Blocos sem conteúdo publicado somem sozinhos mesmo ligados. */
+/**
+ * Liga/desliga PÁGINAS e recursos do site. Blocos sem conteúdo publicado somem sozinhos mesmo ligados.
+ * A ordem e a visibilidade dos blocos da página inicial ficam em ./home-layout.ts (Editar site › Página inicial).
+ */
 const visibility = z.object({
   portfolio: z.boolean(), // página /portfolio, item do menu e bloco na home
   testimonials: z.boolean(), // depoimentos
   faq: z.boolean(),
-  packages: z.boolean(), // página /pacotes, item do menu e bloco na home
-  weddings: z.boolean(), // página /casamentos e item do menu
-  founders: z.boolean(), // bloco dos fundadores na home
-  howItWorks: z.boolean(),
+  packages: z.boolean(), // página /planos, item do menu e blocos de planos/avulsos na home
+  weddings: z.boolean(), // página /eventos-e-casamentos, item do menu e bloco na home
   whatsappFloat: z.boolean(), // botão flutuante de WhatsApp no celular
 });
 
@@ -62,10 +80,11 @@ const home = z.object({
     mediaId,
     mediaCaption: text(120),
   }),
+  /** Bloco "Serviços": a lista vem dos serviços publicados (Editar site › Serviços). */
   highlights: z.object({
     eyebrow: text(80),
     title: text(160),
-    items: z.array(z.object({ title: text(80), text: text(300), href: text(300) })).max(6),
+    text: text(400),
     cta: link,
   }),
   founders: z.object({
@@ -80,6 +99,10 @@ const home = z.object({
     text: text(500),
     cta: link,
   }),
+  /** Bloco "Serviços avulsos" (a lista vem dos avulsos publicados em Editar site › Planos). */
+  standalone: z.object({ eyebrow: text(80), title: text(160), text: text(500), cta: link }),
+  /** Bloco "Eventos e casamentos" (os dois painéis usam os títulos da página de Eventos e Casamentos). */
+  events: z.object({ eyebrow: text(80), title: text(200), text: text(500), cta: link }),
   portfolio: z.object({ eyebrow: text(80), title: text(160), text: text(500), cta: link }),
   testimonials: z.object({ eyebrow: text(80), title: text(160) }),
   faq: z.object({ eyebrow: text(80), title: text(160), cta: link }),
@@ -115,8 +138,17 @@ const about = z.object({
   why: z.object({ title: text(160), text: longText(6000) }),
   /** Trecho em destaque (manifesto). */
   manifesto: z.object({ text: longText(3000), closing: text(300) }),
+  mission: z.object({ title: text(80), text: longText(1200) }),
+  vision: z.object({ title: text(80), text: longText(1200) }),
   values: z.object({ eyebrow: text(80), title: text(160), items: z.array(titled).max(8) }),
   essence: z.object({ title: text(160), text: longText(4000), signature: text(240) }),
+});
+
+// ============================================================ DIFERENCIAIS
+const differentials = z.object({
+  eyebrow: text(80),
+  title: text(160),
+  items: z.array(titled).max(8),
 });
 
 // =========================================================== COMO FUNCIONA
@@ -132,9 +164,24 @@ const servicesPage = z.object({
   eyebrow: text(80),
   title: text(160),
   intro: text(600),
+  /** Texto do link de cada serviço da lista para a página dele. */
+  detailLabel: text(60),
   closingTitle: text(200),
   closingText: text(400),
   cta: link,
+  /** Títulos dos blocos da página de cada serviço (/servicos/…). Bloco sem conteúdo não aparece. */
+  detail: z.object({
+    deliverablesTitle: text(120),
+    benefitsTitle: text(120),
+    mediaTitle: text(120),
+    relatedTitle: text(120),
+    faqTitle: text(120),
+    quoteTitle: text(160),
+    quoteText: text(400),
+    othersTitle: text(120),
+    /** Botão para a página temática do serviço (ex.: Eventos e Casamentos), quando houver. */
+    pageLinkLabel: text(60),
+  }),
 });
 
 // ================================================================= PACOTES
@@ -143,8 +190,12 @@ const packagesPage = z.object({
   title: text(160),
   intro: text(600),
   recommendedLabel: text(40),
+  /** Texto no lugar do valor enquanto ele não for publicado. */
+  priceOnRequestLabel: text(120),
   /** Aviso sob os planos (condições definidas em proposta). */
   note: text(400),
+  /** Tabela comparativa dos planos (montada a partir das entregas de cada plano). */
+  comparison: z.object({ enabled: z.boolean(), title: text(160), intro: text(400) }),
   standaloneTitle: text(160),
   standaloneIntro: text(400),
   closingTitle: text(200),
@@ -152,11 +203,26 @@ const packagesPage = z.object({
   cta: link,
 });
 
-// ============================================================== CASAMENTOS
+// ==================================================== EVENTOS E CASAMENTOS
+/** Página /eventos-e-casamentos (a chave continua `weddingsPage` para preservar o que já foi salvo). */
 const weddingsPage = z.object({
   eyebrow: text(80),
+  /** A chamada da página (h1). */
   title: text(160),
   lead: text(400),
+  /** Botão que leva ao formulário. */
+  ctaLabel: text(80),
+  heroMediaId: mediaId,
+  /** Parte 1 — eventos corporativos e sociais. */
+  events: z.object({
+    eyebrow: text(80),
+    title: text(160),
+    text: longText(2000),
+    /** Formatos de cobertura. */
+    items: z.array(titled).max(12),
+  }),
+  /** Parte 2 — casamentos. */
+  weddingsEyebrow: text(80),
   approach: z.object({ title: text(160), text: longText(3000) }),
   coverage: z.object({
     title: text(160),
@@ -166,8 +232,15 @@ const weddingsPage = z.object({
     note: text(400),
   }),
   proposal: z.object({ title: text(160), text: longText(2000), steps: z.array(titled).max(6) }),
-  form: z.object({ title: text(160), text: text(400), submitLabel: text(60) }),
-  heroMediaId: mediaId,
+  /** Galeria (projetos publicados de eventos e casamentos) — só aparece com conteúdo real. */
+  galleryTitle: text(160),
+  form: z.object({
+    title: text(160),
+    text: text(400),
+    submitLabel: text(80),
+    /** Aviso de que o envio não reserva a data. */
+    note: text(400),
+  }),
 });
 
 // =============================================================== PORTFÓLIO
@@ -201,6 +274,12 @@ const privacyPage = z.object({
   body: longText(30_000),
 });
 
+/** Termos de uso e política de cookies: mesmo esquema da privacidade (título, versão e markdown). */
+const legalPage = z.object({ title: text(160), version: text(20), body: longText(30_000) });
+
+// ===================================================================== 404
+const notFoundPage = z.object({ eyebrow: text(80), title: text(160), text: text(300), cta: link });
+
 // ===================================================================== SEO
 const pageSeo = z.object({ title: text(70), description: text(180) });
 const seo = z.object({
@@ -223,9 +302,11 @@ const seo = z.object({
 
 export const siteContentSchemas = {
   general,
+  navigation,
   visibility,
   home,
   about,
+  differentials,
   howItWorks,
   servicesPage,
   packagesPage,
@@ -233,6 +314,9 @@ export const siteContentSchemas = {
   portfolioPage,
   contactPage,
   privacyPage,
+  termsPage: legalPage,
+  cookiesPage: legalPage,
+  notFoundPage,
   seo,
 } as const;
 
@@ -245,16 +329,21 @@ export type FounderContent = z.infer<typeof founder>;
 /** Rótulos das seções no editor do painel. */
 export const SITE_CONTENT_LABELS: Record<SiteContentKey, string> = {
   general: "Contato e redes",
-  visibility: "Visibilidade das seções",
+  navigation: "Menu e rodapé",
+  visibility: "Páginas visíveis",
   home: "Página inicial",
-  about: "Quem Somos",
-  howItWorks: "Como funciona",
-  servicesPage: "Página de serviços",
-  packagesPage: "Página de pacotes",
-  weddingsPage: "Página de casamentos",
+  about: "Sobre a NÓS",
+  differentials: "Diferenciais",
+  howItWorks: "Processo de atendimento",
+  servicesPage: "Páginas de serviços",
+  packagesPage: "Página de planos",
+  weddingsPage: "Eventos e Casamentos",
   portfolioPage: "Página de portfólio",
   contactPage: "Contato e orçamento",
   privacyPage: "Política de privacidade",
+  termsPage: "Termos de uso",
+  cookiesPage: "Política de cookies",
+  notFoundPage: "Página não encontrada (404)",
   seo: "SEO e compartilhamento",
 };
 
@@ -267,12 +356,13 @@ A {{marca}} é a controladora dos dados pessoais coletados neste site. Para qual
 
 ## Quais dados coletamos
 
-Coletamos apenas o que você nos envia pelo formulário de contato e orçamento:
+Coletamos apenas o que você nos envia pelos formulários de contato, orçamento e consulta de data:
 
-- nome;
+- nome e, se informada, a empresa;
 - WhatsApp;
 - e-mail (opcional);
-- serviço de interesse, data e cidade do evento ou projeto (quando informados);
+- serviço ou plano de interesse e o objetivo do projeto (quando informados);
+- conforme o tipo de pedido: segmento e perfil do negócio nas redes; tipo e previsão da produção; ou tipo, data, horário, cidade, local, número de convidados e serviços desejados para o evento;
 - a descrição que você escrever sobre a sua ideia.
 
 Não pedimos documentos, dados bancários nem dados sensíveis pelo site. Por favor, não inclua esse tipo de informação na mensagem.
@@ -287,7 +377,7 @@ Não usamos seus dados para enviar publicidade sem a sua autorização e não ve
 
 ## Com quem compartilhamos
 
-Seus dados ficam restritos aos sócios da {{marca}}. Usamos fornecedores de tecnologia (hospedagem do site, banco de dados e e-mail) que tratam os dados em nosso nome, apenas para manter o serviço funcionando. Se você optar por conversar pelo WhatsApp ou Instagram, valem também as políticas dessas plataformas.
+Seus dados ficam restritos à equipe da {{marca}} que cuida do atendimento. Usamos fornecedores de tecnologia (hospedagem do site, banco de dados e e-mail) que tratam os dados em nosso nome, apenas para manter o serviço funcionando. Se você optar por conversar pelo WhatsApp ou Instagram, valem também as políticas dessas plataformas.
 
 ## Por quanto tempo guardamos
 
@@ -295,7 +385,7 @@ Pedidos de orçamento que não viram projeto são mantidos por até 12 meses ap�
 
 ## Cookies
 
-Este site não usa cookies de publicidade nem de rastreamento. Usamos apenas armazenamento essencial ao funcionamento — por exemplo, para lembrar que você fechou um aviso.
+Este site não usa cookies de publicidade nem de rastreamento. Os detalhes estão na [Política de Cookies](/cookies).
 
 ## Seus direitos
 
@@ -309,17 +399,106 @@ Adotamos medidas técnicas e administrativas para proteger os dados: conexão cr
 
 Esta política pode ser atualizada para refletir mudanças no site ou na legislação. A data da versão vigente aparece no topo da página.`;
 
+const TERMS_BODY = `Estes termos explicam as regras de uso do site da **{{marca}}**. Ao navegar por aqui, você concorda com eles.
+
+## O que é este site
+
+O site apresenta a {{marca}}, seus serviços e planos, e oferece formulários para pedir contato, orçamento ou consultar uma data. Ele também dá acesso às áreas privadas de clientes e da equipe, que exigem login.
+
+## Pedidos de contato e orçamento
+
+Enviar um formulário não cria um contrato, não reserva data e não garante disponibilidade. Serviços, entregas, prazos e valores só ficam combinados em proposta e contrato aceitos pelas duas partes.
+
+As informações do site (descrições de serviços e planos, por exemplo) podem mudar sem aviso e não substituem a proposta enviada a cada cliente.
+
+## Conteúdo e direitos autorais
+
+Textos, marca, logotipo, fotografias, vídeos e demais materiais deste site pertencem à {{marca}} ou aos seus clientes e parceiros, que autorizaram a exibição. Não é permitido copiar, reproduzir ou usar esse conteúdo para fins comerciais sem autorização por escrito.
+
+## Áreas privadas
+
+O acesso às áreas de clientes e da equipe é pessoal e intransferível. Guarde a sua senha, não a compartilhe e avise a gente se suspeitar de uso indevido da sua conta.
+
+## Uso adequado
+
+Não use o site para enviar conteúdo ilegal ou ofensivo, tentar acessar áreas sem autorização, nem prejudicar o funcionamento do serviço.
+
+## Links para outros sites
+
+O site pode levar a serviços de terceiros, como WhatsApp, Instagram, YouTube e Vimeo. Cada um tem os seus próprios termos e políticas.
+
+## Privacidade
+
+O tratamento de dados pessoais está descrito na [Política de Privacidade](/privacidade) e o uso de cookies, na [Política de Cookies](/cookies).
+
+## Contato
+
+Dúvidas sobre estes termos: {{email}}.
+
+## Atualizações
+
+Estes termos podem ser atualizados. A versão vigente aparece no topo da página.`;
+
+const COOKIES_BODY = `Esta página explica o que a **{{marca}}** guarda no seu navegador quando você usa este site.
+
+## Resumo
+
+O site público não usa cookies de publicidade, de rastreamento nem de estatísticas de terceiros. Por isso não há um aviso de consentimento de cookies: não existe nada opcional para aceitar ou recusar.
+
+## Site público
+
+Navegar pelas páginas públicas não grava cookies. Guardamos apenas uma preferência no armazenamento local do seu navegador: a informação de que você fechou um aviso do topo da página, para ele não voltar a aparecer. Essa informação não identifica você e não é enviada para a gente.
+
+## Áreas privadas (login)
+
+Quem entra na Área do Cliente, na Área da Equipe ou no painel usa cookies estritamente necessários:
+
+- **cookie de sessão** — mantém você conectado depois do login e é apagado quando você sai ou a sessão expira;
+- **cookie de dispositivo** — ajuda a proteger o login contra tentativas indevidas de acesso;
+- **cookie de aviso** — guarda por instantes a mensagem de confirmação de uma ação ("alterações salvas", por exemplo).
+
+Sem eles, o login não funciona. Eles não são usados para publicidade.
+
+## Conteúdo de terceiros
+
+Vídeos do YouTube e do Vimeo só são carregados quando você clica para assistir. A partir daí, valem as políticas dessas plataformas. Os links para WhatsApp e Instagram abrem os serviços dessas empresas, que têm as suas próprias regras.
+
+## Como controlar
+
+Você pode apagar cookies e dados de sites nas configurações do seu navegador. Se bloquear os cookies deste site, a navegação pública continua funcionando; apenas o login das áreas privadas deixa de funcionar.
+
+## Mudanças
+
+Se o site passar a usar outros cookies (de estatísticas, por exemplo), esta página será atualizada antes e, quando a lei exigir, o seu consentimento será pedido.
+
+## Contato
+
+Dúvidas: {{email}}. Veja também a [Política de Privacidade](/privacidade).`;
+
 export const defaultSiteContent: SiteContent = {
   general: {
     brandName: "NÓS Studio",
     tagline: "Sua história, nosso olhar.",
     descriptor: "Marketing, comunicação e audiovisual",
     whatsapp: "",
-    whatsappMessage: "Olá! Vim pelo site da NÓS Studio e quero conversar sobre um projeto.",
+    whatsappMessage: "Olá, NÓS! Conheci o trabalho de vocês pelo site e gostaria de conversar sobre um projeto.",
     email: "",
     instagram: "@nosstudio.cria",
     socialLinks: [],
     serviceArea: "",
+    copyright: "Todos os direitos reservados.",
+  },
+
+  navigation: {
+    home: "Início",
+    about: "Sobre a NÓS",
+    services: "Serviços",
+    plans: "Planos",
+    portfolio: "Portfólio",
+    events: "Eventos e Casamentos",
+    contact: "Contato",
+    clientArea: "Área do Cliente",
+    cta: { label: "Solicitar proposta", href: "/contato#formulario" },
   },
 
   visibility: {
@@ -329,8 +508,6 @@ export const defaultSiteContent: SiteContent = {
     faq: true,
     packages: true,
     weddings: true,
-    founders: true,
-    howItWorks: true,
     whatsappFloat: true,
   },
 
@@ -348,48 +525,43 @@ export const defaultSiteContent: SiteContent = {
     highlights: {
       eyebrow: "O que fazemos",
       title: "Criatividade, estratégia e audiovisual no mesmo olhar.",
-      items: [
-        {
-          title: "Produção Audiovisual",
-          text: "Vídeos, fotografia e produções criativas para marcas, pessoas e eventos.",
-          href: "/servicos#video",
-        },
-        {
-          title: "Marketing & Redes Sociais",
-          text: "Estratégias, planejamento e conteúdos para construir uma presença digital de verdade.",
-          href: "/servicos#marketing",
-        },
-        {
-          title: "Eventos & Casamentos",
-          text: "Histórias, experiências e momentos únicos registrados com sensibilidade e criatividade.",
-          href: "/servicos#eventos",
-        },
-      ],
+      text: "",
       cta: { label: "Conheça todos os serviços", href: "/servicos" },
     },
     founders: {
-      eyebrow: "Quem somos",
+      eyebrow: "Sobre a NÓS",
       title: "Antes de existir a NÓS, já existia um nós.",
       text: [
-        "A NÓS Studio nasceu muito antes de ganhar um nome, uma identidade visual ou se tornar uma empresa.",
-        "Nasceu da conexão entre duas pessoas: Pedro Henrique e Laura Nepomuceno. Um casal que encontrou, além da parceria na vida, a possibilidade de construir algo junto.",
-        "Nós dois temos formas de enxergar, criar e sentir. E foi justamente nessa união que encontramos a força para transformar nossa paixão pela comunicação e pelo audiovisual em um projeto maior.",
+        "Algumas histórias começam com uma ideia. A nossa começou com uma conexão.",
+        "Somos Pedro Henrique e Laura Nepomuceno, dois empreendedores que encontraram na comunicação, na criatividade e no audiovisual uma oportunidade de construir algo juntos.",
       ].join("\n\n"),
       cta: { label: "Conheça nossa história", href: "/sobre" },
     },
     packages: {
-      eyebrow: "Pacotes e planos",
+      eyebrow: "Planos",
       title: "Um plano para cada momento da sua marca.",
-      text: "Do primeiro passo à presença completa: planos mensais e serviços avulsos, sempre com proposta personalizada.",
-      cta: { label: "Ver pacotes", href: "/pacotes" },
+      text: "",
+      cta: { label: "Comparar os planos", href: "/planos" },
+    },
+    standalone: {
+      eyebrow: "Serviços avulsos",
+      title: "Precisa de algo pontual?",
+      text: "Também atendemos por diária e por projeto.",
+      cta: { label: "Ver serviços avulsos", href: "/planos#planos-avulsos" },
+    },
+    events: {
+      eyebrow: "Eventos e Casamentos",
+      title: "Existem momentos que passam. E histórias que *permanecem.*",
+      text: "",
+      cta: { label: "Consultar disponibilidade da minha data", href: "/eventos-e-casamentos#eventos-formulario" },
     },
     portfolio: {
       eyebrow: "Portfólio",
-      title: "Histórias que já passaram pelo nosso olhar.",
+      title: "Nosso olhar em prática.",
       text: "",
       cta: { label: "Ver todos os projetos", href: "/portfolio" },
     },
-    testimonials: { eyebrow: "Depoimentos", title: "Quem viveu, conta." },
+    testimonials: { eyebrow: "Clientes e depoimentos", title: "Quem viveu, conta." },
     faq: {
       eyebrow: "Perguntas frequentes",
       title: "Ficou com alguma dúvida?",
@@ -404,15 +576,15 @@ export const defaultSiteContent: SiteContent = {
     },
   },
 
+  // Briefing v2, seção 05 — texto copiado do documento (só as quebras de parágrafo foram acrescentadas).
   about: {
-    eyebrow: "Quem somos",
+    eyebrow: "Sobre a NÓS",
     title: "Antes de existir a NÓS, já existia um nós.",
     intro: [
       "Algumas histórias começam com uma ideia. A nossa começou com uma conexão.",
-      "Somos Pedro Henrique e Laura Nepomuceno. Dois profissionais, dois olhares e uma vontade em comum: transformar criatividade, comunicação e audiovisual em algo que fosse verdadeiramente nosso.",
-      "A NÓS Studio nasceu da união das nossas histórias, das experiências que construímos individualmente e dos sonhos que decidimos compartilhar.",
-      "Mais do que abrir uma empresa, queríamos criar um espaço onde nossas ideias pudessem se encontrar e onde cada cliente tivesse sua história compreendida, valorizada e contada de uma maneira única.",
-      "Porque antes de sermos uma marca, somos pessoas que acreditam no poder das conexões.",
+      "Somos Pedro Henrique e Laura Nepomuceno, dois empreendedores que encontraram na comunicação, na criatividade e no audiovisual uma oportunidade de construir algo juntos. A NÓS Studio nasceu da união das nossas experiências profissionais, das nossas diferentes maneiras de enxergar o mundo e da vontade de transformar ideias em projetos que realmente façam sentido.",
+      "Acreditamos que comunicar vai muito além de aparecer. É sobre criar conexões, transmitir sentimentos e fazer com que pessoas e marcas sejam reconhecidas por aquilo que as torna únicas. Por isso, unimos estratégia, criatividade e produção audiovisual em um mesmo lugar.",
+      "Mais do que uma empresa de marketing, somos parceiros de quem tem uma história para contar. Sua história, nosso olhar.",
     ].join("\n\n"),
     coupleMediaId: null,
     foundersTitle: "Quem está por trás da NÓS?",
@@ -420,98 +592,76 @@ export const defaultSiteContent: SiteContent = {
       {
         name: "Pedro Henrique",
         role: "Cofundador | Marketing, Estratégia e Audiovisual",
-        shortBio:
-          "Atua com marketing, comunicação, criação de conteúdo e produção audiovisual. Une visão estratégica e criatividade para transformar ideias em projetos de comunicação.",
+        shortBio: "Na NÓS, reúne experiência em negócios, estratégia e audiovisual.",
         bio: [
-          "Minha trajetória profissional começou em 2016 e, desde então, tive a oportunidade de atuar em diferentes áreas, desenvolvendo uma visão ampla sobre pessoas, comunicação, gestão e negócios.",
-          "Passei por projetos institucionais, ações de comunicação, campanhas, gestão de iniciativas e organização de eventos. Experiências que me ensinaram que comunicar bem vai muito além de produzir algo bonito: é preciso entender o público, ter estratégia e transmitir a mensagem certa.",
-          "Com o tempo, ampliei minha atuação para o marketing digital e a produção audiovisual, trabalhando com planejamento de conteúdo, roteiros, redes sociais, gravações, edição de vídeos e campanhas de comunicação.",
-          "Também encontrei na educação uma forma de compartilhar conhecimento, atuando na formação de pessoas em marketing digital, criação de conteúdo e comunicação.",
-          "Hoje, reúno essa bagagem para desenvolver projetos que conectem criatividade, estratégia e resultados.",
+          "Empresário no segmento de brindes personalizados, com trajetória profissional iniciada em 2016 e atuação em campanhas de comunicação desde 2018.",
+          "Possui experiências em gestão, planejamento estratégico, comunicação institucional, marketing digital, organização de eventos e produção audiovisual. Também atuou na formação de alunos nas áreas de comunicação e criação de conteúdo.",
+          "Na NÓS, reúne experiência em negócios, estratégia e audiovisual.",
         ].join("\n\n"),
         mediaId: null,
       },
       {
         name: "Laura Nepomuceno",
-        role: "Cofundadora | Criação e Produção Audiovisual",
-        shortBio:
-          "Atua na criação e produção de conteúdos audiovisuais, contribuindo com sensibilidade, criatividade e um olhar próprio para o desenvolvimento dos projetos.",
+        role: "Cofundadora | Criação, Comunicação e Audiovisual",
+        shortBio: "Na NÓS, une criatividade, sensibilidade e visão empreendedora.",
         bio: [
-          "Laura traz para a NÓS sua experiência com criação de conteúdo, gravação e edição de vídeos, contribuindo com um olhar criativo para a maneira como cada história é construída e apresentada.",
-          "Sua atuação também passa pelo universo do empreendedorismo, incluindo a participação como palestrante em uma atividade sobre empreendedorismo feminino.",
-          "Na NÓS, participa da construção das ideias e dos projetos audiovisuais, unindo criação, sensibilidade e atenção à identidade de cada trabalho.",
-          "Seu olhar complementa a visão estratégica e criativa da empresa, ajudando a transformar ideias em conteúdos que tenham personalidade e significado.",
+          "Empresária na área da educação, com seis anos de experiência no universo do marketing e atuação profissional nos últimos dois anos.",
+          "Sua trajetória reúne empreendedorismo, comunicação digital, criação de conteúdo, gravação e edição de vídeos.",
+          "Na NÓS, une criatividade, sensibilidade e visão empreendedora.",
         ].join("\n\n"),
         mediaId: null,
       },
     ],
-    why: {
-      title: "Por que nasceu a NÓS?",
-      text: [
-        "Porque percebemos que nossas experiências poderiam construir algo maior quando estivessem juntas.",
-        "A NÓS nasceu do desejo de empreender como casal e transformar o que sabemos fazer em um negócio com propósito.",
-        "Queríamos ir além de simplesmente oferecer vídeos, fotografias ou publicações para redes sociais.",
-        "Queríamos participar das histórias.",
-        "Entender o sonho de quem está começando um negócio. Valorizar o trabalho de quem construiu uma marca. Registrar a emoção de quem está vivendo um momento único.",
-        "Foi assim que encontramos nosso propósito: usar a comunicação, o marketing e o audiovisual para aproximar pessoas, marcas e histórias.",
-        "O nome NÓS representa exatamente isso.",
-        "Representa nossa parceria como casal, mas também a conexão que queremos construir com cada cliente.",
-        "Porque quando alguém confia sua história à NÓS, ela passa a fazer parte da nossa também.",
-      ].join("\n\n"),
+    // Blocos do texto anterior (briefing v1): continuam editáveis, mas nascem vazios — bloco vazio não aparece.
+    why: { title: "", text: "" },
+    manifesto: { text: "", closing: "" },
+    mission: {
+      title: "Missão",
+      text: "Transformar ideias e histórias em estratégias de comunicação que gerem conexões, reconhecimento e valor.",
     },
-    manifesto: {
-      text: [
-        "Porque acreditamos que uma boa imagem não é apenas aquela que impressiona. É aquela que comunica, transmite sentimentos e faz sentido para quem está do outro lado.",
-        "Queremos conhecer pessoas, entender negócios, descobrir histórias e encontrar novas maneiras de contá-las.",
-        "Seja uma empresa construindo sua marca, um profissional compartilhando seu trabalho ou um casal vivendo um dos dias mais importantes da vida.",
-        "Cada história merece um olhar único.",
-      ].join("\n\n"),
-      closing: "E é por isso que existimos. Para unir o nosso olhar à sua história.",
+    vision: {
+      title: "Visão",
+      text: "Ser reconhecida pela criatividade, qualidade audiovisual e soluções personalizadas.",
     },
     values: {
-      eyebrow: "Nosso jeito de trabalhar",
-      title: "Quatro coisas que levamos para todo projeto.",
+      eyebrow: "Missão, visão e valores",
+      title: "Valores",
       items: [
-        { title: "Conexão", text: "Acreditamos que grandes projetos começam com boas relações." },
-        { title: "Criatividade", text: "Buscamos caminhos que valorizem a identidade de cada cliente." },
-        { title: "Estratégia", text: "Cada produção precisa ter um objetivo e uma intenção." },
-        {
-          title: "Parceria",
-          text: "Gostamos de construir junto, ouvindo, entendendo e participando de cada etapa.",
-        },
+        { title: "Criatividade", text: "" },
+        { title: "Autenticidade", text: "" },
+        { title: "Comprometimento", text: "" },
+        { title: "Transparência", text: "" },
+        { title: "Parceria", text: "" },
+        { title: "Evolução constante", text: "" },
       ],
     },
-    essence: {
-      title: "Sua história, nosso olhar.",
-      text: [
-        "Essa frase traduz a essência da NÓS Studio.",
-        "**Sua história**, porque cada pessoa, empresa e momento tem algo único para contar.",
-        "**Nosso olhar**, porque usamos nossa experiência, criatividade e sensibilidade para encontrar a melhor maneira de transformar essa história em comunicação.",
-        "Não queremos que todas as marcas pareçam iguais.",
-        "Queremos que cada uma seja reconhecida por aquilo que a torna especial.",
-      ].join("\n\n"),
-      signature: "NÓS Studio. Mais do que produzir conteúdo, queremos fazer parte da sua história.",
-    },
+    essence: { title: "", text: "", signature: "" },
   },
 
+  // Briefing v2, seção 03: os seis diferenciais (o documento traz só os títulos).
+  differentials: {
+    eyebrow: "Diferenciais",
+    title: "O que você encontra na NÓS.",
+    items: [
+      { title: "Estratégia antes da criação", text: "" },
+      { title: "Atendimento próximo", text: "" },
+      { title: "Comunicação integrada", text: "" },
+      { title: "Criatividade com intenção", text: "" },
+      { title: "Audiovisual alinhado à marca", text: "" },
+      { title: "Planejamento orientado aos objetivos", text: "" },
+    ],
+  },
+
+  // Briefing v2, seção 03: conexão, estratégia, planejamento, produção e entrega (só os nomes das etapas).
   howItWorks: {
-    eyebrow: "Como funciona",
+    eyebrow: "Processo de atendimento",
     title: "Do primeiro contato à entrega, a gente caminha junto.",
     steps: [
-      { title: "Primeiro contato", text: "Você conta sua ideia, necessidade e objetivo." },
-      {
-        title: "Entendemos seu projeto",
-        text: "Conversamos, fazemos perguntas e identificamos a melhor solução.",
-      },
-      {
-        title: "Proposta personalizada",
-        text: "Apresentamos os serviços, entregas, condições e investimento.",
-      },
-      { title: "Planejamento e produção", text: "Organizamos as etapas e executamos o trabalho." },
-      {
-        title: "Entrega e acompanhamento",
-        text: "Entregamos os materiais e acompanhamos os resultados quando o serviço contratado incluir essa etapa.",
-      },
+      { title: "Conexão", text: "" },
+      { title: "Estratégia", text: "" },
+      { title: "Planejamento", text: "" },
+      { title: "Produção", text: "" },
+      { title: "Entrega", text: "" },
     ],
     closing: "Você traz a história. NÓS encontramos o olhar.",
   },
@@ -519,31 +669,62 @@ export const defaultSiteContent: SiteContent = {
   servicesPage: {
     eyebrow: "Serviços",
     title: "Tudo o que a sua história precisa para ser bem contada.",
-    intro:
-      "Fotografia, vídeo, marketing e cobertura de eventos — juntos ou separados, sempre com um objetivo e uma intenção.",
+    intro: "Estratégia, criatividade e produção audiovisual em um mesmo lugar.",
+    detailLabel: "Ver o serviço",
     closingTitle: "Não sabe por onde começar?",
     closingText: "Conte sua ideia. Vamos encontrar juntos a melhor maneira de transformá-la em realidade.",
-    cta: { label: "Solicitar orçamento", href: "/contato" },
+    cta: { label: "Solicitar orçamento", href: "/contato#formulario" },
+    detail: {
+      deliverablesTitle: "Possíveis entregas",
+      benefitsTitle: "Benefícios",
+      mediaTitle: "Em imagens",
+      relatedTitle: "Trabalhos relacionados",
+      faqTitle: "Perguntas frequentes",
+      quoteTitle: "Vamos conversar sobre o seu projeto?",
+      quoteText: "Conte sua ideia. Vamos encontrar juntos a melhor maneira de transformá-la em realidade.",
+      othersTitle: "Outros serviços",
+      pageLinkLabel: "Ver a página completa",
+    },
   },
 
   packagesPage: {
-    eyebrow: "Pacotes e planos",
+    eyebrow: "Planos",
     title: "Um plano para cada momento da sua marca.",
-    intro:
-      "Planos mensais para quem quer comunicar com consistência e serviços avulsos para necessidades pontuais.",
+    intro: "Planos mensais para quem quer comunicar com consistência e serviços avulsos para necessidades pontuais.",
     recommendedLabel: "Recomendado",
+    priceOnRequestLabel: "Investimento personalizado para o seu negócio.",
     note: "Entregas, quantidades e investimento são definidos em proposta personalizada, de acordo com o momento de cada marca.",
+    comparison: {
+      enabled: true,
+      title: "Compare os planos",
+      intro: "",
+    },
     standaloneTitle: "Serviços avulsos",
     standaloneIntro: "Precisa de algo pontual? Também atendemos por diária e por projeto.",
     closingTitle: "Vamos montar o seu?",
     closingText: "Conte o que você precisa e receba uma proposta feita para o seu momento.",
-    cta: { label: "Solicitar orçamento", href: "/contato" },
+    cta: { label: "Solicitar proposta", href: "/contato#formulario" },
   },
 
   weddingsPage: {
-    eyebrow: "Casamentos",
-    title: "Vamos eternizar a sua história?",
+    eyebrow: "Eventos e Casamentos",
+    title: "Existem momentos que passam. E histórias que *permanecem.*",
     lead: "Histórias, experiências e momentos únicos registrados com sensibilidade e criatividade.",
+    ctaLabel: "Consultar disponibilidade da minha data",
+    heroMediaId: null,
+    events: {
+      eyebrow: "Eventos",
+      title: "Eventos corporativos e sociais",
+      text: "Foto, filme, storymaker e conteúdo em tempo real para eventos empresariais e sociais.",
+      items: [
+        { title: "Cobertura fotográfica", text: "" },
+        { title: "Filmagem profissional", text: "" },
+        { title: "Storymaker", text: "" },
+        { title: "Conteúdo em tempo real", text: "" },
+        { title: "Vídeo de melhores momentos", text: "" },
+      ],
+    },
+    weddingsEyebrow: "Casamentos",
     approach: {
       title: "Um dos dias mais importantes da vida merece um olhar único.",
       text: [
@@ -567,7 +748,7 @@ export const defaultSiteContent: SiteContent = {
     },
     proposal: {
       title: "Como funciona a proposta",
-      text: "Sem tabela pronta: a proposta é feita para o casamento de vocês.",
+      text: "Sem tabela pronta: a proposta é feita para a celebração de vocês.",
       steps: [
         { title: "Vocês contam", text: "Data, local, tamanho da celebração e o que sonham para o registro." },
         { title: "A gente conversa", text: "Entendemos o estilo de vocês e tiramos as dúvidas." },
@@ -577,17 +758,18 @@ export const defaultSiteContent: SiteContent = {
         },
       ],
     },
+    galleryTitle: "Histórias que já passaram pelo nosso olhar.",
     form: {
-      title: "Contem sobre o grande dia",
-      text: "Preencham o que já souberem. O restante a gente descobre junto.",
-      submitLabel: "Pedir proposta de casamento",
+      title: "Conte sobre a sua data.",
+      text: "Preencha o que já souber. O restante a gente descobre junto.",
+      submitLabel: "Consultar disponibilidade da minha data",
+      note: "O envio não reserva a data nem confirma a contratação: a gente confere a agenda e responde com a disponibilidade.",
     },
-    heroMediaId: null,
   },
 
   portfolioPage: {
     eyebrow: "Portfólio",
-    title: "Histórias que já passaram pelo nosso olhar.",
+    title: "Nosso olhar em prática.",
     intro: "Marcas, pessoas e momentos que confiaram sua história à NÓS.",
     emptyText: "Estamos preparando os primeiros projetos para mostrar aqui.",
   },
@@ -607,8 +789,28 @@ export const defaultSiteContent: SiteContent = {
 
   privacyPage: {
     title: "Política de Privacidade",
-    version: "2026-11",
+    version: "2026-11.2",
     body: PRIVACY_BODY,
+  },
+
+  termsPage: {
+    title: "Termos de Uso",
+    version: "2026-11",
+    body: TERMS_BODY,
+  },
+
+  cookiesPage: {
+    title: "Política de Cookies",
+    version: "2026-11",
+    body: COOKIES_BODY,
+  },
+
+  // Briefing v2, seção 31.
+  notFoundPage: {
+    eyebrow: "Erro 404",
+    title: "Esse take saiu do roteiro.",
+    text: "Mas toda boa história tem uma segunda tomada.",
+    cta: { label: "Voltar para o início", href: "/" },
   },
 
   seo: {
@@ -617,33 +819,32 @@ export const defaultSiteContent: SiteContent = {
     googleVerification: "",
     pages: {
       home: {
-        title: "NÓS Studio — Marketing, conteúdo e audiovisual",
+        title: "NÓS Studio — Marketing, comunicação e audiovisual",
         description:
           "Sua história, nosso olhar. Unimos criatividade, estratégia e audiovisual para transformar ideias em conexões reais.",
       },
       sobre: {
-        title: "Quem Somos",
+        title: "Sobre a NÓS",
         description:
-          "Antes de existir a NÓS, já existia um nós. Conheça Pedro Henrique e Laura Nepomuceno, o casal por trás da NÓS Studio.",
+          "Antes de existir a NÓS, já existia um nós. Conheça Pedro Henrique e Laura Nepomuceno, fundadores da NÓS Studio.",
       },
       servicos: {
         title: "Serviços",
         description:
-          "Fotografia, vídeo e produção audiovisual, marketing e redes sociais, eventos e casamentos.",
+          "Marketing e estratégia, redes sociais, audiovisual, fotografia, design gráfico, identidade visual, tráfego pago, eventos e casamentos.",
       },
       pacotes: {
-        title: "Pacotes e planos",
-        description:
-          "Planos mensais Começo, Presença e Destaque, além de serviços avulsos por diária e por projeto.",
+        title: "Planos",
+        description: "Plano Essencial, Plano Integrado e Plano Estratégico, além de serviços avulsos por diária e por projeto.",
       },
       casamentos: {
-        title: "Casamentos",
+        title: "Eventos e Casamentos",
         description:
-          "Fotografia e filme de casamento, making of, pré-wedding e galeria digital, com proposta personalizada.",
+          "Fotografia e filme para eventos corporativos, sociais e casamentos. Consulte a disponibilidade da sua data.",
       },
       portfolio: {
         title: "Portfólio",
-        description: "Projetos de marketing, fotografia, vídeo, eventos e casamentos da NÓS Studio.",
+        description: "Nosso olhar em prática: projetos de marketing, audiovisual, fotografia, design, eventos e casamentos.",
       },
       contato: {
         title: "Contato e orçamento",
@@ -679,7 +880,7 @@ export function resolveSiteContent<K extends SiteContentKey>(key: K, stored: unk
   return parsed.success ? (parsed.data as SiteContent[K]) : fallback;
 }
 
-/** Substitui `{{marca}}` e `{{email}}` no texto da política de privacidade. */
+/** Substitui `{{marca}}` e `{{email}}` no texto das páginas legais (privacidade, termos e cookies). */
 export function fillPrivacyPlaceholders(body: string, general: SiteContent["general"]): string {
   const email = general.email || "pelos canais de contato deste site";
   return body.replaceAll("{{marca}}", general.brandName).replaceAll("{{email}}", email);

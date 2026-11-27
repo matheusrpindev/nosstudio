@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Fragment, useActionState, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { ActionState } from "@/lib/action-state";
 import { cn } from "@/lib/cn";
 import { keepChoicesOnReset } from "@/lib/form-reset";
 import { SERVICE_INTEREST_LABELS, SERVICE_INTERESTS, type ServiceInterest } from "@/lib/domain";
 import {
-  EVENT_COVERAGE_OPTIONS,
   EVENT_GUEST_OPTIONS,
-  EVENT_STORYMAKER_OPTIONS,
+  EVENT_SERVICE_OPTIONS,
+  EVENT_TYPE_OPTIONS,
   LEAD_HONEYPOT_FIELD,
   LEAD_STARTED_AT_FIELD,
   knownPackageName,
+  leadExtraFields,
   type LeadSuccess,
 } from "@/lib/site/lead-form-fields";
 import { submitLeadAction } from "@/server/leads/actions";
@@ -25,8 +26,11 @@ import { Icon } from "./marks";
  *
  * Variantes:
  * - "compact" (home): nome, WhatsApp, serviço de interesse, mensagem, consentimento.
- * - "full" (contato): + e-mail (opcional), data do evento/projeto, cidade.
- * - "event" (casamentos/eventos): + tipo de evento, local, convidados, início/fim, cobertura, storymaker.
+ * - "full" (contato e páginas de serviço) — o formulário "inteligente" do briefing v2, seção 10: nome, empresa,
+ *   WhatsApp, e-mail, serviço, objetivo e observações, mais os campos do TIPO do serviço escolhido
+ *   (`leadExtraFields`): marketing → segmento e perfil; audiovisual → tipo e previsão; evento → data e local.
+ * - "event" (Eventos e Casamentos), seção 09: nome, WhatsApp, e-mail, tipo, data, horário, cidade, local,
+ *   convidados, serviços e observações. O tipo de evento decide o interesse gravado no lead.
  *
  * A página que o hospeda continua estática: `?servico=…&pacote=…` são lidos no navegador (ver
  * `packageContactHref` / `serviceContactHref` em ./text).
@@ -47,11 +51,11 @@ export type LeadFormProps = {
   defaultInterest?: ServiceInterest;
   /** Variante "event": tipo de evento que já vem preenchido (ex.: "Casamento"). */
   defaultEventType?: string;
-  /** Pacote/serviço de origem, quando o formulário está ao lado de um cartão específico. */
+  /** Plano/serviço de origem, quando o formulário está na página de um serviço específico. */
   packageName?: string;
   /**
-   * Nomes dos pacotes publicados (`getPackages()`): `?pacote=…` da URL só é aceito se for um deles. Sem esta
-   * lista o parâmetro é ignorado. (O servidor confere de novo em `submitLeadAction`.)
+   * Nomes dos planos e serviços publicados (`getLeadOriginNames()`): `?pacote=…` da URL só é aceito se for um
+   * deles. Sem esta lista o parâmetro é ignorado. (O servidor confere de novo em `submitLeadAction`.)
    */
   packageOptions?: readonly string[];
   privacyHref?: string;
@@ -65,7 +69,7 @@ type Values = Record<string, string>;
 type State = ActionState<LeadSuccess>;
 
 const INITIAL: State = { ok: false };
-const REQUIRED = new Set(["name", "whatsapp", "serviceInterest", "consent"]);
+const REQUIRED = new Set(["name", "whatsapp", "serviceInterest", "eventType", "consent"]);
 
 /** Máscara simples de telefone brasileiro enquanto digita: (11) 91234-5678. */
 function maskPhone(input: string): string {
@@ -120,6 +124,7 @@ function LeadFormInner({
   // Campos controlados: o que a pessoa digitou sobrevive a um erro de validação (com e sem JS).
   const [values, setValues] = useState<Values>(() => state.values ?? {});
   const [consent, setConsent] = useState(() => ["on", "true"].includes(state.values?.consent ?? ""));
+  const [services, setServices] = useState<string[]>([]);
   const [edited, setEdited] = useState<{ nonce?: number; names: string[] }>({ names: [] });
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -128,7 +133,9 @@ function LeadFormInner({
   const startedAt = useRef("");
   const startedAtInput = useRef<HTMLInputElement>(null);
 
-  const interest = values.serviceInterest ?? queryInterest ?? defaultInterest ?? (variant === "event" ? "eventos" : "");
+  const interest = values.serviceInterest ?? queryInterest ?? defaultInterest ?? "";
+  /** Campos adicionais do tipo do serviço escolhido (só na variante "full"). */
+  const extra = variant === "full" ? leadExtraFields(interest) : [];
   const pkg = packageName ?? queryPackage;
   const value = (name: string, fallback = "") => values[name] ?? fallback;
   const errorOf = (name: string) =>
@@ -263,18 +270,31 @@ function LeadFormInner({
   );
   const dateField = (label: ReactNode) => textInput("eventDate", label, { type: "date" });
   const cityField = textInput("city", <>Cidade{optional}</>, { autoComplete: "address-level2", maxLength: 120 });
+  const locationField = textInput("eventLocation", <>Local{optional}</>, { placeholder: "Espaço, igreja, salão, empresa…", maxLength: 160 });
   const messageField = field(
     "message",
-    variant === "compact" ? "Mensagem" : "Conte um pouco da ideia",
+    variant === "compact" ? "Mensagem" : <>Observações{optional}</>,
     <textarea
       rows={variant === "compact" ? 3 : 5}
       maxLength={2000}
-      placeholder={variant === "compact" ? "Conte um pouco da ideia" : undefined}
+      placeholder={variant === "event" ? "O que não pode faltar no registro?" : "Conte um pouco da ideia"}
       {...control("message")}
       value={value("message")}
       onChange={(e) => change("message", e.target.value)}
     />,
   );
+  /** Campos que só aparecem para o tipo do serviço escolhido. O servidor grava só os do tipo (buildLeadRecord). */
+  const EXTRA: Record<string, ReactNode> = {
+    segment: textInput("segment", <>Segmento do negócio{optional}</>, { placeholder: "Alimentação, moda, saúde…", maxLength: 120 }),
+    profile: textInput("profile", <>Perfil da marca{optional}</>, { placeholder: "@instagram ou site", maxLength: 160, autoCapitalize: "none" }),
+    productionType: textInput("productionType", <>Tipo de produção{optional}</>, { placeholder: "Institucional, Reels, ensaio, produto…", maxLength: 160 }),
+    timeframe: textInput("timeframe", <>Previsão{optional}</>, { placeholder: "Quando você pretende gravar?", maxLength: 120 }),
+    eventDate: dateField(<>Data do evento{optional}</>),
+    eventLocation: locationField,
+    city: cityField,
+  };
+  const extraRows: string[][] = [];
+  for (let i = 0; i < extra.length; i += 2) extraRows.push(extra.slice(i, i + 2));
 
   const consentError = errorOf("consent");
   return (
@@ -318,12 +338,22 @@ function LeadFormInner({
       {variant === "full" ? (
         <>
           <div className="s-form__row">
+            {textInput("company", <>Empresa{optional}</>, { autoComplete: "organization", maxLength: 120 })}
             {emailField}
-            {interestField}
           </div>
           <div className="s-form__row">
-            {dateField(<>Data do evento ou projeto{optional}</>)}
-            {cityField}
+            {interestField}
+            {textInput("objective", <>Objetivo{optional}</>, { placeholder: "O que você quer alcançar?", maxLength: 300 })}
+          </div>
+          {/* O grupo existe sempre (região viva): quem usa leitor de tela é avisado quando os campos mudam. */}
+          <div className="s-form__group" role="group" aria-label="Detalhes do pedido" aria-live="polite" hidden={extraRows.length === 0}>
+            {extraRows.map((row) => (
+              <div className="s-form__row" key={row.join("-")}>
+                {row.map((name) => (
+                  <Fragment key={name}>{EXTRA[name]}</Fragment>
+                ))}
+              </div>
+            ))}
           </div>
           {messageField}
         </>
@@ -333,30 +363,35 @@ function LeadFormInner({
         <>
           <div className="s-form__row">
             {emailField}
-            {interestField}
+            {select("eventType", "Tipo de evento", EVENT_TYPE_OPTIONS, value("eventType", defaultEventType))}
           </div>
           <div className="s-form__group">
             <div className="s-form__row">
-              {textInput("eventType", "Tipo de evento", {
-                value: value("eventType", defaultEventType),
-                placeholder: "Casamento, aniversário, evento da empresa…",
-                maxLength: 120,
-              })}
               {dateField(<>Data{optional}</>)}
+              {textInput("startTime", <>Horário{optional}</>, { type: "time" })}
             </div>
             <div className="s-form__row">
-              {textInput("eventLocation", <>Local{optional}</>, { placeholder: "Espaço, igreja, salão…", maxLength: 160 })}
               {cityField}
+              {locationField}
             </div>
-            <div className="s-form__row">
-              {textInput("startTime", <>Início{optional}</>, { type: "time" })}
-              {textInput("endTime", <>Fim{optional}</>, { type: "time" })}
-            </div>
-            <div className="s-form__row">
-              {select("guests", <>Convidados{optional}</>, EVENT_GUEST_OPTIONS, value("guests"))}
-              {select("coverage", <>Cobertura{optional}</>, EVENT_COVERAGE_OPTIONS, value("coverage"))}
-            </div>
-            {select("storymaker", <>Precisa de storymaker?{optional}</>, EVENT_STORYMAKER_OPTIONS, value("storymaker"))}
+            {select("guests", <>Convidados{optional}</>, EVENT_GUEST_OPTIONS, value("guests"))}
+            <fieldset className="s-choices">
+              <legend>Serviços{optional}</legend>
+              <div className="s-choices__list">
+                {EVENT_SERVICE_OPTIONS.map((option) => (
+                  <label key={option} className="s-choice">
+                    <input
+                      type="checkbox"
+                      name="services"
+                      value={option}
+                      checked={services.includes(option)}
+                      onChange={(e) => setServices((current) => (e.target.checked ? [...current, option] : current.filter((item) => item !== option)))}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </div>
           {messageField}
         </>

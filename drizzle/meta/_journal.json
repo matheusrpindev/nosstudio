@@ -29,6 +29,13 @@
       "when": 1795734867544,
       "tag": "0003_notificacoes_e_lembretes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1795751725026,
+      "tag": "0004_site_v2_servicos_e_planos",
+      "breakpoints": true
     }
   ]
 }

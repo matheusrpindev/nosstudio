@@ -23,9 +23,10 @@ const LABELS = {
 } as const;
 
 /**
- * Quem Somos: a história do casal é o maior diferencial da NÓS. Hero tipográfico (o par NÓS/nós é o visual),
- * os dois fundadores lado a lado com a bio completa, o porquê, o manifesto em bloco de cor, os valores e a
- * essência com a chamada final. Sem fotos, os espaços mostram o estado vazio da marca. Estática.
+ * Sobre a NÓS (briefing v2, seção 05): abertura tipográfica (o par NÓS/nós é o visual), os dois fundadores lado a
+ * lado com a bio completa, e missão, visão e valores num bloco de cor. Os blocos do texto anterior (propósito,
+ * manifesto e essência) continuam existindo e editáveis, mas só aparecem se tiverem texto. Sem fotos, os espaços
+ * mostram o estado vazio da marca. Estática.
  */
 export default async function AboutPage() {
   const [content, images] = await Promise.all([getSiteContent(), getSiteImages()]);
@@ -35,6 +36,8 @@ export default async function AboutPage() {
   const founders = about.founders.filter((founder) => founder.name);
   const [introLead, ...introRest] = paragraphs(about.intro);
   const values = about.values.items.filter((item) => item.title);
+  const purpose = [about.mission, about.vision].filter((item) => item.text.trim());
+  const hasPurpose = purpose.length > 0 || values.length > 0;
   const manifesto = about.manifesto.text.trim();
   const hasManifesto = Boolean(manifesto || about.manifesto.closing);
   const hasEssence = Boolean(about.essence.title || about.essence.text || about.essence.signature);
@@ -113,17 +116,38 @@ export default async function AboutPage() {
         </Section>
       ) : null}
 
-      {/* 5 · Nosso jeito de trabalhar: os valores */}
-      {values.length > 0 ? (
+      {/* 5 · Missão, visão e valores — bloco roxo: duas afirmações grandes e os valores em linhas */}
+      {hasPurpose ? (
         <Section
           id="sobre-valores"
+          tone="roxo"
           number={next()}
           label={about.values.eyebrow}
           labelledBy="sobre-valores-titulo"
-          spaceTop={hasManifesto ? "lg" : "none"}
+          spaceTop={hasManifesto ? "lg" : "md"}
         >
-          <SectionHeader id="sobre-valores-titulo" title={about.values.title} />
-          <AboutValues items={values} />
+          {purpose.length > 0 ? (
+            <dl className="about__purpose" data-count={purpose.length}>
+              {purpose.map((item, i) => (
+                <div key={i} className="about__purpose-item" {...revealProps(i)}>
+                  <dt className="s-meta">{item.title}</dt>
+                  <dd>{item.text}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+          {values.length > 0 ? (
+            <div className="about__values-wrap">
+              <h2 id="sobre-valores-titulo" className="s-meta about__values-title">
+                {about.values.title || about.values.eyebrow}
+              </h2>
+              <AboutValues items={values} />
+            </div>
+          ) : (
+            <h2 id="sobre-valores-titulo" className="sr-only">
+              {about.values.eyebrow}
+            </h2>
+          )}
         </Section>
       ) : null}
 
@@ -163,7 +187,14 @@ export default async function AboutPage() {
           </div>
         </Section>
       ) : (
-        <CtaBand id="sobre-fechamento" title={home.closing.question} text={home.closing.text} cta={home.closing.cta} />
+        <CtaBand
+          id="sobre-fechamento"
+          tone={hasPurpose ? "grafite" : "roxo"}
+          title={home.closing.question}
+          text={home.closing.text}
+          cta={home.closing.cta}
+          secondaryCta={instagram ? { label: general.instagram, href: instagram, icon: "instagram" } : null}
+        />
       )}
     </>
   );

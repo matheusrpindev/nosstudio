@@ -1,7 +1,7 @@
 import "server-only";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { services, type Service } from "@/db/schema";
+import { portfolioProjects, services, type Service, type ServiceBenefit, type ServiceFaq } from "@/db/schema";
 import type { ServiceInterest } from "@/lib/domain";
 import { droppedMediaIds, releaseMedia } from "@/server/media";
 import { moveInOrder, nextSortOrder, slugTaken, uniqueSlug, type MoveDirection } from "./order";
@@ -19,8 +19,22 @@ export type ServiceInput = {
   gallery: number[];
   videoUrl: string | null;
   pagePath: string | null;
+  benefits: ServiceBenefit[];
+  faq: ServiceFaq[];
+  /** Projetos do portfólio relacionados (ids existentes; os inexistentes são descartados ao salvar). */
+  relatedProjectIds: number[];
   visible: boolean;
 };
+
+export type RelatedProjectOption = { id: number; title: string; published: boolean };
+
+/** Projetos do portfólio que podem ser marcados como "trabalhos relacionados" de um serviço. */
+export async function listRelatedProjectOptions(): Promise<RelatedProjectOption[]> {
+  return db
+    .select({ id: portfolioProjects.id, title: portfolioProjects.title, published: portfolioProjects.published })
+    .from(portfolioProjects)
+    .orderBy(asc(portfolioProjects.sortOrder), asc(portfolioProjects.id));
+}
 
 export type SaveResult<T> = { ok: true; row: T } | { ok: false; error: "slug_taken" | "not_found" };
 
@@ -40,7 +54,9 @@ export async function saveService(id: number | null, input: ServiceInput): Promi
   } else {
     slug = await uniqueSlug(services, input.title, id ?? undefined);
   }
-  const values = { ...input, slug };
+  // só ids de projetos que existem (o formulário pode ter ficado aberto enquanto um projeto era excluído)
+  const known = new Set((await listRelatedProjectOptions()).map((project) => project.id));
+  const values = { ...input, slug, relatedProjectIds: [...new Set(input.relatedProjectIds)].filter((projectId) => known.has(projectId)) };
   if (id === null) {
     const [row] = await db.insert(services).values({ ...values, sortOrder: await nextSortOrder(services) }).returning();
     return { ok: true, row };

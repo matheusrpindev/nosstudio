@@ -179,7 +179,7 @@ export default async function KitPage({ searchParams }: { searchParams: PageSear
           <Demo label="Alert / Callout">
             <div className="grid gap-3 lg:grid-cols-2">
               <Alert tone="info" title="Informação">
-                Pacotes sem valor cadastrado aparecem como “Sob consulta” no site.
+                Planos sem valor publicado aparecem com o texto “Investimento personalizado para o seu negócio.” no site.
               </Alert>
               <Alert tone="sucesso" title="Tudo certo">
                 A proposta foi enviada.

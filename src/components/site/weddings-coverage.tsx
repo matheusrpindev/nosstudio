@@ -21,7 +21,7 @@ export function WeddingsCoverage({
   const Title = `h${headingLevel}` as "h3" | "h4";
   return (
     <div className={cn("weddings-coverage", className)}>
-      <ol className="weddings-coverage__list">
+      <ol className="weddings-coverage__list" data-plain={items.every((item) => !item.text) || undefined}>
         {items.map((item, i) => (
           <li key={i} className="weddings-coverage__item" {...revealProps(i % 3)}>
             <span className="weddings-coverage__n" aria-hidden="true">

@@ -36,12 +36,18 @@ const n = (rows: { n: number }[]) => rows[0]?.n ?? 0;
 /** Contadores de cada área do editor + pendências de lançamento. Leitura direta do banco (sem cache). */
 export async function getSiteOverview(): Promise<SiteOverview> {
   const now = nowLocal();
-  const [general, visibility, about, privacy, infos] = await Promise.all([
+  const [general, visibility, about, privacy, terms, cookies, infos] = await Promise.all([
     getSiteContentForEdit("general"),
     getSiteContentForEdit("visibility"),
     getSiteContentForEdit("about"),
     getSiteContentForEdit("privacyPage"),
+    getSiteContentForEdit("termsPage"),
+    getSiteContentForEdit("cookiesPage"),
     getSectionInfos(SECTION_ORDER),
+  ]);
+  const [serviceRows, planRows] = await Promise.all([
+    db.select({ description: services.description }).from(services).where(eq(services.visible, true)),
+    db.select({ includes: packages.includes }).from(packages).where(and(eq(packages.visible, true), eq(packages.kind, "plano"))),
   ]);
 
   const [annActive, annTotal, svcVisible, svcTotal, pkgVisible, pkgTotal, pkgPrice, faqPub, faqTotal, portPub, portTotal, testPub, testTotal] = await Promise.all([
@@ -76,7 +82,9 @@ export async function getSiteOverview(): Promise<SiteOverview> {
     testimonialsTotal: n(testTotal),
   };
 
-  const privacyIsBaseText = privacy.body === defaultSiteContent.privacyPage.body && privacy.version === defaultSiteContent.privacyPage.version;
+  const isBase = (page: { body: string; version: string }, key: "privacyPage" | "termsPage" | "cookiesPage") =>
+    page.body === defaultSiteContent[key].body && page.version === defaultSiteContent[key].version;
+  const privacyIsBaseText = isBase(privacy, "privacyPage");
 
   return {
     visibility,
@@ -90,6 +98,13 @@ export async function getSiteOverview(): Promise<SiteOverview> {
       coupleMediaId: about.coupleMediaId,
       publishedFaqs: counts.faqsPublished,
       privacyIsBaseText,
+      termsIsBaseText: isBase(terms, "termsPage"),
+      cookiesIsBaseText: isBase(cookies, "cookiesPage"),
+      biosUnreviewed: !infos.about.customized,
+      visiblePlans: planRows.length,
+      plansWithIncludes: planRows.filter((row) => row.includes.length > 0).length,
+      visibleServices: serviceRows.length,
+      servicesWithoutDescription: serviceRows.filter((row) => !row.description.trim()).length,
       packagesWithPrice: counts.packagesWithPrice,
       visiblePackages: counts.packagesVisible,
     }),

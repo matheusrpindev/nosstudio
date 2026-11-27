@@ -5,8 +5,10 @@
  */
 import { z } from "zod";
 import { isISODate, isTime } from "@/lib/dates";
-import { SERVICE_INTERESTS } from "@/lib/domain";
+import type { LeadDetails } from "@/db/schema";
+import { leadFieldGroup, SERVICE_INTERESTS } from "@/lib/domain";
 import { isValidEmail, isValidPhone } from "@/lib/format";
+import { EVENT_SERVICE_OPTIONS, eventTypeInterest } from "./lead-form-fields";
 
 const optionalText = (max: number) =>
   z
@@ -46,10 +48,73 @@ export const leadFormSchema = z.object({
   guests: optionalText(60),
   startTime: optionalText(5).refine((value) => value === "" || isTime(value), "Horário inválido."),
   endTime: optionalText(5).refine((value) => value === "" || isTime(value), "Horário inválido."),
-  coverage: optionalText(60),
-  storymaker: optionalText(60),
-  /** Pacote ou serviço avulso de origem, quando o visitante veio de um card. */
+  /** Serviços marcados no formulário de evento: só as opções conhecidas entram. */
+  services: z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .transform((value) => {
+      const picked = (Array.isArray(value) ? value : value ? [value] : []).map((item) => item.trim());
+      return EVENT_SERVICE_OPTIONS.filter((option) => picked.includes(option));
+    }),
+  // captação comercial (briefing v2, seção 10)
+  company: optionalText(120),
+  objective: optionalText(300),
+  segment: optionalText(120),
+  profile: optionalText(160),
+  productionType: optionalText(160),
+  timeframe: optionalText(120),
+  /** Plano, serviço avulso ou serviço de origem, quando o visitante veio de um botão do site. */
   packageName: optionalText(120),
 });
 
 export type LeadFormData = z.infer<typeof leadFormSchema>;
+
+/**
+ * O que um envio validado grava no lead. Regras (briefing v2, seções 09 e 10):
+ * - formulário de evento (tem "tipo de evento"): o tipo decide o interesse — Casamento → casamentos; os demais →
+ *   eventos — e os campos de evento entram todos;
+ * - nos outros formulários, só entram os campos adicionais DO TIPO do serviço escolhido (marketing: segmento e
+ *   perfil; audiovisual: tipo e previsão; evento: data, local e cidade). Um campo de outro tipo que venha no
+ *   envio (trocou o serviço depois de preencher, ou envio forjado) é descartado;
+ * - empresa, objetivo e plano/serviço de origem valem para qualquer tipo.
+ */
+export function buildLeadRecord(data: LeadFormData): {
+  serviceInterest: LeadFormData["serviceInterest"];
+  eventDate: string | null;
+  city: string | null;
+  details: LeadDetails;
+} {
+  const isEventForm = data.eventType !== "";
+  const serviceInterest = isEventForm ? eventTypeInterest(data.eventType) : data.serviceInterest;
+  const group = leadFieldGroup(serviceInterest);
+  const details: LeadDetails = {};
+  const put = (key: Exclude<keyof LeadDetails, "extras">, value: string) => {
+    if (value) details[key] = value;
+  };
+
+  put("company", data.company);
+  put("objective", data.objective);
+  put("packageName", data.packageName);
+  if (group === "marketing") {
+    put("segment", data.segment);
+    put("profile", data.profile);
+  }
+  if (group === "audiovisual") {
+    put("productionType", data.productionType);
+    put("timeframe", data.timeframe);
+  }
+  if (group === "evento") {
+    put("eventType", data.eventType);
+    put("eventLocation", data.eventLocation);
+    put("guests", data.guests);
+    put("startTime", data.startTime);
+    put("endTime", data.endTime);
+    put("services", data.services.join(", "));
+  }
+  return {
+    serviceInterest,
+    eventDate: group === "evento" ? data.eventDate : null,
+    city: group === "evento" && data.city ? data.city : null,
+    details,
+  };
+}

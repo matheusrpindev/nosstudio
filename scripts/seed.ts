@@ -1,7 +1,8 @@
 /**
  * Carga inicial do banco (idempotente: pode rodar várias vezes; só preenche tabelas vazias).
  *
- *   npm run db:seed              conteúdo inicial do site (serviços, pacotes, FAQ, avisos, modelos de proposta)
+ *   npm run db:seed              conteúdo inicial do site (serviços, planos, FAQ, avisos, modelos de proposta) e, em
+ *                                bancos criados com o seed anterior, a atualização para o briefing v2
  *   npm run db:seed -- --dev     + contas de desenvolvimento: os dois sócios (admin) e uma conta de cada perfil
  *                                novo — gestor, funcionário, freelancer, cliente (NUNCA em produção)
  *   npm run db:seed -- --demo    + dados de exemplo no painel, marcados como [Exemplo] (para testar os fluxos)
@@ -43,6 +44,8 @@ import { addDays, startOfWeek, todayISO } from "@/lib/dates";
 import type { EventInput } from "@/server/agenda/input";
 import { createEvent } from "@/server/agenda/mutations";
 import { ensureAgendaDefaults, ensurePersonalCalendars } from "@/server/agenda/settings";
+import { FAQ_PLANS_V2, PLANS_V2, SERVICES_V2, STANDALONE_ADDED_V2, STANDALONE_V1 } from "@/server/site/seed-data";
+import { upgradeSiteContentToV2 } from "@/server/site/upgrade-v2";
 
 const args = new Set(process.argv.slice(2));
 const isProd = process.env.NODE_ENV === "production";
@@ -55,130 +58,45 @@ async function isEmpty(table: SQLiteTable) {
 // ---------------------------------------------------------------- serviços
 async function seedServices() {
   if (!(await isEmpty(services))) return false;
-  await db.insert(services).values([
-    {
-      slug: "fotografia",
-      title: "Fotografia",
-      summary: "Ensaios, fotos para marcas e produtos, fotografia de eventos e cobertura social.",
-      items: [
-        "Ensaios individuais e profissionais",
-        "Fotografia corporativa",
-        "Fotografia de produtos",
-        "Cobertura fotográfica de eventos",
-        "Casamentos e pré-wedding",
-      ],
-      ctaLabel: "Quero fotos",
-      interest: "fotografia",
-      sortOrder: 1,
-    },
-    {
-      slug: "video",
-      title: "Vídeo e produção audiovisual",
-      summary: "Roteiro, captação, reels, vídeos institucionais, edição e pós-produção.",
-      items: [
-        "Vídeos institucionais",
-        "Reels e vídeos para redes sociais",
-        "Produção de campanhas",
-        "Vídeos promocionais",
-        "Captação e edição audiovisual",
-        "Vídeos para profissionais e influenciadores",
-      ],
-      ctaLabel: "Quero vídeo",
-      interest: "video",
-      sortOrder: 2,
-    },
-    {
-      slug: "marketing",
-      title: "Marketing e redes sociais",
-      summary: "Planejamento, calendário, gestão de conteúdo e acompanhamento de resultados.",
-      items: [
-        "Gestão de redes sociais",
-        "Planejamento estratégico",
-        "Calendário editorial",
-        "Criação de conteúdos",
-        "Roteiros e legendas",
-        "Posicionamento e comunicação digital",
-        "Acompanhamento de resultados",
-      ],
-      ctaLabel: "Quero presença digital",
-      interest: "marketing",
-      sortOrder: 3,
-    },
-    {
-      slug: "eventos",
-      title: "Eventos",
-      summary: "Foto, filme, storymaker e conteúdo em tempo real para eventos empresariais e sociais.",
-      items: [
-        "Cobertura fotográfica",
-        "Filmagem profissional",
-        "Storymaker",
-        "Conteúdo em tempo real",
-        "Vídeo de melhores momentos",
-        "Cobertura para eventos empresariais e sociais",
-      ],
-      ctaLabel: "Quero cobrir meu evento",
-      interest: "eventos",
-      sortOrder: 4,
-    },
-    {
-      slug: "casamentos",
-      title: "Casamentos",
-      summary: "Pré-wedding, making of, fotografia e filme, com proposta específica para cada casal.",
-      items: [
-        "Fotografia do casamento",
-        "Filme cinematográfico",
-        "Making of dos noivos",
-        "Ensaio pré-wedding",
-        "Teaser vertical",
-        "Filme de melhores momentos",
-        "Galeria digital",
-      ],
-      ctaLabel: "Pedir proposta de casamento",
-      interest: "casamentos",
-      pagePath: "/casamentos",
-      sortOrder: 5,
-    },
-  ]);
+  // Briefing v2, seção 06: as nove áreas. Resumo, descrição, benefícios e perguntas nascem vazios (não inventamos).
+  await db.insert(services).values(SERVICES_V2.map((service, index) => ({ ...service, pagePath: service.pagePath ?? null, sortOrder: index + 1 })));
   return true;
 }
 
-// ------------------------------------------------------------------ pacotes
+// ------------------------------------------------------------------- planos
 async function seedPackages() {
   if (!(await isEmpty(packages))) return false;
-  // Quantidades, limites e preços ainda serão fechados pelos sócios: tudo "Sob consulta", sem promessas.
-  await db.insert(packages).values([
-    {
-      kind: "plano",
-      name: "Começo",
-      tagline: "Para marcas que precisam começar a se comunicar com consistência.",
-      description: "Foco em organizar a presença digital, criar conteúdo e estabelecer uma comunicação profissional.",
-      sortOrder: 1,
-    },
-    {
-      kind: "plano",
-      name: "Presença",
-      tagline: "Para marcas que querem estar presentes de verdade.",
-      description:
-        "Foco em produção recorrente de conteúdo, planejamento de comunicação e fortalecimento do relacionamento com o público.",
-      recommended: true,
-      sortOrder: 2,
-    },
-    {
-      kind: "plano",
-      name: "Destaque",
-      tagline: "Para marcas que querem ampliar sua presença e desenvolver uma comunicação mais completa.",
-      description:
-        "Foco em maior volume de produção, acompanhamento estratégico e integração entre marketing e audiovisual.",
-      sortOrder: 3,
-    },
-    { kind: "avulso", name: "Diária de fotógrafo", sortOrder: 10 },
-    { kind: "avulso", name: "Diária de filmmaker", sortOrder: 11 },
-    { kind: "avulso", name: "Cobertura de eventos", sortOrder: 12 },
-    { kind: "avulso", name: "Storymaker", sortOrder: 13 },
-    { kind: "avulso", name: "Produção e edição de vídeos", sortOrder: 14 },
-    { kind: "avulso", name: "Projetos personalizados", sortOrder: 15 },
-  ]);
+  // Briefing v2, seção 07. Quantidades, limites e preços ainda serão fechados pelos sócios: sem valores publicados.
+  const created = await db
+    .insert(packages)
+    .values(
+      PLANS_V2.map((plan, index) => ({
+        kind: "plano" as const,
+        name: plan.name,
+        tagline: plan.tagline,
+        description: plan.description,
+        includes: plan.includes,
+        recommended: Boolean(plan.recommended),
+        sortOrder: index + 1,
+      })),
+    )
+    .returning({ id: packages.id, name: packages.name });
+  for (const plan of PLANS_V2) {
+    const id = created.find((row) => row.name === plan.name)?.id;
+    const baseId = created.find((row) => row.name === plan.base)?.id;
+    if (id && baseId) await db.update(packages).set({ basePackageId: baseId }).where(eq(packages.id, id));
+  }
+  await db.insert(packages).values([...STANDALONE_V1, ...STANDALONE_ADDED_V2].map((name, index) => ({ kind: "avulso" as const, name, sortOrder: 10 + index })));
   return true;
+}
+
+/**
+ * Bancos criados com o seed anterior: leva serviços, planos, FAQ e aviso para o briefing v2 SEM sobrescrever o que
+ * foi editado no painel (ver src/server/site/upgrade-v2.ts). Em banco novo não há o que atualizar.
+ */
+async function upgradeSiteV2() {
+  const report = await upgradeSiteContentToV2();
+  return Object.values(report).some((count) => count > 0);
 }
 
 // ---------------------------------------------------------------------- FAQ
@@ -205,12 +123,7 @@ async function seedFaqs() {
         "Sim. Além dos planos mensais, trabalhamos com serviços avulsos, como diária de fotógrafo, diária de filmmaker, storymaker, cobertura de eventos e projetos personalizados.",
       showOnHome: true,
     },
-    {
-      question: "Vocês trabalham com pacotes mensais?",
-      answer:
-        "Sim. Temos os planos Começo, Presença e Destaque, pensados para diferentes momentos de cada marca. As entregas de cada plano são definidas em proposta.",
-      showOnHome: true,
-    },
+    { ...FAQ_PLANS_V2, showOnHome: true },
     {
       question: "Fazem cobertura de casamentos e eventos?",
       answer:
@@ -266,7 +179,7 @@ async function seedAnnouncements() {
     {
       message: "Vamos eternizar a sua história? Conheça nossas coberturas de casamento.",
       linkLabel: "Ver casamentos",
-      linkUrl: "/casamentos",
+      linkUrl: "/eventos-e-casamentos",
       bgColor: "lavanda",
       textColor: "roxo",
       enabled: false,
@@ -695,7 +608,7 @@ async function seedDemo() {
       serviceInterest: "marketing",
       message: "Quero organizar o Instagram da loja.",
       source: "site",
-      originPath: "/pacotes",
+      originPath: "/planos",
       consentAt: new Date(),
       consentVersion: "2026-11",
     },
@@ -821,9 +734,10 @@ async function seedDemo() {
 async function main() {
   const steps: [string, () => Promise<boolean>][] = [
     ["serviços", seedServices],
-    ["pacotes", seedPackages],
+    ["planos e serviços avulsos", seedPackages],
     ["perguntas frequentes (rascunhos)", seedFaqs],
     ["avisos", seedAnnouncements],
+    ["site: atualização para o briefing v2 (só o que ninguém editou)", upgradeSiteV2],
     ["modelos de proposta", seedProposalTemplates],
     ["biblioteca da marca", seedBrandAssets],
     ["agenda: categorias e agendas iniciais", seedAgendaDefaults],

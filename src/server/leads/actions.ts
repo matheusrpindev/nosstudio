@@ -11,11 +11,11 @@ import { rateLimitIp } from "@/lib/client-ip";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { getClientIp } from "@/lib/request";
-import { leadFormSchema } from "@/lib/site/lead-form";
+import { buildLeadRecord, leadFormSchema } from "@/lib/site/lead-form";
 import { knownPackageName, leadSpamSignals, type LeadSuccess } from "@/lib/site/lead-form-fields";
 import { parseForm } from "@/server/action";
 import { getSetting } from "@/server/settings";
-import { getPackages, getSiteContent } from "@/server/site/queries";
+import { getLeadOriginNames, getSiteContent } from "@/server/site/queries";
 import { createLead, leadNotificationEmail, leadWhatsAppUrl } from "./create-lead";
 
 const MINUTE = 60 * 1000;
@@ -56,9 +56,9 @@ export async function submitLeadAction(_prev: ActionState<LeadSuccess>, formData
     }
   }
 
-  // "Pacote de origem" só é gravado se for o nome de um pacote publicado (o campo vem da URL: ?pacote=…).
-  const packages = await getPackages();
-  const packageName = knownPackageName(parsed.data.packageName, [...packages.plans, ...packages.standalone].map((pkg) => pkg.name));
+  // "Plano/serviço de origem" só é gravado se for o nome de um plano, avulso ou serviço publicado (o campo vem da
+  // URL: ?pacote=…).
+  const packageName = knownPackageName(parsed.data.packageName, await getLeadOriginNames());
 
   const lead = await createLead({ ...parsed.data, packageName }, content.privacyPage.version, { tooFast: signals.tooFast });
 
@@ -79,5 +79,7 @@ export async function submitLeadAction(_prev: ActionState<LeadSuccess>, formData
     }
   });
 
-  return success(leadWhatsAppUrl(content.general.whatsapp, parsed.data));
+  // no formulário de evento o interesse vem do tipo de evento (ver `buildLeadRecord`)
+  const record = buildLeadRecord(parsed.data);
+  return success(leadWhatsAppUrl(content.general.whatsapp, { name: parsed.data.name, ...record }));
 }

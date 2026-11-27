@@ -66,13 +66,18 @@ export type SectionConfig = {
 /** Páginas do site, para o campo de link (sugestões) e para a prévia de SEO. */
 export const SITE_PAGES = [
   { href: "/", label: "Página inicial" },
-  { href: "/sobre", label: "Quem somos" },
+  { href: "/sobre", label: "Sobre a NÓS" },
   { href: "/servicos", label: "Serviços" },
-  { href: "/pacotes", label: "Pacotes e planos" },
-  { href: "/casamentos", label: "Casamentos" },
+  { href: "/planos", label: "Planos" },
+  { href: "/planos#planos-avulsos", label: "Serviços avulsos" },
+  { href: "/eventos-e-casamentos", label: "Eventos e Casamentos" },
+  { href: "/eventos-e-casamentos#eventos-formulario", label: "Formulário de eventos" },
   { href: "/portfolio", label: "Portfólio" },
   { href: "/contato", label: "Contato e orçamento" },
+  { href: "/contato#formulario", label: "Formulário de contato" },
   { href: "/privacidade", label: "Política de privacidade" },
+  { href: "/termos", label: "Termos de uso" },
+  { href: "/cookies", label: "Política de cookies" },
 ] as const;
 
 
@@ -158,7 +163,49 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
         id: "atendimento",
         title: "Região de atendimento",
         fields: [
-          text("serviceArea", "Cidade ou região atendida", "Ex.: “Atendemos toda a região metropolitana de Curitiba”. Vazio = não aparece no site."),
+          text("serviceArea", "Cidade ou região atendida", "É a “localização” do rodapé. Ex.: “Atendemos toda a região metropolitana de Curitiba”. Vazio = não aparece no site."),
+        ],
+      },
+      {
+        id: "direitos",
+        title: "Direitos autorais",
+        fields: [text("copyright", "Linha de direitos autorais", "Aparece no rodapé, depois de “© ano” e do nome da marca.")],
+      },
+    ],
+  },
+
+  // ----------------------------------------------------------- navegação
+  navigation: {
+    key: "navigation",
+    title: SITE_CONTENT_LABELS.navigation,
+    summary: "Nomes dos itens do menu, o link da Área do Cliente e o botão de destaque do topo.",
+    publicPath: "/",
+    notice: {
+      tone: "info",
+      title: "O menu se ajusta sozinho",
+      text: "Planos só aparece com planos publicados; Portfólio, só com projetos publicados; Eventos e Casamentos segue a chave em “Páginas visíveis”. Apagar o nome de um item também o tira do menu e do rodapé.",
+    },
+    groups: [
+      {
+        id: "itens",
+        title: "Itens do menu",
+        description: "Na ordem em que aparecem no topo e no rodapé do site.",
+        fields: [
+          text("home", "Início"),
+          text("about", "Sobre a NÓS"),
+          text("services", "Serviços"),
+          text("plans", "Planos"),
+          text("portfolio", "Portfólio"),
+          text("events", "Eventos e Casamentos"),
+          text("contact", "Contato"),
+        ],
+      },
+      {
+        id: "acesso",
+        title: "Área do Cliente e botão de destaque",
+        fields: [
+          text("clientArea", "Área do Cliente", "Link para a tela de login (clientes, equipe e painel entram por ali). Vazio = o link some do site."),
+          link("cta", "Botão de destaque do topo", "O botão lima do cabeçalho. Texto vazio = o botão some."),
         ],
       },
     ],
@@ -168,12 +215,12 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
   visibility: {
     key: "visibility",
     title: SITE_CONTENT_LABELS.visibility,
-    summary: "Liga e desliga páginas, itens do menu e blocos do site.",
+    summary: "Liga e desliga páginas inteiras e recursos do site.",
     publicPath: "/",
     notice: {
       tone: "info",
       title: "Blocos vazios não aparecem",
-      text: "Mesmo com a chave ligada, um bloco sem conteúdo publicado não aparece no site (nem o título, nem o link do menu). Por exemplo: o Portfólio só surge quando houver pelo menos um projeto publicado.",
+      text: "Mesmo com a chave ligada, um bloco sem conteúdo publicado não aparece no site (nem o título, nem o link do menu). Por exemplo: o Portfólio só surge quando houver pelo menos um projeto publicado. Para mudar a ordem ou esconder um bloco só da página inicial, use Editar site → Página inicial.",
     },
     groups: [
       {
@@ -182,25 +229,23 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
         description: "Desligar uma página a tira do menu, da página inicial e do mapa do site.",
         fields: [
           toggle("portfolio", "Portfólio", "Página /portfolio, item no menu e bloco na página inicial. Começa desligado: ligue quando houver projetos reais e autorizados."),
-          toggle("packages", "Pacotes e planos", "Página /pacotes, item no menu e bloco na página inicial."),
-          toggle("weddings", "Casamentos", "Página /casamentos e item no menu."),
+          toggle("packages", "Planos", "Página /planos, item no menu e os blocos de planos e de serviços avulsos na página inicial."),
+          toggle("weddings", "Eventos e Casamentos", "Página /eventos-e-casamentos, item no menu e bloco na página inicial."),
         ],
       },
       {
         id: "blocos",
-        title: "Blocos da página inicial",
+        title: "Conteúdos que aparecem em mais de uma página",
         fields: [
-          toggle("founders", "Fundadores", "Bloco “Quem somos” com Pedro Henrique e Laura na página inicial."),
-          toggle("howItWorks", "Como funciona", "Bloco com as etapas do primeiro contato à entrega."),
-          toggle("testimonials", "Depoimentos", "Bloco com o que os clientes dizem. Só aparece com depoimentos publicados e autorizados pelo cliente."),
-          toggle("faq", "Perguntas frequentes", "Bloco de dúvidas comuns. Só aparecem as perguntas publicadas."),
+          toggle("testimonials", "Depoimentos", "O que os clientes dizem (página inicial e Eventos e Casamentos). Só aparece com depoimentos publicados e autorizados pelo cliente."),
+          toggle("faq", "Perguntas frequentes", "Dúvidas comuns (página inicial e Eventos e Casamentos). Só aparecem as perguntas publicadas."),
         ],
       },
       {
         id: "whatsapp",
         title: "WhatsApp",
         fields: [
-          toggle("whatsappFloat", "Botão flutuante de WhatsApp", "Botão redondo fixo no canto da tela, no celular. Só aparece se o número do WhatsApp estiver cadastrado em “Contato e redes”."),
+          toggle("whatsappFloat", "Botão flutuante de WhatsApp", "Botão fixo no canto da tela, no celular. Só aparece se o número do WhatsApp estiver cadastrado em “Contato e redes”."),
         ],
       },
     ],
@@ -210,8 +255,9 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
   home: {
     key: "home",
     title: SITE_CONTENT_LABELS.home,
-    summary: "Todos os blocos da página inicial: topo, serviços em destaque, fundadores, pacotes e fechamento.",
+    summary: "Os textos de cada bloco da página inicial: topo, serviços, fundadores, planos, eventos e fechamento.",
     publicPath: "/",
+    notice: { tone: "info", text: "A ordem dos blocos e quais aparecem são definidos em Editar site → Página inicial. Os diferenciais e o processo de atendimento têm telas próprias em Textos." },
     groups: [
       {
         id: "hero",
@@ -232,31 +278,14 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
       },
       {
         id: "destaques",
-        title: "Serviços em destaque",
-        description: "Faixa com até 6 cartões logo abaixo do topo. O catálogo completo fica em Editar site → Serviços.",
-        fields: within("highlights", [
-          eyebrow(),
-          text("title", "Título do bloco"),
-          {
-            type: "list",
-            path: "items",
-            label: "Cartões",
-            hint: "Cada cartão tem um título, uma frase e um link (ex.: /servicos#video).",
-            itemName: "cartão",
-            addLabel: "Adicionar cartão",
-            items: [
-              { key: "title", type: "text", label: "Título" },
-              { key: "text", type: "textarea", label: "Texto" },
-              { key: "href", type: "href", label: "Link do cartão" },
-            ],
-          },
-          link("cta", "Botão do bloco"),
-        ]),
+        title: "Serviços",
+        description: "A lista mostra os serviços publicados em Editar site → Serviços, na ordem de lá. Aqui ficam só os textos do bloco.",
+        fields: within("highlights", [eyebrow(), text("title", "Título do bloco"), area("text", "Texto do bloco", "Opcional."), link("cta", "Botão do bloco")]),
       },
       {
         id: "fundadores",
         title: "Fundadores",
-        description: "Bloco “Quem somos” da página inicial. Aparece se “Fundadores” estiver ligado em Visibilidade. Fotos e bios ficam em Quem Somos.",
+        description: "Apresentação de Pedro Henrique e Laura na página inicial. Fotos e bios ficam em Sobre a NÓS.",
         fields: within("founders", [
           eyebrow(),
           text("title", "Título do bloco"),
@@ -266,14 +295,31 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
       },
       {
         id: "pacotes",
-        title: "Pacotes e planos",
-        description: "Aparece se “Pacotes e planos” estiver ligado em Visibilidade. Os planos em si ficam em Editar site → Pacotes.",
-        fields: within("packages", [eyebrow(), text("title", "Título do bloco"), area("text", "Texto do bloco"), link("cta", "Botão do bloco")]),
+        title: "Planos",
+        description: "Aparece com “Planos” ligado em Páginas visíveis e planos publicados. Os planos em si ficam em Editar site → Planos.",
+        fields: within("packages", [eyebrow(), text("title", "Título do bloco"), area("text", "Texto do bloco", "Opcional."), link("cta", "Botão do bloco")]),
+      },
+      {
+        id: "avulsos",
+        title: "Serviços avulsos",
+        description: "Lista dos serviços avulsos publicados em Editar site → Planos.",
+        fields: within("standalone", [eyebrow(), text("title", "Título do bloco"), area("text", "Texto do bloco", "Opcional."), link("cta", "Botão do bloco")]),
+      },
+      {
+        id: "eventos",
+        title: "Eventos e casamentos",
+        description: "Chamada para a página de Eventos e Casamentos. Os dois painéis usam os títulos cadastrados naquela página.",
+        fields: within("events", [
+          eyebrow(),
+          text("title", "Chamada", "Para destacar um trecho, coloque-o entre asteriscos: histórias que *permanecem.*"),
+          area("text", "Texto do bloco", "Opcional."),
+          link("cta", "Botão do bloco"),
+        ]),
       },
       {
         id: "portfolio",
-        title: "Portfólio",
-        description: "Aparece se o Portfólio estiver ligado em Visibilidade e houver projetos publicados.",
+        title: "Portfólio em destaque",
+        description: "Aparece se o Portfólio estiver ligado em Páginas visíveis e houver projetos publicados.",
         fields: within("portfolio", [
           eyebrow(),
           text("title", "Título do bloco"),
@@ -283,20 +329,20 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
       },
       {
         id: "depoimentos",
-        title: "Depoimentos",
-        description: "Aparece se Depoimentos estiver ligado em Visibilidade e houver depoimentos publicados.",
+        title: "Clientes e depoimentos",
+        description: "Aparece se Depoimentos estiver ligado em Páginas visíveis e houver depoimentos publicados.",
         fields: within("testimonials", [eyebrow(), text("title", "Título do bloco")]),
       },
       {
         id: "faq",
         title: "Perguntas frequentes",
-        description: "Aparece se Perguntas frequentes estiver ligado em Visibilidade e houver perguntas publicadas para a página inicial.",
+        description: "Aparece se Perguntas frequentes estiver ligado em Páginas visíveis e houver perguntas publicadas para a página inicial.",
         fields: within("faq", [eyebrow(), text("title", "Título do bloco"), link("cta", "Botão do bloco")]),
       },
       {
         id: "fechamento",
         title: "Fechamento",
-        description: "Faixa final da página, logo antes do rodapé.",
+        description: "Chamada final com o formulário de contato.",
         fields: within("closing", [
           text("title", "Título"),
           text("text", "Frase de apoio"),
@@ -312,24 +358,29 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
   about: {
     key: "about",
     title: SITE_CONTENT_LABELS.about,
-    summary: "História da NÓS, fotos e bios de Pedro Henrique e Laura, valores e manifesto.",
+    summary: "História da NÓS, fotos e bios de Pedro Henrique e Laura, missão, visão e valores.",
     publicPath: "/sobre",
+    notice: {
+      tone: "alerta",
+      title: "Validem as biografias antes de divulgar o site",
+      text: "A abertura, as bios e a missão, visão e valores vieram do briefing de novembro de 2026. Confiram datas, cargos e experiências de cada um antes de publicar. Os blocos “Por que nasceu a NÓS”, “Manifesto” e “Essência” estão vazios (não aparecem no site) e podem ser preenchidos quando quiserem.",
+    },
     groups: [
       {
         id: "abertura",
         title: "Abertura",
-        description: "Topo da página Quem Somos.",
+        description: "Topo da página Sobre a NÓS.",
         fields: [
           eyebrow(),
           text("title", "Título da página", undefined, { required: true }),
           md("intro", "Texto de abertura", "Parágrafos separados por uma linha em branco. Dá para usar **negrito** e listas.", 10),
-          image("coupleMediaId", "Foto do casal", "Foto de Pedro e Laura juntos. Aparece na abertura da página.", "4/5"),
+          image("coupleMediaId", "Foto dos dois juntos", "Foto de Pedro e Laura juntos. Aparece na abertura da página.", "4/5"),
         ],
       },
       {
         id: "fundadores",
         title: "Fundadores",
-        description: "Cada pessoa tem foto, resumo (usado nos cartões da página inicial) e bio completa (usada nesta página).",
+        description: "Cada pessoa tem foto, resumo (usado em “Quem estará no dia”, na página de Eventos e Casamentos) e bio completa (usada nesta página).",
         fields: [
           text("foundersTitle", "Título do bloco"),
           {
@@ -343,7 +394,7 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
               { key: "name", type: "text", label: "Nome" },
               { key: "role", type: "text", label: "Cargo ou descrição curta" },
               { key: "mediaId", type: "image", label: "Foto", hint: "Foto de rosto ou meio corpo. Quadrada ou vertical funciona melhor.", aspect: "4/5" },
-              { key: "shortBio", type: "textarea", label: "Resumo (cartão da página inicial)" },
+              { key: "shortBio", type: "textarea", label: "Resumo (Eventos e Casamentos)" },
               { key: "bio", type: "markdown", label: "Bio completa (esta página)" },
             ],
           },
@@ -352,25 +403,37 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
       {
         id: "porque",
         title: "Por que nasceu a NÓS",
+        description: "Opcional. Vazio = o bloco não aparece.",
         fields: within("why", [text("title", "Título"), md("text", "Texto", "Parágrafos separados por uma linha em branco.", 10)]),
       },
       {
         id: "manifesto",
         title: "Manifesto",
-        description: "Trecho em destaque da página.",
+        description: "Trecho em destaque da página. Opcional: vazio = o bloco não aparece.",
         fields: within("manifesto", [md("text", "Texto do manifesto", undefined, 8), text("closing", "Frase final")]),
+      },
+      {
+        id: "missao",
+        title: "Missão e visão",
+        description: "Aparecem em destaque, no mesmo bloco dos valores.",
+        fields: [
+          text("mission.title", "Nome do primeiro bloco"),
+          area("mission.text", "Missão", undefined, 3),
+          text("vision.title", "Nome do segundo bloco"),
+          area("vision.text", "Visão", undefined, 3),
+        ],
       },
       {
         id: "valores",
         title: "Valores",
         fields: within("values", [
-          eyebrow(),
-          text("title", "Título do bloco"),
+          eyebrow("Rótulo do bloco de missão, visão e valores."),
+          text("title", "Título da lista de valores"),
           {
             type: "list",
             path: "items",
             label: "Valores",
-            hint: "Até 8. Cada um tem um título e uma frase.",
+            hint: "Até 8. Cada um tem um título; a frase é opcional.",
             itemName: "valor",
             addLabel: "Adicionar valor",
             items: titledItems,
@@ -380,7 +443,7 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
       {
         id: "essencia",
         title: "Essência",
-        description: "Fecho da página.",
+        description: "Fecho da página. Opcional: vazio = entra a chamada padrão para o contato.",
         fields: within("essence", [
           text("title", "Título"),
           md("text", "Texto", "Use **negrito** para destacar trechos.", 8),
@@ -390,17 +453,46 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
     ],
   },
 
+  // -------------------------------------------------------- differentials
+  differentials: {
+    key: "differentials",
+    title: SITE_CONTENT_LABELS.differentials,
+    summary: "Os diferenciais da NÓS, mostrados na página inicial.",
+    publicPath: "/#diferenciais",
+    notice: { tone: "info", text: "O briefing trouxe só os títulos dos seis diferenciais. Se quiserem, escrevam uma frase curta para cada um: ela aparece logo abaixo do título." },
+    groups: [
+      {
+        id: "bloco",
+        title: "Bloco “Diferenciais”",
+        fields: [
+          eyebrow(),
+          text("title", "Título do bloco"),
+          {
+            type: "list",
+            path: "items",
+            label: "Diferenciais",
+            hint: "Até 8. O título é obrigatório; a frase é opcional.",
+            itemName: "diferencial",
+            addLabel: "Adicionar diferencial",
+            items: titledItems,
+          },
+        ],
+      },
+    ],
+  },
+
   // ---------------------------------------------------------- howItWorks
   howItWorks: {
     key: "howItWorks",
     title: SITE_CONTENT_LABELS.howItWorks,
-    summary: "As etapas do primeiro contato à entrega.",
-    publicPath: "/",
+    summary: "As etapas do atendimento: conexão, estratégia, planejamento, produção e entrega.",
+    publicPath: "/#como-funciona",
+    notice: { tone: "info", text: "O briefing trouxe só os nomes das cinco etapas. Se quiserem, escrevam uma frase curta para cada uma: ela aparece ao lado do nome." },
     groups: [
       {
         id: "bloco",
-        title: "Bloco “Como funciona”",
-        description: "Aparece na página inicial se “Como funciona” estiver ligado em Visibilidade.",
+        title: "Bloco “Processo de atendimento”",
+        description: "Aparece na página inicial, na página de Serviços e, resumido, ao lado do formulário de contato.",
         fields: [
           eyebrow(),
           text("title", "Título do bloco"),
@@ -408,7 +500,7 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
             type: "list",
             path: "steps",
             label: "Etapas",
-            hint: "Até 8 etapas, na ordem em que acontecem.",
+            hint: "Até 8 etapas, na ordem em que acontecem. A frase de cada etapa é opcional.",
             itemName: "etapa",
             addLabel: "Adicionar etapa",
             items: titledItems,
@@ -423,20 +515,41 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
   servicesPage: {
     key: "servicesPage",
     title: SITE_CONTENT_LABELS.servicesPage,
-    summary: "Textos de abertura e fechamento da página de serviços.",
+    summary: "Textos da página de serviços e os títulos dos blocos da página de cada serviço.",
     publicPath: "/servicos",
-    notice: { tone: "info", text: "Os serviços em si (título, descrição, itens e fotos) são editados em Editar site → Serviços." },
+    notice: { tone: "info", text: "Os serviços em si (nome, descrição, entregas, benefícios, perguntas e fotos) são editados em Editar site → Serviços." },
     groups: [
       {
         id: "topo",
         title: "Topo da página",
-        fields: [eyebrow(), text("title", "Título da página", undefined, { required: true }), area("intro", "Texto de abertura", undefined, 3)],
+        fields: [
+          eyebrow(),
+          text("title", "Título da página", undefined, { required: true }),
+          area("intro", "Texto de abertura", undefined, 3),
+          text("detailLabel", "Texto do link de cada serviço", "Leva à página própria do serviço. Ex.: “Ver o serviço”."),
+        ],
       },
       {
         id: "fechamento",
         title: "Fechamento",
         description: "Faixa no fim da página, depois da lista de serviços.",
         fields: [text("closingTitle", "Título"), area("closingText", "Texto"), link("cta", "Botão")],
+      },
+      {
+        id: "detalhe",
+        title: "Página de cada serviço",
+        description: "Títulos dos blocos de /servicos/nome-do-servico. Bloco sem conteúdo cadastrado não aparece.",
+        fields: within("detail", [
+          text("deliverablesTitle", "Título de “possíveis entregas”"),
+          text("benefitsTitle", "Título de “benefícios”"),
+          text("mediaTitle", "Título do vídeo e da galeria"),
+          text("relatedTitle", "Título de “trabalhos relacionados”"),
+          text("faqTitle", "Título das perguntas frequentes"),
+          text("quoteTitle", "Chamada do orçamento", "Fica ao lado do formulário, no fim da página."),
+          area("quoteText", "Texto do orçamento"),
+          text("othersTitle", "Título de “outros serviços”"),
+          text("pageLinkLabel", "Botão da página temática", "Só aparece em serviços que têm uma página temática (ex.: Casamentos → Eventos e Casamentos)."),
+        ]),
       },
     ],
   },
@@ -445,9 +558,13 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
   packagesPage: {
     key: "packagesPage",
     title: SITE_CONTENT_LABELS.packagesPage,
-    summary: "Textos da página de pacotes e planos. Valores e entregas ficam em Editar site → Pacotes.",
-    publicPath: "/pacotes",
-    notice: { tone: "info", text: "Enquanto nenhum valor estiver cadastrado, os pacotes aparecem como “Sob consulta”. Os planos em si (nome, entregas, valor) são editados em Editar site → Pacotes." },
+    summary: "Textos da página de planos e serviços avulsos. Valores e entregas ficam em Editar site → Planos.",
+    publicPath: "/planos",
+    notice: {
+      tone: "alerta",
+      title: "Nomes dos planos, entregas e valores ainda são provisórios",
+      text: "O briefing pede para não publicar preços nem quantidades antes de validar custos, capacidade e margem. Enquanto um plano não tiver valor publicado, o site mostra o texto de “Texto no lugar do valor”. Os planos em si (nome, entregas, opcionais, valor, destaque) são editados em Editar site → Planos.",
+    },
     groups: [
       {
         id: "topo",
@@ -458,9 +575,20 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
         id: "planos",
         title: "Planos mensais",
         fields: [
-          text("recommendedLabel", "Etiqueta do plano recomendado", "Selo que aparece no plano marcado como recomendado."),
+          text("recommendedLabel", "Etiqueta do plano em destaque", "Selo que aparece no plano marcado como destaque."),
+          text("priceOnRequestLabel", "Texto no lugar do valor", "Aparece em cada plano que ainda não tem valor publicado. Vazio = a linha de investimento some."),
           area("note", "Aviso sob os planos", "Explica que entregas, quantidades e investimento são definidos em proposta."),
         ],
+      },
+      {
+        id: "comparativo",
+        title: "Tabela comparativa",
+        description: "Montada sozinha a partir do campo “O que inclui” de cada plano (um plano com plano-base herda as entregas dele).",
+        fields: within("comparison", [
+          toggle("enabled", "Mostrar a tabela comparativa", "Só aparece com dois ou mais planos publicados que tenham entregas cadastradas."),
+          text("title", "Título da tabela"),
+          area("intro", "Texto ao lado do título", "Opcional."),
+        ]),
       },
       {
         id: "avulsos",
@@ -479,27 +607,55 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
   weddingsPage: {
     key: "weddingsPage",
     title: SITE_CONTENT_LABELS.weddingsPage,
-    summary: "Página de casamentos: abordagem, cobertura, como funciona a proposta e formulário.",
-    publicPath: "/casamentos",
+    summary: "Página de Eventos e Casamentos: eventos corporativos e sociais, casamentos, formatos de cobertura e formulário de data.",
+    publicPath: "/eventos-e-casamentos",
+    notice: {
+      tone: "info",
+      title: "O formulário não reserva data",
+      text: "Quem envia o formulário desta página vira um lead no painel (Leads), com tipo, data, horário, local, convidados e serviços. Nada entra na agenda sozinho: a confirmação é sempre de vocês. Galeria e depoimentos só aparecem quando houver projetos e relatos reais publicados.",
+    },
     groups: [
       {
         id: "topo",
         title: "Topo da página",
         fields: [
           eyebrow(),
-          text("title", "Título da página", undefined, { required: true }),
+          text("title", "Chamada da página", "Com duas frases, cada uma começa na sua linha. Para destacar um trecho, coloque-o entre asteriscos: histórias que *permanecem.*", { required: true }),
           area("lead", "Frase de apoio"),
-          image("heroMediaId", "Foto do topo", "Opcional. Uma foto de casamento real e autorizada. Prefira horizontal.", "16/9"),
+          text("ctaLabel", "Botão que leva ao formulário"),
+          image("heroMediaId", "Foto do topo", "Opcional. Uma foto real e autorizada de evento ou casamento. Prefira horizontal.", "16/9"),
         ],
       },
       {
+        id: "eventos",
+        title: "Eventos corporativos e sociais",
+        fields: within("events", [
+          eyebrow("Rótulo da primeira parte da página."),
+          text("title", "Título"),
+          md("text", "Texto", "Parágrafos separados por uma linha em branco.", 5),
+          {
+            type: "list",
+            path: "items",
+            label: "Formatos de cobertura",
+            hint: "Até 12. O título é obrigatório; a frase é opcional.",
+            itemName: "formato",
+            addLabel: "Adicionar formato",
+            items: titledItems,
+          },
+        ]),
+      },
+      {
         id: "abordagem",
-        title: "Nossa abordagem",
-        fields: within("approach", [text("title", "Título"), md("text", "Texto", "Parágrafos separados por uma linha em branco.", 8)]),
+        title: "Casamentos — nosso olhar",
+        fields: [
+          text("weddingsEyebrow", "Rótulo da segunda parte da página", "Também é o nome do painel de casamentos na página inicial."),
+          text("approach.title", "Título"),
+          md("approach.text", "Texto", "Parágrafos separados por uma linha em branco.", 8),
+        ],
       },
       {
         id: "cobertura",
-        title: "O que a cobertura pode incluir",
+        title: "Casamentos — o que a cobertura pode incluir",
         fields: within("coverage", [
           text("title", "Título"),
           area("intro", "Texto de abertura"),
@@ -533,9 +689,20 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
         ]),
       },
       {
+        id: "galeria",
+        title: "Galeria",
+        description: "Mostra os projetos de Eventos e de Casamentos publicados no Portfólio. Sem projetos publicados, o bloco não aparece.",
+        fields: [text("galleryTitle", "Título do bloco")],
+      },
+      {
         id: "formulario",
-        title: "Formulário de casamento",
-        fields: within("form", [text("title", "Título"), area("text", "Texto"), text("submitLabel", "Texto do botão de enviar")]),
+        title: "Formulário de disponibilidade",
+        fields: within("form", [
+          text("title", "Título"),
+          area("text", "Texto"),
+          text("submitLabel", "Texto do botão de enviar"),
+          area("note", "Aviso sobre a data", "Deixa claro que o envio não reserva a data nem confirma a contratação."),
+        ]),
       },
     ],
   },
@@ -637,6 +804,69 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
     ],
   },
 
+  // ----------------------------------------------------------- termsPage
+  termsPage: {
+    key: "termsPage",
+    title: SITE_CONTENT_LABELS.termsPage,
+    summary: "Texto dos termos de uso do site e versão.",
+    publicPath: "/termos",
+    notice: {
+      tone: "alerta",
+      title: "Texto-base sugerido: precisa de revisão jurídica",
+      text: "Este texto foi escrito como ponto de partida e não traz dados da empresa (razão social, CNPJ, endereço, foro). Antes de divulgar o site, peçam a um advogado ou assessoria jurídica para revisar e completar. Os marcadores {{marca}} e {{email}} são preenchidos automaticamente.",
+    },
+    groups: [
+      {
+        id: "termos",
+        title: "Termos de uso",
+        fields: [
+          text("title", "Título da página", "Também é o nome do link no rodapé.", { required: true }),
+          text("version", "Versão ou data", "Aparece no topo da página. Mude sempre que alterar o texto (ex.: 2026-11).", { required: true }),
+          md("body", "Texto dos termos", "Use ## para títulos de seção, - para listas e **negrito**. {{marca}} e {{email}} são preenchidos automaticamente.", 24, { required: true }),
+        ],
+      },
+    ],
+  },
+
+  // --------------------------------------------------------- cookiesPage
+  cookiesPage: {
+    key: "cookiesPage",
+    title: SITE_CONTENT_LABELS.cookiesPage,
+    summary: "Texto da política de cookies e versão.",
+    publicPath: "/cookies",
+    notice: {
+      tone: "alerta",
+      title: "Texto-base sugerido: precisa de revisão jurídica",
+      text: "O texto descreve o que o site usa hoje: nenhum cookie de rastreamento no site público e só os cookies essenciais do login nas áreas privadas — por isso não há aviso de consentimento de cookies. Se um dia forem ligadas estatísticas ou publicidade (Google Analytics, Meta Pixel…), este texto e o site precisam mudar antes. Peçam a revisão de um advogado ou assessoria jurídica.",
+    },
+    groups: [
+      {
+        id: "cookies",
+        title: "Política de cookies",
+        fields: [
+          text("title", "Título da página", "Também é o nome do link no rodapé.", { required: true }),
+          text("version", "Versão ou data", "Aparece no topo da página. Mude sempre que alterar o texto (ex.: 2026-11).", { required: true }),
+          md("body", "Texto da política", "Use ## para títulos de seção, - para listas e **negrito**. {{marca}} e {{email}} são preenchidos automaticamente.", 24, { required: true }),
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------- notFoundPage
+  notFoundPage: {
+    key: "notFoundPage",
+    title: SITE_CONTENT_LABELS.notFoundPage,
+    summary: "O que aparece quando alguém abre um endereço que não existe.",
+    publicPath: "/pagina-que-nao-existe",
+    groups: [
+      {
+        id: "pagina",
+        title: "Página não encontrada",
+        fields: [eyebrow("Pequeno rótulo acima do título."), text("title", "Título", undefined, { required: true }), text("text", "Frase de apoio"), link("cta", "Botão")],
+      },
+    ],
+  },
+
   // ----------------------------------------------------------------- seo
   seo: {
     key: "seo",
@@ -665,13 +895,13 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
       {
         id: "paginas",
         title: "Título e descrição de cada página",
-        description: "É o que aparece como resultado de busca no Google. Mantenha o título curto e a descrição clara.",
+        description: "É o que aparece como resultado de busca no Google. Mantenha o título curto e a descrição clara. A página de cada serviço usa o nome e o resumo do próprio serviço.",
         fields: [
           { type: "seoPage", path: "pages.home", label: "Página inicial", publicPath: "/", required: true },
-          { type: "seoPage", path: "pages.sobre", label: "Quem Somos", publicPath: "/sobre", required: true },
+          { type: "seoPage", path: "pages.sobre", label: "Sobre a NÓS", publicPath: "/sobre", required: true },
           { type: "seoPage", path: "pages.servicos", label: "Serviços", publicPath: "/servicos", required: true },
-          { type: "seoPage", path: "pages.pacotes", label: "Pacotes e planos", publicPath: "/pacotes", required: true },
-          { type: "seoPage", path: "pages.casamentos", label: "Casamentos", publicPath: "/casamentos", required: true },
+          { type: "seoPage", path: "pages.pacotes", label: "Planos", publicPath: "/planos", required: true },
+          { type: "seoPage", path: "pages.casamentos", label: "Eventos e Casamentos", publicPath: "/eventos-e-casamentos", required: true },
           { type: "seoPage", path: "pages.portfolio", label: "Portfólio", publicPath: "/portfolio", required: true },
           { type: "seoPage", path: "pages.contato", label: "Contato e orçamento", publicPath: "/contato", required: true },
         ],
@@ -687,16 +917,21 @@ export function isSiteContentKey(value: string): value is SiteContentKey {
 
 export const SECTION_ORDER: readonly SiteContentKey[] = [
   "general",
+  "navigation",
   "visibility",
   "home",
-  "about",
+  "differentials",
   "howItWorks",
+  "about",
   "servicesPage",
   "packagesPage",
   "weddingsPage",
   "portfolioPage",
   "contactPage",
   "privacyPage",
+  "termsPage",
+  "cookiesPage",
+  "notFoundPage",
   "seo",
 ];
 

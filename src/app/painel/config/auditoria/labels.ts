@@ -52,7 +52,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   finance_reserve: "Reserva de caixa",
   lead: "Lead",
   media: "Arquivo",
-  package: "Pacote",
+  package: "Plano ou serviço avulso",
   portfolio: "Portfólio",
   project: "Projeto",
   project_member: "Equipe do projeto",

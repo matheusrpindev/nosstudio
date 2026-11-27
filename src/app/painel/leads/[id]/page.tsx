@@ -1,4 +1,4 @@
-import { MessageCircle, Trash2, UserRoundCheck, UserRoundPlus } from "lucide-react";
+import { CalendarSearch, MessageCircle, Trash2, UserRoundCheck, UserRoundPlus } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
@@ -12,7 +12,8 @@ import { Select } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateText } from "@/components/ui/text";
 import { requirePermission } from "@/lib/auth";
-import { CONTACT_SOURCE_LABELS, LEAD_STATUS_LABELS, SERVICE_INTEREST_LABELS } from "@/lib/domain";
+import { CONTACT_SOURCE_LABELS, LEAD_STATUS_LABELS, leadFieldGroup, SERVICE_INTEREST_LABELS } from "@/lib/domain";
+import { canEverywhere } from "@/lib/permissions";
 import { formatPhone, mailtoHref, whatsAppLink } from "@/lib/format";
 import { getLead } from "@/server/leads/admin";
 import { convertLeadAction, deleteLeadAction, updateLeadStatusAction } from "../actions";
@@ -38,6 +39,10 @@ export default async function LeadPage({ params }: Props) {
     `Olá, ${firstName}! Aqui é ${user.name.split(" ")[0]}, da NÓS Studio. Recebemos seu contato sobre ${SERVICE_INTEREST_LABELS[lead.serviceInterest].toLowerCase()} e queremos entender melhor o que você precisa. Podemos conversar por aqui?`,
   );
   const extras = Object.entries(details.extras ?? {}).map(([label, value]) => ({ label, value }));
+  // pedido de evento com data: atalho para conferir a agenda — o envio do site NÃO cria compromisso nem reserva a data
+  const isEventRequest = leadFieldGroup(lead.serviceInterest) === "evento";
+  const agendaHref = lead.eventDate && canEverywhere(user, "agenda", "ver") ? `/painel/agenda?vista=dia&data=${lead.eventDate}` : null;
+  const time = details.startTime && details.endTime ? `${details.startTime} – ${details.endTime}` : details.startTime || (details.endTime ? `até ${details.endTime}` : null);
 
   return (
     <>
@@ -102,18 +107,40 @@ export default async function LeadPage({ params }: Props) {
               hideEmpty
               items={[
                 { label: "Interesse", value: SERVICE_INTEREST_LABELS[lead.serviceInterest] },
-                { label: "Pacote / serviço de origem", value: details.packageName },
-                { label: "Data do evento", value: lead.eventDate ? <DateText value={lead.eventDate} format="long" /> : null },
-                { label: "Cidade", value: lead.city },
+                { label: "Plano / serviço de origem", value: details.packageName },
+                { label: "Empresa", value: details.company },
+                { label: "Objetivo", value: details.objective },
+                // marketing
+                { label: "Segmento", value: details.segment },
+                { label: "Perfil da marca", value: details.profile },
+                // audiovisual
+                { label: "Tipo de produção", value: details.productionType },
+                { label: "Previsão", value: details.timeframe },
+                // evento
                 { label: "Tipo de evento", value: details.eventType },
+                { label: "Data do evento", value: lead.eventDate ? <DateText value={lead.eventDate} format="long" /> : null },
+                { label: "Horário", value: time },
+                { label: "Cidade", value: lead.city },
                 { label: "Local do evento", value: details.eventLocation },
                 { label: "Convidados", value: details.guests },
-                { label: "Horário", value: details.startTime || details.endTime ? `${details.startTime ?? "?"} – ${details.endTime ?? "?"}` : null },
+                { label: "Serviços desejados", value: details.services },
                 { label: "Cobertura", value: details.coverage },
                 { label: "Storymaker", value: details.storymaker },
                 ...extras,
               ]}
             />
+            {isEventRequest && lead.eventDate ? (
+              <div className="border-borda mt-5 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-texto-suave text-sm leading-relaxed">
+                  Este pedido é uma consulta de disponibilidade: nada foi criado na agenda e a data não está reservada. A confirmação é de vocês.
+                </p>
+                {agendaHref ? (
+                  <ButtonLink href={agendaHref} variant="secondary" size="sm" icon={<CalendarSearch />} className="shrink-0">
+                    Ver a agenda neste dia
+                  </ButtonLink>
+                ) : null}
+              </div>
+            ) : null}
           </Card>
 
           <Card as="section" aria-labelledby="registro-titulo" className="order-4">

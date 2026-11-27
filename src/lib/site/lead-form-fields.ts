@@ -4,10 +4,12 @@
  * só roda no servidor, fica em ./lead-form.ts. Manter os dois separados evita mandar o zod inteiro (~30 KB)
  * para o visitante.
  *
- * Nomes dos campos (FormData): name, whatsapp, email, serviceInterest, eventDate, city, message, consent,
- * originPath + extras de evento: eventType, eventLocation, guests, startTime, endTime, coverage, storymaker,
- * packageName. Mais os dois campos anti-spam abaixo.
+ * Nomes dos campos (FormData): name, company, whatsapp, email, serviceInterest, objective, message, consent,
+ * originPath, packageName + os campos conforme o tipo do pedido (`LEAD_GROUP_FIELDS`) + os do formulário de
+ * evento: eventType, eventDate, startTime, endTime, city, eventLocation, guests, services[]. Mais os dois campos
+ * anti-spam abaixo.
  */
+import { leadFieldGroup, type LeadFieldGroup, type ServiceInterest } from "@/lib/domain";
 
 /**
  * Campo-isca: fica fora da tela e do teclado (tabindex -1, aria-hidden, autocomplete off).
@@ -34,7 +36,43 @@ export function leadSpamSignals(formData: FormData, now: number): { honeypot: bo
 }
 
 /**
- * O pacote/serviço de origem (`?pacote=…` na URL do formulário) só vale se for o nome de um pacote publicado.
+ * Campos adicionais do formulário de captação conforme o tipo do pedido (briefing v2, seção 10). O formulário só
+ * mostra os do grupo do serviço escolhido e o servidor só grava esses (`buildLeadDetails` em ./lead-form.ts).
+ */
+export const LEAD_GROUP_FIELDS: Record<LeadFieldGroup, readonly string[]> = {
+  marketing: ["segment", "profile"],
+  audiovisual: ["productionType", "timeframe"],
+  evento: ["eventDate", "eventLocation", "city"],
+};
+
+/** Campos adicionais que o formulário mostra para um serviço de interesse (vazio = só os campos comuns). */
+export function leadExtraFields(interest: string | null | undefined): readonly string[] {
+  const group = leadFieldGroup(interest);
+  return group ? LEAD_GROUP_FIELDS[group] : [];
+}
+
+/** Tipos de evento do formulário de Eventos e Casamentos e o interesse que cada um grava no lead. */
+export const EVENT_TYPE_OPTIONS = ["Casamento", "Evento corporativo", "Evento social", "Outro"] as const;
+export function eventTypeInterest(eventType: string | null | undefined): ServiceInterest {
+  return (eventType ?? "").trim().toLocaleLowerCase("pt-BR").startsWith("casamento") ? "casamentos" : "eventos";
+}
+
+/** Serviços que a pessoa pode marcar no formulário de evento (formatos de cobertura do briefing). */
+export const EVENT_SERVICE_OPTIONS = [
+  "Fotografia",
+  "Filmagem",
+  "Storymaker",
+  "Conteúdo em tempo real",
+  "Melhores momentos",
+  "Pré-wedding",
+  "Making of",
+  "Teaser",
+  "Galeria digital",
+] as const;
+
+/**
+ * O plano/serviço de origem (`?pacote=…` na URL do formulário) só vale se for o nome de um plano, serviço avulso
+ * ou serviço publicado.
  * Qualquer outro texto é ignorado: senão um link do próprio site exibiria uma frase arbitrária ("Pedido sobre:
  * promoção falsa…") com a identidade da NÓS e a gravaria no lead. Devolve o nome oficial ou "".
  */
@@ -52,7 +90,4 @@ export type LeadSuccess = {
   whatsappUrl: string | null;
 };
 
-/** Opções do campo "cobertura" do formulário de evento. */
-export const EVENT_COVERAGE_OPTIONS = ["Foto", "Vídeo", "Foto e vídeo", "Ainda não sei"] as const;
-export const EVENT_STORYMAKER_OPTIONS = ["Sim", "Não", "Talvez"] as const;
 export const EVENT_GUEST_OPTIONS = ["Até 50", "51 a 100", "101 a 200", "Mais de 200", "Ainda não sei"] as const;

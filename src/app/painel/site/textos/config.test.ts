@@ -43,7 +43,8 @@ describe("mapa do editor de textos", () => {
   it("lê limites do schema", () => {
     expect(maxLengthAt("home", "hero.title")).toBe(120);
     expect(maxLengthAt("seo", "pages.home.description")).toBe(180);
-    expect(maxLengthAt("home", "highlights.items")).toBe(6);
-    expect(maxLengthAt("home", "highlights.items[].title")).toBe(80);
+    expect(maxLengthAt("differentials", "items")).toBe(8);
+    expect(maxLengthAt("differentials", "items[].title")).toBe(120);
+    expect(maxLengthAt("weddingsPage", "events.items[].text")).toBe(600);
   });
 });

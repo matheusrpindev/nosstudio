@@ -90,7 +90,7 @@ export const PACKAGE_KIND_LABELS = labels(PACKAGE_KINDS, {
 export const PRICE_MODES = ["sob_consulta", "a_partir", "fixo"] as const;
 export type PriceMode = (typeof PRICE_MODES)[number];
 export const PRICE_MODE_LABELS = labels(PRICE_MODES, {
-  sob_consulta: "Sob consulta",
+  sob_consulta: "Valor oculto",
   a_partir: "A partir de",
   fixo: "Preço fixo",
 });
@@ -136,11 +136,18 @@ export const CONTACT_SOURCE_LABELS = labels(CONTACT_SOURCES, {
   outro: "Outro",
 });
 
-/** Opções do campo "Serviço de interesse" (formulário público, leads e clientes). */
+/**
+ * Opções do campo "Serviço de interesse" (formulário público, leads e clientes). São as nove áreas do briefing v2
+ * (seção 06) + plano mensal + "ainda não sei". Um serviço novo cadastrado no painel escolhe uma destas.
+ */
 export const SERVICE_INTERESTS = [
-  "fotografia",
-  "video",
   "marketing",
+  "redes_sociais",
+  "video",
+  "fotografia",
+  "design",
+  "identidade_visual",
+  "trafego",
   "eventos",
   "casamentos",
   "pacote_mensal",
@@ -148,14 +155,42 @@ export const SERVICE_INTERESTS = [
 ] as const;
 export type ServiceInterest = (typeof SERVICE_INTERESTS)[number];
 export const SERVICE_INTEREST_LABELS = labels(SERVICE_INTERESTS, {
+  marketing: "Marketing e estratégia",
+  redes_sociais: "Redes sociais",
+  video: "Audiovisual",
   fotografia: "Fotografia",
-  video: "Vídeo e produção audiovisual",
-  marketing: "Marketing e redes sociais",
-  eventos: "Cobertura de evento",
-  casamentos: "Casamento",
-  pacote_mensal: "Pacote mensal",
+  design: "Design gráfico",
+  identidade_visual: "Identidade visual",
+  trafego: "Tráfego pago",
+  eventos: "Eventos e storymaker",
+  casamentos: "Casamentos",
+  pacote_mensal: "Plano mensal",
   outro: "Outro / ainda não sei",
 });
+
+/**
+ * Campos adicionais do formulário de captação conforme o tipo do pedido (briefing v2, seção 10):
+ * marketing → segmento e perfil; audiovisual → tipo e previsão; evento → data e local.
+ */
+export const LEAD_FIELD_GROUPS = ["marketing", "audiovisual", "evento"] as const;
+export type LeadFieldGroup = (typeof LEAD_FIELD_GROUPS)[number];
+const INTEREST_FIELD_GROUP: Record<ServiceInterest, LeadFieldGroup | null> = {
+  marketing: "marketing",
+  redes_sociais: "marketing",
+  design: "marketing",
+  identidade_visual: "marketing",
+  trafego: "marketing",
+  pacote_mensal: "marketing",
+  video: "audiovisual",
+  fotografia: "audiovisual",
+  eventos: "evento",
+  casamentos: "evento",
+  outro: null,
+};
+/** Grupo de campos adicionais de um interesse (`null` = só os campos comuns). */
+export function leadFieldGroup(interest: string | null | undefined): LeadFieldGroup | null {
+  return interest && Object.hasOwn(INTEREST_FIELD_GROUP, interest) ? INTEREST_FIELD_GROUP[interest as ServiceInterest] : null;
+}
 
 // ----------------------------------------------------------------- clientes
 export const CLIENT_KINDS = ["pf", "pj"] as const;

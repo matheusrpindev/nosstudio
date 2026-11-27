@@ -32,8 +32,22 @@ export default async function ServicesPage() {
       ),
     },
     { key: "interesse", header: "Interesse no formulário", hideOnMobile: true, cell: (service) => SERVICE_INTEREST_LABELS[service.interest] },
-    { key: "pagina", header: "Página própria", hideOnMobile: true, cell: (service) => (service.pagePath ? <Badge tone="roxo">{service.pagePath}</Badge> : <span className="text-texto-suave">—</span>) },
-    { key: "visivel", header: "No site", interactive: true, cell: (service) => <RowSwitch id={service.id} checked={service.visible} label={`Mostrar “${service.title}” no site`} action={toggleServiceAction} /> },
+    { key: "pagina", header: "Página no site", hideOnMobile: true, cell: (service) => <span className="text-texto-suave break-all">/servicos/{service.slug}</span> },
+    {
+      key: "conteudo",
+      header: "Conteúdo",
+      hideOnMobile: true,
+      cell: (service) => {
+        const missing = [
+          service.description.trim() ? null : "descrição",
+          service.benefits.length > 0 ? null : "benefícios",
+          service.faq.some((item) => item.answer.trim()) ? null : "perguntas",
+          service.coverMediaId ? null : "capa",
+        ].filter(Boolean);
+        return missing.length === 0 ? <Badge tone="sucesso">Completo</Badge> : <span className="text-texto-suave">Falta: {missing.join(", ")}</span>;
+      },
+    },
+    { key: "visivel", header: "Publicado", interactive: true, cell: (service) => <RowSwitch id={service.id} checked={service.visible} label={`Mostrar “${service.title}” no site`} action={toggleServiceAction} /> },
     {
       key: "ordem",
       header: "Ordem",
@@ -49,7 +63,7 @@ export default async function ServicesPage() {
     <>
       <PageHeader
         title="Serviços do site"
-        description="O que a NÓS Studio oferece, na ordem em que aparece em Serviços e na página inicial. Serviços ocultos ficam guardados aqui."
+        description="O que a NÓS Studio oferece, na ordem em que aparece em Serviços e na página inicial. Cada serviço publicado tem página própria; os desligados ficam guardados aqui como rascunho. Blocos sem conteúdo (benefícios, perguntas, trabalhos relacionados) simplesmente não aparecem no site."
         actions={
           <>
             <ButtonLink href="/servicos" external variant="secondary" icon={<ExternalLink />}>

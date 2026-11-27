@@ -1,4 +1,4 @@
-/* Página de casamentos. Prefixos `weddings` e `weddings-` (componentes). Tudo em @layer components. */
+/* Página de Eventos e Casamentos. Prefixos `events`, `weddings` e `weddings-` (componentes). Tudo em @layer components. */
 @layer components {
   /* ---- hero ---- */
   .weddings__hero-media {
@@ -15,6 +15,104 @@
     .weddings__hero-media .s-photo__field {
       aspect-ratio: 21 / 9;
     }
+  }
+
+  /* ---- atalho para as duas partes da página ---- */
+  .events__jump {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: clamp(2rem, 1.25rem + 3vw, 3.5rem);
+    border-bottom: 1px solid var(--s-line);
+  }
+  .events__jump a {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.5rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--s-line);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    text-decoration: none;
+  }
+  .events__jump a span {
+    font-size: var(--s-fs-meta);
+    color: var(--s-idx);
+    font-variant-numeric: tabular-nums;
+  }
+  .events__jump a:hover {
+    color: var(--s-link-hover);
+  }
+  .events__jump + .weddings__hero-media {
+    margin-top: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  }
+  @media (min-width: 640px) {
+    .events__jump {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      border-bottom: 0;
+    }
+    .events__jump a {
+      border-top-color: var(--s-line-strong);
+    }
+  }
+
+  /* ---- eventos corporativos e sociais ---- */
+  .events__more {
+    margin-bottom: var(--s-cab);
+  }
+  .events__cta {
+    margin-top: clamp(2rem, 1.25rem + 3vw, 3rem);
+  }
+  @media (max-width: 479.98px) {
+    .events__cta .s-btn {
+      width: 100%;
+    }
+  }
+
+  /* ---- casamentos: cobertura dentro do bloco ---- */
+  .events__coverage {
+    margin-top: var(--s-cab);
+  }
+  .events__coverage-head {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+    max-width: 38rem;
+  }
+  @media (min-width: 1024px) {
+    .events__coverage-head {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--s-gutter);
+      align-items: end;
+      max-width: none;
+    }
+    .events__coverage-head > :first-child {
+      grid-column: 1 / 5;
+    }
+    .events__coverage-head > :last-child:not(:first-child) {
+      grid-column: 5 / 10;
+    }
+  }
+
+  /* ---- aviso do formulário (o envio não reserva a data) ---- */
+  .events__note {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.75rem;
+    max-width: 30rem;
+    margin-top: 1.5rem;
+    font-size: var(--s-fs-sm);
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .events__note-mark {
+    width: 0.875rem;
+    height: auto;
+    margin-top: 0.45em;
+    color: var(--color-lima);
   }
 
   /* ---- abordagem ---- */
@@ -95,6 +193,13 @@
       grid-row: auto;
       padding-top: 0;
       margin-bottom: 2.5rem;
+    }
+    /* formatos só com o nome (sem frase): linhas mais baixas */
+    .weddings-coverage__list[data-plain="true"] .weddings-coverage__item {
+      min-height: 8.5rem;
+    }
+    .weddings-coverage__list[data-plain="true"] .weddings-coverage__n {
+      margin-bottom: 1.75rem;
     }
   }
 

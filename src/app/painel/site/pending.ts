@@ -10,7 +10,18 @@ export type LaunchSnapshot = {
   publishedFaqs: number;
   /** O texto da política ainda é o texto-base e a versão não mudou. */
   privacyIsBaseText: boolean;
-  /** Pacotes (visíveis) que já têm valor cadastrado. */
+  /** Idem para os termos de uso e a política de cookies. */
+  termsIsBaseText: boolean;
+  cookiesIsBaseText: boolean;
+  /** A seção "Sobre a NÓS" nunca foi salva no painel: as biografias ainda são as do briefing, sem validação. */
+  biosUnreviewed: boolean;
+  /** Planos mensais (visíveis) e quantos têm entregas cadastradas. */
+  visiblePlans: number;
+  plansWithIncludes: number;
+  /** Serviços publicados e quantos ainda não têm descrição. */
+  visibleServices: number;
+  servicesWithoutDescription: number;
+  /** Planos e avulsos (visíveis) que já têm valor publicado. */
   packagesWithPrice: number;
   visiblePackages: number;
 };
@@ -67,10 +78,22 @@ export function computeLaunchPending(s: LaunchSnapshot): LaunchPending[] {
     out.push({
       id: "couple-photo",
       tone: "alerta",
-      title: "Foto do casal não enviada",
-      description: "É a foto de Pedro e Laura juntos, usada na página Quem Somos.",
+      title: "Foto dos dois juntos não enviada",
+      description: "É a foto de Pedro e Laura juntos, usada na abertura da página Sobre a NÓS.",
       href: "/painel/site/textos/about#bloco-abertura",
       actionLabel: "Enviar foto",
+    });
+  }
+
+  if (s.biosUnreviewed) {
+    out.push({
+      id: "bios",
+      tone: "alerta",
+      title: "Biografias a validar",
+      description:
+        "A abertura, as bios de Pedro e Laura e a missão, visão e valores vieram do briefing. Confiram datas, cargos e experiências antes de divulgar. Ao revisar, salvem a seção (mesmo sem mudar nada) e este aviso some.",
+      href: "/painel/site/textos/about#bloco-fundadores",
+      actionLabel: "Revisar biografias",
     });
   }
 
@@ -96,14 +119,61 @@ export function computeLaunchPending(s: LaunchSnapshot): LaunchPending[] {
     });
   }
 
+  if (s.termsIsBaseText) {
+    out.push({
+      id: "terms",
+      tone: "alerta",
+      title: "Termos de uso ainda no texto-base",
+      description: "O texto é um ponto de partida, sem dados da empresa (razão social, CNPJ, foro). Precisa de revisão jurídica antes de divulgar o site.",
+      href: "/painel/site/textos/termsPage",
+      actionLabel: "Revisar termos",
+    });
+  }
+
+  if (s.cookiesIsBaseText) {
+    out.push({
+      id: "cookies",
+      tone: "alerta",
+      title: "Política de cookies ainda no texto-base",
+      description:
+        "Descreve o que o site usa hoje (nenhum cookie de rastreamento; só os do login). Precisa de revisão jurídica — e de atualização se um dia forem ligadas estatísticas ou publicidade.",
+      href: "/painel/site/textos/cookiesPage",
+      actionLabel: "Revisar cookies",
+    });
+  }
+
+  if (s.visibleServices > 0 && s.servicesWithoutDescription > 0) {
+    out.push({
+      id: "services-descriptions",
+      tone: "info",
+      title: s.servicesWithoutDescription === 1 ? "Um serviço ainda sem descrição" : `${s.servicesWithoutDescription} serviços ainda sem descrição`,
+      description:
+        "O briefing trouxe o nome e as entregas de cada serviço. Descrição, benefícios, perguntas e fotos são escritos por vocês: enquanto estiverem vazios, esses blocos não aparecem na página do serviço.",
+      href: "/painel/site/servicos",
+      actionLabel: "Completar serviços",
+    });
+  }
+
+  if (s.visiblePlans > 0 && s.plansWithIncludes < s.visiblePlans) {
+    out.push({
+      id: "plans-includes",
+      tone: "info",
+      title: "Planos sem entregas cadastradas",
+      description: "A tabela comparativa é montada com o campo “O que inclui” de cada plano. Plano sem entregas aparece vazio na comparação.",
+      href: "/painel/site/pacotes",
+      actionLabel: "Ver planos",
+    });
+  }
+
   if (s.visiblePackages > 0 && s.packagesWithPrice === 0) {
     out.push({
       id: "packages-prices",
       tone: "info",
-      title: "Pacotes sem valores cadastrados",
-      description: "Tudo bem: o combinado é mostrar “Sob consulta” até vocês cadastrarem os valores. Quando quiserem, é só preencher em Pacotes.",
+      title: "Planos sem valores publicados",
+      description:
+        "Tudo bem: o combinado é não publicar preços nem quantidades até validar custos, capacidade e margem. Enquanto isso o site mostra “Investimento personalizado para o seu negócio.”. Quando quiserem, é só preencher em Planos.",
       href: "/painel/site/pacotes",
-      actionLabel: "Ver pacotes",
+      actionLabel: "Ver planos",
     });
   }
 

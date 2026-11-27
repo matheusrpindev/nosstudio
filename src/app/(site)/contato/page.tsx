@@ -4,23 +4,23 @@ import { LeadForm } from "@/components/site/lead-form";
 import { PageHeader, Section } from "@/components/site/layout";
 import { instagramLink, whatsAppLink } from "@/lib/format";
 import { buildMetadata } from "@/lib/site/seo";
-import { getPackages, getSiteContent } from "@/server/site/queries";
+import { getLeadOriginNames, getSiteContent } from "@/server/site/queries";
 import "./contact.css";
 
 export const generateMetadata = () => buildMetadata("contato");
 
 /**
- * Contato e orçamento: página de conversão. Estática — `?servico=` e `?pacote=` são lidos no navegador pelo
- * <LeadForm> (pré-seleção do serviço, `packageName`) e por <ContactPackageNotice> (aviso "Pedido sobre").
+ * Contato e orçamento: página de conversão, com o formulário "inteligente" do briefing v2 (seção 10) — os campos
+ * adicionais mudam conforme o serviço escolhido. Estática: `?servico=` e `?pacote=` são lidos no navegador pelo
+ * <LeadForm> (pré-seleção do serviço/plano de origem) e por <ContactPackageNotice> (aviso "Pedido sobre").
  */
 export default async function ContactPage() {
-  const [{ contactPage, general, howItWorks, visibility }, packages] = await Promise.all([getSiteContent(), getPackages()]);
-  // `?pacote=` só vale para nomes de pacotes publicados (nada de texto arbitrário exibido na página)
-  const packageNames = [...packages.plans, ...packages.standalone].map((pkg) => pkg.name);
+  const [{ contactPage, general, howItWorks }, packageNames] = await Promise.all([getSiteContent(), getLeadOriginNames()]);
+  // `?pacote=` só vale para nomes de planos e serviços publicados (nada de texto arbitrário exibido na página)
 
   const whatsapp = whatsAppLink(general.whatsapp, general.whatsappMessage);
   const instagram = instagramLink(general.instagram);
-  const steps = visibility.howItWorks ? howItWorks.steps.slice(0, 3) : [];
+  const steps = howItWorks.steps.filter((step) => step.title).slice(0, 5);
 
   return (
     <>

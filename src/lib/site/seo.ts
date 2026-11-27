@@ -6,18 +6,20 @@ import "server-only";
 import type { Metadata } from "next";
 import { env } from "@/lib/env";
 import type { SiteContent } from "@/lib/site/content";
+import { SITE_PATHS } from "@/lib/site/paths";
 import { getSiteContent, getSiteImages } from "@/server/site/queries";
 
 export type SeoPage = keyof SiteContent["seo"]["pages"];
 
 export const SEO_PATHS: Record<SeoPage, string> = {
-  home: "/",
-  sobre: "/sobre",
-  servicos: "/servicos",
-  pacotes: "/pacotes",
-  casamentos: "/casamentos",
-  portfolio: "/portfolio",
-  contato: "/contato",
+  home: SITE_PATHS.home,
+  sobre: SITE_PATHS.about,
+  servicos: SITE_PATHS.services,
+  // as chaves internas são as do briefing v1 (o que já foi salvo continua valendo); os caminhos, os do v2
+  pacotes: SITE_PATHS.plans,
+  casamentos: SITE_PATHS.events,
+  portfolio: SITE_PATHS.portfolio,
+  contato: SITE_PATHS.contact,
 };
 
 type CustomPage = {

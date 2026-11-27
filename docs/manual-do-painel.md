@@ -209,22 +209,44 @@ Os padrões de cada orçamento novo (validade, sinal, textos, tributos e meta de
 
 ## Editar o site
 
-Tudo o que o público vê é editado em **Editar site**, que tem oito abas: **Visão geral**, **Textos**, **Avisos**, **Serviços**, **Pacotes**, **FAQ**, **Portfólio** e **Depoimentos**.
+Tudo o que o público vê é editado em **Editar site**, que tem nove abas: **Visão geral**, **Página inicial**, **Textos**, **Avisos**, **Serviços**, **Planos**, **FAQ**, **Portfólio** e **Depoimentos**.
 
 **Salvar atualiza o site na hora.** Não existe botão de "publicar" depois de salvar. Para conferir, use **Ver no site**, que abre em outra aba. Se um texto nunca foi editado, o site mostra o texto original combinado com vocês.
 
+### Página inicial: ordem e seções
+
+Em **Página inicial** fica a lista das seções da home, na ordem em que aparecem: **Serviços**, **Portfólio em destaque**, **Diferenciais**, **Fundadores**, **Processo de atendimento**, **Planos**, **Serviços avulsos**, **Eventos e casamentos**, **Clientes e depoimentos**, **Perguntas frequentes** e **Formulário de contato**.
+
+- Para **mudar a ordem**, arraste a seção pela alça (os seis pontinhos) ou use as setas. No celular, use as setas.
+- Para **esconder** uma seção, desligue a chave dela. Ela continua guardada e volta ao mesmo lugar quando você ligar de novo.
+- **Conteúdo** leva à tela onde se edita o que a seção mostra.
+- Uma seção ligada mas **sem conteúdo publicado** não aparece no site (o painel mostra "Sem conteúdo: não aparece" e explica o motivo).
+- **Restaurar ordem original** devolve a sequência combinada, com tudo ligado.
+
+A barra de avisos, o menu, o topo da página e o rodapé são fixos e não entram na lista.
+
 ### Textos
 
-Em **Textos**, cada cartão é uma parte do site: **Contato e redes**, **Visibilidade das seções**, **Página inicial**, **Quem Somos**, **Como funciona**, **Página de serviços**, **Página de pacotes**, **Página de casamentos**, **Página de portfólio**, **Contato e orçamento**, **Política de privacidade** e **SEO e compartilhamento**. Um selo mostra se a seção está como **Texto original** ou **Editado**.
+Em **Textos**, cada cartão é uma parte do site: **Contato e redes**, **Menu e rodapé**, **Páginas visíveis**, **Página inicial**, **Diferenciais**, **Processo de atendimento**, **Sobre a NÓS**, **Páginas de serviços**, **Página de planos**, **Eventos e Casamentos**, **Página de portfólio**, **Contato e orçamento**, **Política de privacidade**, **Termos de uso**, **Política de cookies**, **Página não encontrada (404)** e **SEO e compartilhamento**. Um selo mostra se a seção está como **Texto original** ou **Editado**.
 
 Abra a seção, mude o que quiser e toque em **Salvar alterações**. Para voltar ao combinado inicial, use **Restaurar texto original** (isso apaga as suas edições daquela seção).
 
 Nos botões do site (grupos com **Texto do botão** e **Para onde leva**), deixar o **texto vazio esconde o botão**. O link fica guardado para quando você escrever o texto de novo.
 
-### Fotos dos fundadores e do casal
+Para **destacar um trecho de um título** com a barra verde-lima, escreva o trecho entre asteriscos: `histórias que *permanecem.*`
 
-- Fotos de Pedro e Laura: **Textos › Quem Somos**, grupo **Fundadores**, no campo **Foto** de cada pessoa. Funciona melhor com foto de rosto ou meio corpo, quadrada ou vertical.
-- Foto do casal: **Textos › Quem Somos**, grupo **Abertura**, campo **Foto do casal**.
+### Menu, rodapé e páginas legais
+
+Em **Textos › Menu e rodapé** ficam os nomes dos itens do menu, o link da **Área do Cliente** (leva à tela de login) e o **botão de destaque do topo** ("Solicitar proposta"). Apagar o nome de um item o tira do menu e do rodapé. O menu se ajusta sozinho: **Planos** só aparece com planos publicados e **Portfólio**, só com projetos publicados.
+
+O rodapé mostra o logo, a frase da marca, o menu, WhatsApp, Instagram, e-mail, a região de atendimento, a Área do Cliente e os links de **Privacidade**, **Termos** e **Cookies**. Os textos dessas três páginas ficam em **Textos** e são **textos-base que precisam de revisão jurídica** antes da divulgação. O site não usa cookies de rastreamento, por isso não há aviso de consentimento de cookies. Se um dia forem ligadas estatísticas ou publicidade, a política de cookies e o site precisam mudar antes.
+
+### Sobre a NÓS: biografias e fotos
+
+A abertura, as bios e a missão, visão e valores vieram do briefing de novembro de 2026. **Validem as biografias antes de divulgar** (datas, cargos e experiências): **Textos › Sobre a NÓS**. Ao revisar, salvem a seção — o aviso "Biografias a validar" some da lista de pendências.
+
+- Fotos de Pedro e Laura: **Textos › Sobre a NÓS**, grupo **Fundadores**, no campo **Foto** de cada pessoa. Funciona melhor com foto de rosto ou meio corpo, quadrada ou vertical.
+- Foto dos dois juntos: **Textos › Sobre a NÓS**, grupo **Abertura**, campo **Foto dos dois juntos**.
 
 Sem fotos, o site mostra um espaço com as iniciais. Só envie fotos reais.
 
@@ -242,21 +264,41 @@ Um aviso com **Começa em** no futuro aparece na lista como **Agendado**. O text
 
 ### Serviços
 
-Em **Serviços** ficam os serviços que aparecem na página de serviços e na página inicial. Dá para editar o resumo, a descrição, o que está incluído, a capa, a galeria e o vídeo. Em **Interesse já marcado no formulário** você escolhe o que vem selecionado no contato. Com **Mostrar no site** desligado, o serviço fica guardado e some do site.
+Em **Serviços** ficam os serviços do site, na ordem em que aparecem na página de Serviços e na página inicial. **Cada serviço publicado tem uma página própria** (`/servicos/nome-do-servico`), com a capa, a descrição, as possíveis entregas, os benefícios, o vídeo e a galeria, os trabalhos relacionados, as perguntas frequentes e um formulário de orçamento que já sabe de qual serviço se trata.
 
-### Pacotes: como publicar valores
+- **Novo serviço** cria uma nova área sem precisar de programador: ela ganha página, entra nas listas e no mapa do site.
+- O briefing trouxe o nome e as entregas de cada serviço. **Resumo, descrição, benefícios, perguntas e fotos são escritos por vocês**: enquanto estiverem vazios, esses blocos simplesmente não aparecem na página. A lista mostra, em "Conteúdo", o que ainda falta em cada um.
+- **Trabalhos relacionados**: marque os projetos do Portfólio que mostram aquele serviço. Só os publicados aparecem.
+- Em **Interesse já marcado no formulário** você escolhe o que vem selecionado no contato.
+- **Publicar no site** desligado deixa o serviço como rascunho: ele some das listas e do mapa do site, e a página dele deixa de existir.
 
-O padrão é **Sob consulta**. Combinado com vocês: nenhum valor ou quantidade aparece até serem aprovados.
+### Planos e serviços avulsos
 
-Para publicar um valor, abra o pacote em **Pacotes** e, em **Como o preço aparece**, escolha **A partir de** ou **Preço fixo**, preencha o **Valor** e, se quiser, o **Complemento** (por exemplo, /mês). O painel mostra "No site aparece: …" antes de salvar. Para voltar atrás, escolha **Sob consulta** de novo.
+Em **Planos** ficam os planos mensais (**Plano Essencial**, **Plano Integrado** e **Plano Estratégico** — nomes provisórios do briefing) e os **serviços avulsos**.
 
-As **Entregas e quantidades** (por exemplo, "Reels — 8 por mês") só aparecem no site quando preenchidas, então preencha apenas o que já foi aprovado. **Pacote recomendado** dá destaque visual e **Mostrar no site** liga e desliga o pacote.
+- **O que inclui**: uma entrega por linha. É daqui que sai a **tabela comparativa** da página de Planos: escreva a mesma entrega do mesmo jeito em todos os planos.
+- **Plano-base**: quando um plano inclui tudo de outro, escolha o outro aqui. O site mostra "Tudo do Plano Essencial, mais:" e a tabela comparativa marca também as entregas herdadas. O **Plano Integrado** já vem apoiado no Essencial. O briefing não diz se o **Estratégico** inclui as entregas do Integrado: se incluir, é só escolher o plano-base.
+- **Plano em destaque**: ganha o bloco roxo e a etiqueta "Recomendado". Dá para destacar qualquer plano, ou nenhum.
+- **Opcionais**: o que pode ser acrescentado ao plano. Só aparece se preenchido.
+- **Entregas e quantidades** (por exemplo, "Reels — 8 por mês") só aparecem no site quando preenchidas.
+
+**Valores.** O padrão é **Valor oculto**: o site mostra o texto "Investimento personalizado para o seu negócio." (editável em **Textos › Página de planos**). O combinado é não publicar preços nem quantidades antes de validar custos, capacidade e margem. Dá para deixar o **Valor** já preenchido e oculto. Para publicar, escolha **A partir de** ou **Preço fixo** em **Como o valor aparece**; o painel mostra "No site aparece: …" antes de salvar. **Desconto ou condição** (por exemplo, "10% no contrato semestral") aparece logo abaixo do valor, e só quando o valor está publicado.
+
+A tabela comparativa pode ser desligada em **Textos › Página de planos**.
+
+### Eventos e Casamentos, e os pedidos do site
+
+A página **Eventos e Casamentos** separa eventos corporativos e sociais de casamentos e termina no formulário **Consultar disponibilidade da minha data**. Os textos ficam em **Textos › Eventos e Casamentos**. Galeria e depoimentos só aparecem quando houver projetos de eventos e casamentos publicados no Portfólio e depoimentos publicados.
+
+**O formulário não reserva data.** Cada envio vira um **lead** (em **Leads**), com tipo de evento, data, horário, cidade, local, convidados e serviços desejados. Nada entra na agenda sozinho: na ficha do lead há o botão **Ver a agenda neste dia** para vocês conferirem e responderem.
+
+O formulário de **Contato** muda conforme o serviço escolhido: marketing pede segmento e perfil da marca; audiovisual pede tipo de produção e previsão; evento pede data e local. Empresa e objetivo valem para todos. Tudo aparece na ficha do lead, junto com o plano ou serviço de origem (quando a pessoa veio de um botão do site). Ao converter um lead que informou a empresa, ela vira o cliente e quem escreveu vira a pessoa de contato.
 
 ### FAQ (perguntas frequentes)
 
 As 6 respostas sugeridas que já vêm no painel são **rascunhos**, só um ponto de partida. Leia, ajuste e só então ligue **Publicada no site**.
 
-Uma pergunta só aparece no site se estiver publicada, tiver resposta e estiver marcada em **Mostrar na página inicial** e/ou **Mostrar em Casamentos**. Se não houver nenhuma pergunta publicada, o bloco de FAQ inteiro some.
+Uma pergunta só aparece no site se estiver publicada, tiver resposta e estiver marcada em **Mostrar na página inicial** e/ou **Mostrar em Eventos e Casamentos**. As perguntas de um serviço específico ficam na ficha do serviço. Se não houver nenhuma pergunta publicada, o bloco de FAQ inteiro some.
 
 ### Portfólio e Depoimentos
 
@@ -264,13 +306,13 @@ Os dois **começam ocultos e vazios, de propósito**. Só cadastre **material re
 
 Para publicar um projeto, cadastre-o em **Portfólio › Novo projeto** e ligue **Publicado no site**. Use **Exibir o nome do cliente no site (autorizado)** só se o cliente autorizou. No caso de depoimentos, **Novo depoimento** exige marcar **Autorização do cliente registrada**: sem isso não dá para publicar. Copie as palavras do cliente sem melhorar o texto.
 
-Depois, é preciso **ligar a visibilidade** da seção: em **Textos › Visibilidade das seções**, ligue **Portfólio** e **Depoimentos**. Enquanto a chave estiver desligada, nada aparece, mesmo com itens publicados (o painel avisa isso em cada página). E mesmo com a chave ligada, um bloco sem nenhum item publicado não aparece, nem no menu.
+Depois, é preciso **ligar a visibilidade** da seção: em **Textos › Páginas visíveis**, ligue **Portfólio** e **Depoimentos**. Enquanto a chave estiver desligada, nada aparece, mesmo com itens publicados (o painel avisa isso em cada página). E mesmo com a chave ligada, um bloco sem nenhum item publicado não aparece, nem no menu.
 
-Nessa mesma tela você também liga ou desliga **Pacotes e planos**, **Casamentos**, **Fundadores**, **Como funciona**, **Perguntas frequentes** e o **Botão flutuante de WhatsApp**.
+Nessa mesma tela você também liga ou desliga as páginas de **Planos** e de **Eventos e Casamentos**, as **Perguntas frequentes** e o **Botão flutuante de WhatsApp**. Para esconder um bloco só da página inicial, use a aba **Página inicial**.
 
 ### Contato e WhatsApp
 
-Em **Textos › Contato e redes** ficam o **Número do WhatsApp comercial**, a **Mensagem que já vem escrita**, o **E-mail de contato**, o **Instagram**, as **Outras redes** e a **Cidade ou região atendida**.
+Em **Textos › Contato e redes** ficam o **Número do WhatsApp comercial**, a **Mensagem que já vem escrita** ("Olá, NÓS! Conheci o trabalho de vocês pelo site e gostaria de conversar sobre um projeto."), o **E-mail de contato**, o **Instagram**, as **Outras redes**, a **Cidade ou região atendida** (a localização do rodapé) e a **Linha de direitos autorais**.
 
 **Sem número de WhatsApp cadastrado, todos os botões de WhatsApp somem do site.** O formulário de contato continua funcionando normalmente. O que ficar em branco (e-mail, Instagram, região) simplesmente não aparece.
 
@@ -285,10 +327,12 @@ Em **Editar site › Visão geral**, o painel calcula as pendências e mostra "A
 1. **WhatsApp**: cadastrar o número em **Textos › Contato e redes**. Sem ele, os botões de WhatsApp ficam ocultos.
 2. **E-mail de contato**: cadastrar no mesmo lugar. Ele aparece no rodapé e na política de privacidade, para pedidos de quem quer cuidar dos próprios dados.
 3. **Fotos dos fundadores**: enviar a foto de Pedro e a de Laura.
-4. **Foto do casal**: enviar em **Quem Somos**.
-5. **Perguntas frequentes**: revisar as respostas sugeridas e publicar pelo menos uma.
-6. **Política de privacidade**: revisar com advogado ou assessoria jurídica e atualizar o texto e a versão em **Textos › Política de privacidade**. O painel só tira o aviso quando o texto ou a versão mudam.
-7. **Pacotes**: lembrete, não obrigação. "Sob consulta" é um estado válido. Preencha quando quiserem divulgar valores.
+4. **Foto dos dois juntos**: enviar em **Sobre a NÓS**.
+5. **Biografias a validar**: conferir a abertura, as bios e a missão, visão e valores em **Textos › Sobre a NÓS** e salvar a seção.
+6. **Perguntas frequentes**: revisar as respostas sugeridas e publicar pelo menos uma.
+7. **Política de privacidade**, **Termos de uso** e **Política de cookies**: revisar com advogado ou assessoria jurídica e atualizar o texto e a versão de cada uma em **Textos**. O painel só tira cada aviso quando o texto ou a versão mudam.
+8. **Serviços sem descrição** e **Planos sem entregas**: lembretes. Os blocos vazios não aparecem no site; completem quando quiserem.
+9. **Planos sem valores publicados**: lembrete, não obrigação. O texto "Investimento personalizado para o seu negócio." é um estado válido. Preencham quando quiserem divulgar valores.
 
 Na **Visão geral** do painel (a tela inicial), os administradores veem também um aviso se o **envio de e-mail (SMTP)** não estiver configurado. Sem ele, o aviso de novo lead e a recuperação de senha por e-mail não funcionam (veja o documento Contas e serviços).
 
@@ -648,7 +692,7 @@ Enquanto isso, a exportação em **Configurações › Dados** é uma cópia ext
 
 - **Não consigo entrar**: confira o e-mail, tente **Esqueci minha senha** ou peça ao seu sócio uma **Nova senha** em **Configurações › Usuários**. Se aparecer "Muitas tentativas", veja "Bloqueio e desbloqueio do login" em "Primeiro acesso".
 - **Fui desconectado sem sair**: a conta entrou em mais de 10 aparelhos (o mais antigo sai), a senha foi trocada ou gerada de novo, ou alguém usou **Encerrar outras sessões**. É só entrar de novo.
-- **Salvei e o site não mudou**: atualize a página do site (no celular, feche e abra de novo). Veja se a seção está ligada em **Visibilidade das seções** e se o item está publicado.
+- **Salvei e o site não mudou**: atualize a página do site (no celular, feche e abra de novo). Veja se a seção está ligada em **Páginas visíveis** e se o item está publicado.
 - **Mensagem de erro na tela**: anote o que você estava fazendo, tire um print e avise o responsável técnico.
 - **Apaguei algo sem querer**: avise o responsável técnico logo. Exclusões são definitivas no painel, mas pode haver cópia em backup.
 - **O painel está fora do ar**: avise o responsável técnico. Para o site e o painel, o que precisa existir é explicado no documento Contas e serviços.
@@ -679,17 +723,17 @@ Não. Enviar, aceitar e converter em projeto já movem o cliente (Em orçamento,
 
 Faltou algum dado no cadastro (CPF, data do evento…) ou o modelo tem um campo que o painel não conhece. Complete o cadastro e salve o contrato de novo, ou escreva o texto no lugar do campo. Veja "Campos automáticos".
 
-### Por que o site mostra "Sob consulta" nos pacotes?
+### Por que o site mostra "Investimento personalizado para o seu negócio." nos planos?
 
-É o combinado até vocês cadastrarem os valores. Veja "Pacotes: como publicar valores".
+É o combinado até vocês publicarem os valores. Veja "Planos e serviços avulsos".
 
 **Cadastrei um projeto no portfólio e ele não aparece no site.**
-Confira duas coisas: se o projeto está com **Publicado no site** ligado e se **Portfólio** está ligado em **Textos › Visibilidade das seções**.
+Confira duas coisas: se o projeto está com **Publicado no site** ligado e se **Portfólio** está ligado em **Textos › Páginas visíveis**.
 
 **Os botões de WhatsApp sumiram do site.**
 Não há número cadastrado. Preencha em **Textos › Contato e redes**.
 
-### Posso mudar a ordem dos serviços, pacotes e perguntas?
+### Posso mudar a ordem dos serviços, planos e perguntas?
 
 Sim. Use as setas na lista de cada um. A ordem da lista é a ordem no site.
 

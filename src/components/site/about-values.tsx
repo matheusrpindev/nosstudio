@@ -1,6 +1,6 @@
 /**
  * Valores em linhas tipográficas (página /sobre): número, palavra gigante e o compromisso ao lado.
- * Na home os mesmos valores aparecem resumidos com <ValuesList />.
+ * Quando nenhum valor tem frase (só os nomes, como no briefing v2), a lista vira uma grade de palavras.
  */
 import { revealProps } from "./reveal";
 import { pad2 } from "./text";
@@ -15,7 +15,7 @@ export function AboutValues({
   if (items.length === 0) return null;
   const Title = `h${headingLevel}` as "h3" | "h4";
   return (
-    <ol className="about__values">
+    <ol className="about__values" data-plain={items.every((item) => !item.text) || undefined}>
       {items.map((item, i) => (
         <li key={i} className="about__value" {...revealProps(i % 4)}>
           <span className="about__value-n" aria-hidden="true">

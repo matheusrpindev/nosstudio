@@ -16,7 +16,7 @@ export function FaqForm({ action, faq }: { action: FormAction; faq: Faq | null }
       <div className="space-y-1">
         <Switch name="published" label="Publicada no site" hint="Desligada, fica como rascunho e não aparece para os visitantes. Só publique depois que os sócios revisarem a resposta." defaultChecked={faq?.published ?? false} />
         <Switch name="showOnHome" label="Mostrar na página inicial" hint="Aparece no resumo de perguntas da página inicial (só se estiver publicada)." defaultChecked={faq?.showOnHome ?? false} />
-        <Switch name="showOnWeddings" label="Mostrar em Casamentos" hint="Aparece nas perguntas da página de Casamentos (só se estiver publicada). Sem nenhuma das duas marcas, a pergunta publicada não aparece em lugar nenhum." defaultChecked={faq?.showOnWeddings ?? false} />
+        <Switch name="showOnWeddings" label="Mostrar em Eventos e Casamentos" hint="Aparece nas perguntas da página de Eventos e Casamentos (só se estiver publicada). Sem nenhuma das duas marcas, a pergunta publicada não aparece em lugar nenhum." defaultChecked={faq?.showOnWeddings ?? false} />
       </div>
       <FormActions>
         <SubmitButton pendingLabel="Salvando…">{faq ? "Salvar pergunta" : "Criar pergunta"}</SubmitButton>

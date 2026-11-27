@@ -20,7 +20,8 @@ react-markdown · sharp · nodemailer · @node-rs/argon2. Idioma da interface, d
 ## Estrutura
 
 ```
-src/app/(site)/…            páginas públicas: /, /sobre, /servicos, /pacotes, /casamentos, /portfolio, /contato, /privacidade
+src/app/(site)/…            páginas públicas: /, /sobre, /servicos, /servicos/[slug], /planos, /eventos-e-casamentos, /portfolio,
+                            /contato, /privacidade, /termos, /cookies (rotas antigas /pacotes e /casamentos: redirects em next.config.ts)
 src/app/(auth)/…            /login, /recuperar-senha, /redefinir-senha, /convite (aceite), /conta/senha (troca fora do painel)
 src/app/painel/…            painel (protegido). Um diretório por módulo.
 src/app/media/[...key]/     entrega de uploads
@@ -30,6 +31,7 @@ src/components/site/        componentes do site público
 src/db/schema.ts            schema (fonte da verdade do banco)        src/db/index.ts   → `db`
 src/lib/domain.ts           enums + rótulos pt-BR (fonte única)       src/lib/format.ts, dates.ts → formatação
 src/lib/site/content.ts     modelo + padrões do conteúdo editável     src/lib/settings.ts → configs internas
+src/lib/site/home-layout.ts ordem e visibilidade das seções da home   src/lib/site/paths.ts → caminhos das páginas públicas
 src/lib/auth/               sessão, senha, limitador de tentativas, actions de login, GUARDAS (`require…`)
 src/lib/permissions/        perfis, ambientes e matriz módulo × ação (puro; serve no cliente e no servidor)
 src/server/access/          escopo por projeto/cliente, membros, convites (a parte de permissões com banco)
@@ -115,7 +117,14 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
 ## Conteúdo do site (regras dos sócios)
 
 - Nada inventado: sem clientes, projetos, depoimentos, números, prêmios, ano de fundação ou preços fictícios.
-- Pacotes: "Sob consulta" até os sócios cadastrarem valores; quantidades só aparecem quando preenchidas.
+- Planos: sem preços nem quantidades até os sócios publicarem — no lugar do valor entra o texto de
+  `packagesPage.priceOnRequestLabel` ("Investimento personalizado para o seu negócio."); quantidades só aparecem
+  quando preenchidas. A tabela comparativa sai do "O que inclui" de cada plano (`src/lib/site/plans.ts`).
+- Serviços: cada serviço publicado tem página própria (`/servicos/[slug]`). Benefícios, FAQ do serviço e trabalhos
+  relacionados nascem vazios e só renderizam quando preenchidos no painel.
+- Página inicial: a ordem e a visibilidade das seções vêm de `getHomeLayout()` (Editar site › Página inicial).
+- Formulários: o envio vira lead com os campos do tipo do pedido (`buildLeadRecord`); o de Eventos e Casamentos
+  NÃO cria compromisso na agenda nem promete data.
 - Portfólio e depoimentos começam ocultos; blocos sem conteúdo publicado **não renderizam** (nem título, nem link).
 - FAQ: só perguntas publicadas e com resposta.
 - Sem WhatsApp configurado, os botões de WhatsApp não aparecem (o formulário continua funcionando).

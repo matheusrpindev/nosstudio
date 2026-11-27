@@ -52,10 +52,10 @@ export default async function FaqPage() {
         faq.showOnHome || faq.showOnWeddings ? (
           <span className="flex flex-wrap gap-1.5">
             {faq.showOnHome ? <Badge tone="roxo">Início</Badge> : null}
-            {faq.showOnWeddings ? <Badge tone="roxo">Casamentos</Badge> : null}
+            {faq.showOnWeddings ? <Badge tone="roxo">Eventos e Casamentos</Badge> : null}
           </span>
         ) : (
-          <span className="text-texto-suave">Nenhuma página (marque Início ou Casamentos)</span>
+          <span className="text-texto-suave">Nenhuma página (marque Início ou Eventos e Casamentos)</span>
         ),
     },
     { key: "publicar", header: "No site", interactive: true, cell: (faq) => <RowSwitch id={faq.id} checked={faq.published} label={`Publicar a pergunta “${faq.question}”`} action={toggleFaqAction} /> },
@@ -74,7 +74,7 @@ export default async function FaqPage() {
     <>
       <PageHeader
         title="Perguntas frequentes"
-        description="Só perguntas publicadas e com resposta aparecem no site, na ordem desta lista: no resumo da página inicial e na página de Casamentos, conforme você marcar em cada pergunta."
+        description="Só perguntas publicadas e com resposta aparecem no site, na ordem desta lista: no resumo da página inicial e na página de Eventos e Casamentos, conforme você marcar em cada pergunta. As perguntas de um serviço específico ficam na ficha dele, em Serviços."
         actions={
           <>
             <ButtonLink href="/#faq" external variant="secondary" icon={<ExternalLink />}>
