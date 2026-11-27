@@ -23,6 +23,8 @@ import {
   AGENDA_VISIBILITIES,
   APPROVAL_STATUSES,
   BACKUP_STATUSES,
+  BANNER_LAYOUTS,
+  BANNER_TONES,
   BRAND_ASSET_CATEGORIES,
   BRAND_COLORS,
   CLIENT_KINDS,
@@ -43,6 +45,7 @@ import {
   PACKAGE_KINDS,
   PAYMENT_METHODS,
   PORTFOLIO_CATEGORIES,
+  PORTFOLIO_ORIGINS,
   PRICE_MODES,
   PROJECT_STAGES,
   PROPOSAL_COST_CATEGORIES,
@@ -126,6 +129,8 @@ export type LeadDetails = {
 export type ServiceBenefit = { title: string; text: string };
 /** Pergunta frequente de um serviço (página do serviço). Só aparece com pergunta E resposta. */
 export type ServiceFaq = { question: string; answer: string };
+/** Par "antes e depois" de um projeto do portfólio (ids de `media`). */
+export type PortfolioBeforeAfter = { beforeMediaId: number; afterMediaId: number; caption: string };
 
 // ============================================================== AUTENTICAÇÃO
 export const users = sqliteTable("users", {
@@ -292,6 +297,46 @@ export const announcements = sqliteTable("announcements", {
   endsAt: text("ends_at"),
   enabled: bool("enabled", false),
   dismissible: bool("dismissible", true),
+  /** Páginas em que o aviso aparece (chaves de `src/lib/site/paths.ts`). Vazio = todas. */
+  pages: text("pages", { mode: "json" }).$type<string[]>().notNull().default([]),
+  sortOrder: sortOrder(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/**
+ * Banners do carrossel da página inicial (briefing v2, seção 04). Só aparecem os ativos e dentro da janela
+ * de exibição. Sem nenhum banner no ar, a home mostra a abertura padrão (`HomeHero`).
+ */
+export const banners = sqliteTable("banners", {
+  id: id(),
+  /** Nome interno, só para a lista do painel. */
+  name: text("name").notNull().default(""),
+  layout: text("layout", { enum: BANNER_LAYOUTS }).notNull().default("tipografico"),
+  title: text("title").notNull().default(""),
+  subtitle: text("subtitle").notNull().default(""),
+  buttonLabel: text("button_label").notNull().default(""),
+  buttonUrl: text("button_url").notNull().default(""),
+  secondaryLabel: text("secondary_label").notNull().default(""),
+  secondaryUrl: text("secondary_url").notNull().default(""),
+  /** Imagem da versão desktop (sugestão: 1920 × 800). Em banner com vídeo, serve de capa. */
+  desktopMediaId: integer("desktop_media_id").references(() => media.id, { onDelete: "set null" }),
+  /** Imagem da versão celular (sugestão: 1080 × 1350). Sem ela, usa a de desktop. */
+  mobileMediaId: integer("mobile_media_id").references(() => media.id, { onDelete: "set null" }),
+  /** Vídeo curto de fundo (sem áudio, em loop). Opcional. */
+  videoMediaId: integer("video_media_id").references(() => media.id, { onDelete: "set null" }),
+  /** Descrição da imagem para leitores de tela — obrigatória em peça pronta. */
+  alt: text("alt").notNull().default(""),
+  /** Fundo do banner só de texto. */
+  bgColor: text("bg_color", { enum: BRAND_COLORS }).notNull().default("roxo"),
+  /** Cor do texto sobre a mídia. */
+  tone: text("tone", { enum: BANNER_TONES }).notNull().default("claro"),
+  /** Tempo em tela antes de passar para o próximo, em segundos. */
+  durationSeconds: integer("duration_seconds").notNull().default(7),
+  /** Janela de exibição, horário local `YYYY-MM-DDTHH:mm`. Nulo = sem limite. */
+  startsAt: text("starts_at"),
+  endsAt: text("ends_at"),
+  enabled: bool("enabled", false),
   sortOrder: sortOrder(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -374,6 +419,24 @@ export const portfolioProjects = sqliteTable(
     coverMediaId: integer("cover_media_id").references(() => media.id, { onDelete: "set null" }),
     gallery: text("gallery", { mode: "json" }).$type<number[]>().notNull().default([]),
     videoUrl: text("video_url"),
+    /** Vídeos adicionais (links do YouTube/Vimeo). */
+    extraVideoUrls: text("extra_video_urls", { mode: "json" }).$type<string[]>().notNull().default([]),
+    /** Estudo de caso (briefing v2, seção 08). Cada bloco só aparece quando preenchido. */
+    objective: text("objective").notNull().default(""),
+    challenge: text("challenge").notNull().default(""),
+    solution: text("solution").notNull().default(""),
+    /** Resultados comprovados — só o que os sócios puderem demonstrar. */
+    results: text("results").notNull().default(""),
+    /** Pares "antes e depois". */
+    beforeAfter: text("before_after", { mode: "json" }).$type<PortfolioBeforeAfter[]>().notNull().default([]),
+    /** Fotos de bastidores (ids de media). */
+    backstage: text("backstage", { mode: "json" }).$type<number[]>().notNull().default([]),
+    /** Projetos relacionados escolhidos à mão (ids). Só aparecem os publicados. */
+    relatedProjectIds: text("related_project_ids", { mode: "json" }).$type<number[]>().notNull().default([]),
+    /** Trabalho da NÓS ou experiência anterior de um fundador (o site identifica a diferença). */
+    origin: text("origin", { enum: PORTFOLIO_ORIGINS }).notNull().default("nos"),
+    /** Complemento da origem (ex.: "Trabalho de Pedro Henrique antes da NÓS"). */
+    originNote: text("origin_note").notNull().default(""),
     /** Data do trabalho/publicação exibida no site. */
     projectDate: text("project_date"),
     published: bool("published", false),

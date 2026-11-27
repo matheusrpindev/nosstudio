@@ -79,6 +79,29 @@ export const BRAND_COLOR_LABELS = labels(BRAND_COLORS, {
   branco: "Branco",
 });
 
+// ------------------------------------------------------------------ banners
+/**
+ * Como o banner da página inicial é montado:
+ * - `tipografico`: composição da marca (cor de fundo + título grande), sem mídia;
+ * - `midia`: imagem ou vídeo ao fundo, com título, subtítulo e botões por cima;
+ * - `peca`: peça já diagramada pelos sócios (a imagem ocupa tudo; os textos viram descrição acessível).
+ */
+export const BANNER_LAYOUTS = ["tipografico", "midia", "peca"] as const;
+export type BannerLayout = (typeof BANNER_LAYOUTS)[number];
+export const BANNER_LAYOUT_LABELS = labels(BANNER_LAYOUTS, {
+  tipografico: "Só texto (composição da marca)",
+  midia: "Imagem ou vídeo com texto por cima",
+  peca: "Peça pronta (arte diagramada)",
+});
+
+/** Cor do texto sobre a mídia do banner: `claro` = texto claro (mídia escura); `escuro` = texto escuro. */
+export const BANNER_TONES = ["claro", "escuro"] as const;
+export type BannerTone = (typeof BANNER_TONES)[number];
+export const BANNER_TONE_LABELS = labels(BANNER_TONES, {
+  claro: "Texto claro (mídia escura)",
+  escuro: "Texto escuro (mídia clara)",
+});
+
 // ------------------------------------------------------------------ pacotes
 export const PACKAGE_KINDS = ["plano", "avulso"] as const;
 export type PackageKind = (typeof PACKAGE_KINDS)[number];
@@ -104,6 +127,14 @@ export const PORTFOLIO_CATEGORY_LABELS = labels(PORTFOLIO_CATEGORIES, {
   videos: "Vídeos",
   eventos: "Eventos",
   casamentos: "Casamentos",
+});
+
+/** De onde vem o trabalho exibido: feito pela NÓS ou experiência anterior de um dos fundadores. */
+export const PORTFOLIO_ORIGINS = ["nos", "experiencia_anterior"] as const;
+export type PortfolioOrigin = (typeof PORTFOLIO_ORIGINS)[number];
+export const PORTFOLIO_ORIGIN_LABELS = labels(PORTFOLIO_ORIGINS, {
+  nos: "Trabalho da NÓS Studio",
+  experiencia_anterior: "Experiência anterior dos fundadores",
 });
 
 // -------------------------------------------------------------- depoimentos

@@ -6,6 +6,7 @@ export const TABLE_LABELS: Record<string, string> = {
   agenda_event_people: "Agenda: responsáveis e participantes",
   agenda_events: "Agenda: compromissos",
   announcements: "Site: avisos",
+  banners: "Site: banners",
   audit_log: "Auditoria: eventos",
   brand_assets: "Marca: arquivos e links",
   client_interactions: "Clientes: histórico de atendimento",
