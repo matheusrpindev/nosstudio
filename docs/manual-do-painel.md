@@ -239,7 +239,7 @@ Para **destacar um trecho de um título** com a barra verde-lima, escreva o trec
 
 Em **Textos › Menu e rodapé** ficam os nomes dos itens do menu, o link da **Área do Cliente** (leva à tela de login) e o **botão de destaque do topo** ("Solicitar proposta"). Apagar o nome de um item o tira do menu e do rodapé. O menu se ajusta sozinho: **Planos** só aparece com planos publicados e **Portfólio**, só com projetos publicados.
 
-O rodapé mostra o logo, a frase da marca, o menu, WhatsApp, Instagram, e-mail, a região de atendimento, a Área do Cliente e os links de **Privacidade**, **Termos** e **Cookies**. Os textos dessas três páginas ficam em **Textos** e são **textos-base que precisam de revisão jurídica** antes da divulgação. O site não usa cookies de rastreamento, por isso não há aviso de consentimento de cookies. Se um dia forem ligadas estatísticas ou publicidade, a política de cookies e o site precisam mudar antes.
+O rodapé mostra o logo, a frase da marca, o menu, WhatsApp, Instagram, e-mail, a região de atendimento, a Área do Cliente e os links de **Privacidade**, **Termos** e **Cookies**. Os textos dessas três páginas ficam em **Textos** e são **textos-base que precisam de revisão jurídica** antes da divulgação. O site não usa cookies de rastreamento, por isso não há aviso de consentimento de cookies: a contagem de visitas é do próprio site e não usa cookies (veja "Métricas do site (visitas)"). Se um dia forem ligadas estatísticas de terceiros ou publicidade, a política de cookies e o site precisam mudar antes.
 
 ### Sobre a NÓS: biografias e fotos
 
@@ -300,13 +300,51 @@ As 6 respostas sugeridas que já vêm no painel são **rascunhos**, só um ponto
 
 Uma pergunta só aparece no site se estiver publicada, tiver resposta e estiver marcada em **Mostrar na página inicial** e/ou **Mostrar em Eventos e Casamentos**. As perguntas de um serviço específico ficam na ficha do serviço. Se não houver nenhuma pergunta publicada, o bloco de FAQ inteiro some.
 
-### Portfólio e Depoimentos
+### Portfólio
 
-Os dois **começam ocultos e vazios, de propósito**. Só cadastre **material real e autorizado**: projetos que a NÓS fez e que o cliente deixou mostrar (imagens, vídeo e nome), e depoimentos que o cliente realmente disse.
+O portfólio **começa oculto e vazio, de propósito**. Ele aparece no site como a página **Portfólio** ("Nosso olhar em prática."), com pesquisa e filtros por categoria, e cada projeto publicado ganha uma página própria.
 
-Para publicar um projeto, cadastre-o em **Portfólio › Novo projeto** e ligue **Publicado no site**. Use **Exibir o nome do cliente no site (autorizado)** só se o cliente autorizou. No caso de depoimentos, **Novo depoimento** exige marcar **Autorização do cliente registrada**: sem isso não dá para publicar. Copie as palavras do cliente sem melhorar o texto.
+**As três regras do portfólio**
 
-Depois, é preciso **ligar a visibilidade** da seção: em **Textos › Páginas visíveis**, ligue **Portfólio** e **Depoimentos**. Enquanto a chave estiver desligada, nada aparece, mesmo com itens publicados (o painel avisa isso em cada página). E mesmo com a chave ligada, um bloco sem nenhum item publicado não aparece, nem no menu.
+1. **Só trabalhos reais e autorizados.** Publique apenas o que realmente foi feito e que o cliente deixou mostrar (imagens, vídeo e nome).
+2. **Nada entra sozinho.** Arquivos de projetos, da agenda, da biblioteca da marca ou enviados pela equipe **nunca vão para o portfólio automaticamente**. Publicar é sempre um ato manual de vocês: alguém cadastra o projeto aqui, envia as imagens aqui e liga **Publicado no site**.
+3. **O nome do cliente só aparece com autorização.** O campo **Cliente** fica guardado no painel; o site só mostra o nome se **Exibir o nome do cliente no site (autorizado)** estiver ligado. Sem isso, o nome não aparece em lugar nenhum do site, nem na pesquisa.
+
+**Cadastrar um projeto**
+
+Em **Editar site › Portfólio › Novo projeto**, o formulário tem sete partes. Só o título e a categoria são obrigatórios; no site, **cada bloco aparece apenas quando foi preenchido**.
+
+- **Básico**: título, categoria (Audiovisual, Fotografia, Design, Marketing, Identidade visual, Eventos ou Casamentos; é por ela que o visitante filtra), data do trabalho, cliente, resumo (a frase do cartão), descrição e **serviços realizados**.
+- **Estudo de caso**: **Objetivo**, **Desafio**, **Solução** e **Resultados**. Em Resultados, escreva só o que for **comprovado**, que vocês possam demonstrar se alguém perguntar. Sem resultado comprovado, deixe em branco: o bloco some.
+- **Mídia**: **Capa**, **Galeria** (no site, cada foto abre ampliada), **Vídeo principal** e **Vídeos adicionais** (links do YouTube ou do Vimeo; o vídeo só carrega quando o visitante clica).
+- **Antes e depois**: pares de imagens da mesma cena, com legenda opcional. No site, o visitante arrasta uma divisória para comparar. Use duas imagens com o mesmo enquadramento.
+- **Bastidores**: fotos do processo (gravação, montagem, equipe em ação).
+- **Relacionados**: até 6 outros projetos para mostrar no fim da página. Sem nenhum escolhido, o site mostra outros projetos publicados da mesma categoria.
+- **Publicação**: a **origem** do trabalho, **Destaque** e **Publicado no site**.
+
+**Trabalho da NÓS ou experiência anterior**
+
+Em **Origem do trabalho**, escolha **Trabalho da NÓS Studio** ou **Experiência anterior dos fundadores**, para trabalhos que um de vocês fez antes da NÓS. Nesse segundo caso o site avisa com clareza: o cartão ganha o selo "Experiência anterior" e a página do projeto abre com um aviso, seguido da **observação** que vocês escreverem (por exemplo, de quem é o trabalho). O texto do aviso fica em **Textos › Página de portfólio**.
+
+**Publicar**
+
+Um projeto só pode ser publicado **com capa** e **com texto alternativo em todas as imagens** (capa, galeria, bastidores, antes e depois). O texto alternativo descreve a imagem para quem não pode vê-la e é preenchido logo abaixo de cada foto. Se faltar algo, o painel não publica e mostra o que falta; para guardar o que já fez, salve como rascunho. Rascunhos ficam só no painel, e as imagens deles não são entregues a visitantes.
+
+**Ordem e destaque**
+
+A lista de **Portfólio** está **na ordem em que os projetos aparecem no site**. Para mudar, arraste pela alça à esquerda ou use as setas (que também funcionam no teclado e no celular). Projeto novo entra no topo. Com busca ou filtro aplicados a lista fica parcial, então a reordenação só volta ao limpar os filtros.
+
+A **estrela** marca o **destaque**: o projeto aparece maior na página do portfólio e entra no bloco **Portfólio em destaque** da página inicial, na ordem da lista (até 6). Sem nenhum destaque marcado, a página inicial mostra os 3 primeiros projetos. A **chave** de cada linha publica ou volta para rascunho.
+
+Os textos fixos da página (título, nome do campo de pesquisa, títulos dos blocos) ficam em **Textos › Página de portfólio**.
+
+### Depoimentos
+
+Os depoimentos também **começam ocultos e vazios**. Cadastre só o que o cliente realmente disse: **Novo depoimento** exige marcar **Autorização do cliente registrada**, e sem isso não dá para publicar. Copie as palavras do cliente sem melhorar o texto.
+
+### Ligar o Portfólio e os Depoimentos no site
+
+Além de publicar os itens, é preciso **ligar a visibilidade** da seção: em **Textos › Páginas visíveis**, ligue **Portfólio** e **Depoimentos**. Enquanto a chave estiver desligada, nada aparece, mesmo com itens publicados (o painel avisa isso em cada página). E mesmo com a chave ligada, um bloco sem nenhum item publicado não aparece, nem no menu.
 
 Nessa mesma tela você também liga ou desliga as páginas de **Planos** e de **Eventos e Casamentos**, as **Perguntas frequentes** e o **Botão flutuante de WhatsApp**. Para esconder um bloco só da página inicial, use a aba **Página inicial**.
 
@@ -319,6 +357,43 @@ Em **Textos › Contato e redes** ficam o **Número do WhatsApp comercial**, a *
 ### SEO (como o site aparece no Google)
 
 Em **Textos › SEO e compartilhamento** você define o nome do site nos resultados, a **Imagem de compartilhamento** (aparece quando alguém manda o link no WhatsApp ou Instagram; o ideal é 1200×630 px) e o título e a descrição de cada página, com uma prévia de como aparece no Google. Mantenha o título curto (cerca de 60 caracteres) e a descrição clara.
+
+### Métricas do site (visitas)
+
+Em **Editar site › Métricas** você vê quantas visitas o site recebe e o que acontece nelas. Na **Visão geral** do painel há um resumo (visitas de hoje e dos últimos 7 dias) que leva para esta tela.
+
+**O que aparece**
+
+- **Visitas** e **Visitantes estimados**, no total e dia a dia (gráfico; em "Ver valores em tabela" estão os números de cada dia).
+- **Páginas vistas**, **Formulários enviados**, **Conversão visita → formulário** (formulários ÷ visitas), **Leads recebidos**, **Cliques em WhatsApp** e **Cliques em banner**.
+- **Origem das visitas**: Direto, Busca, Redes sociais, Outros sites e Campanha, com a lista dos sites e redes de onde as pessoas vieram.
+- **Páginas mais vistas** (e em quantas visitas cada uma foi a porta de entrada), **Aparelhos** (celular, tablet, computador), cliques em cada botão de WhatsApp e em cada banner (pelo nome do banner), em que página estava cada formulário enviado e os **Serviços mais procurados** (o interesse informado nos leads).
+
+**Período**: 7, 30 ou 90 dias, um **Mês** (com as setas para voltar) ou um **Intervalo** de datas. Cada indicador mostra a variação contra o período anterior de mesmo tamanho. Enquanto não houver período anterior medido, aparece "Sem período anterior para comparar".
+
+**Como a contagem é feita** (o mesmo resumo está na tela, em "Como a contagem é feita"):
+
+- A medição é do próprio site: **não usa Google Analytics nem outro serviço de fora, não grava cookie e não guarda o IP de ninguém**. Por isso o site não precisa de aviso de cookies.
+- **Visita**: uma sequência de páginas da mesma pessoa. Depois de **30 minutos** sem atividade, a próxima página conta como visita nova. Recarregar a página não conta de novo. A visita não atravessa a meia-noite.
+- **Visitantes estimados**: pessoas diferentes em cada dia, reconhecidas por um código anônimo calculado a partir da rede e do navegador, com uma chave aleatória que **muda todo dia e é apagada**. É uma estimativa: a mesma pessoa no celular e no computador conta duas vezes, duas pessoas na mesma rede com o mesmo navegador podem contar uma, e quem volta em outro dia conta de novo (num período, o número é a soma dos dias).
+- **Não contam**: robôs e buscadores, pré-carregamento de página, navegadores sem JavaScript, **quem está logado no painel** (a sua navegação e a pré-visualização não entram) e as páginas do painel e de login.
+- **Origem**: de onde a pessoa chegou na primeira página da visita. Fica só o domínio (ex.: instagram.com), nunca o endereço completo. Links com `utm_source`, `utm_medium` ou `utm_campaign` contam como **Campanha**. Acesso por link enviado no WhatsApp ou digitado costuma aparecer como **Direto**.
+- **O que fica guardado**: os totais de cada dia, sem prazo. Os registros de cada visita (sem IP) são apagados depois de **30 dias**.
+
+Os números começam no dia em que a medição entrou no ar: não há histórico anterior. Com poucos dias medidos, a tela avisa quantos dias do período têm dados.
+
+**Exportar**: os botões **CSV por dia** e **CSV por recorte** (origem, páginas, aparelhos, cliques…) baixam a planilha do período escolhido. Só para administradores, como as outras exportações; o download fica na auditoria. A planilha só tem totais, sem dados pessoais.
+
+**Campanhas**: para medir um link divulgado (bio do Instagram, anúncio, e-mail), acrescente as marcações ao endereço, por exemplo `https://seusite.com.br/?utm_source=instagram&utm_medium=bio&utm_campaign=lancamento`. As visitas por esse link aparecem em **Campanhas**.
+
+### Contador de visitas no site
+
+A faixa "Cada visita é o começo de uma nova história." mostra, no fim das páginas do site (logo acima do rodapé), o **total real de visitas** desde que a medição começou, com a legenda "visitas ao site desde (mês e ano)".
+
+- **Nasce desligado.** Para mostrar, vá em **Textos › Contador de visitas** (ou no botão **Configurar** da tela de Métricas) e ligue **Mostrar o contador no site**.
+- **Só mostrar a partir de quantas visitas**: opcional. Enquanto o total for menor que esse número, a faixa fica oculta.
+- A **Frase** e a **Legenda do número** podem ser editadas. Na legenda, `{{inicio}}` vira o mês em que a contagem começou. Sem legenda o contador não aparece, porque o número precisa dizer o que conta.
+- O número **não pode ser digitado** nem ajustado: é sempre o total medido, o mesmo que a tela de Métricas mostra em "Contador público de visitas". No site ele é atualizado a cada poucos minutos.
 
 ## Antes de divulgar o site
 
@@ -639,7 +714,7 @@ Em **Dados**, **Baixar tudo (JSON)** gera uma cópia completa e há planilhas (C
 
 **Compromissos particulares**: o arquivo sai para quem está exportando. Os particulares de que você participa vão inteiros; os de outras pessoas vão como a agenda os mostra para você, só "Ocupado" com data, horário e de quem é (marcados com `oculto`), sem título, local, notas, pessoas nem nome de anexo. A auditoria registra quantos saíram assim. A cópia integral do banco é o **backup** feito no servidor (veja "Backup").
 
-Toda exportação é **só para administradores**: esta tela, o **Exportar CSV** de Clientes e do Financeiro e o botão **Dados deste titular (JSON)** da ficha do cliente (veja "Atender um pedido de acesso aos dados").
+Toda exportação é **só para administradores**: esta tela, o **Exportar CSV** de Clientes e do Financeiro, os **CSV** das Métricas do site e o botão **Dados deste titular (JSON)** da ficha do cliente (veja "Atender um pedido de acesso aos dados").
 
 ### Auditoria
 
@@ -651,6 +726,7 @@ Em **Auditoria** está o histórico de quem fez o quê no painel, com filtros po
 
 - Os dados de leads e clientes ficam **só no painel**, que exige login. O site público não mostra nada disso.
 - O formulário do site grava o consentimento com data e versão da política de privacidade. Por isso é importante manter a política revisada e a versão atualizada.
+- A contagem de visitas do site é anônima: sem cookie, sem IP guardado, só totais por dia (veja "Métricas do site (visitas)"). A Política de Privacidade e a Política de Cookies do site descrevem essa medição; se mudarem o texto, mantenham essa parte fiel ao que o site faz.
 - Não coloque senhas nem dados sensíveis desnecessários nas observações.
 - As **Observações internas** e as notas do **Cálculo interno** nunca vão para o PDF.
 
@@ -735,7 +811,7 @@ Não há número cadastrado. Preencha em **Textos › Contato e redes**.
 
 ### Posso mudar a ordem dos serviços, planos e perguntas?
 
-Sim. Use as setas na lista de cada um. A ordem da lista é a ordem no site.
+Sim. Use as setas na lista de cada um. A ordem da lista é a ordem no site. Os projetos do portfólio também podem ser arrastados pela alça.
 
 ### Como crio uma conta para o desenvolvedor dar suporte?
 

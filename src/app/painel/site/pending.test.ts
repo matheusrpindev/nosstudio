@@ -29,6 +29,12 @@ describe("pendências de lançamento", () => {
     expect(ids(READY)).toEqual([]);
   });
 
+  it("política própria que não fala da contagem de visitas vira pendência", () => {
+    const pending = computeLaunchPending({ ...READY, privacyMissesVisitMeasurement: true });
+    expect(pending.map((item) => item.id)).toEqual(["privacy-visits"]);
+    expect(pending[0]).toMatchObject({ tone: "alerta", href: "/painel/site/textos/privacyPage" });
+  });
+
   it("lista tudo o que falta num site recém-criado, cada item com link para resolver", () => {
     const empty: LaunchSnapshot = {
       whatsapp: "",

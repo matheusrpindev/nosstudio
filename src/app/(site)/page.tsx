@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ContactChannels, FaqAccordion, ServicePanels, StatementBanner, Steps, type ContactChannel } from "@/components/site/blocks";
 import { SiteButtonLink, SiteLink } from "@/components/site/button";
 import { DifferentialsList, ServiceIndex, StandaloneIndex } from "@/components/site/home-blocks";
+import { HomeBanners } from "@/components/site/banner-section";
 import { HomeHero } from "@/components/site/home-hero";
 import { Accented, Display, Section, SectionHeader } from "@/components/site/layout";
 import { LeadForm } from "@/components/site/lead-form";
@@ -13,8 +14,10 @@ import { displayRole, pad2, paragraphs, sectionCounter, splitStatement } from "@
 import { instagramLink, whatsAppLink } from "@/lib/format";
 import { visibleHomeSections, type HomeSectionId } from "@/lib/site/home-layout";
 import { SITE_PATHS } from "@/lib/site/paths";
+import { homeFeaturedProjects } from "@/lib/site/portfolio";
 import { buildMetadata } from "@/lib/site/seo";
 import {
+  getBanners,
   getFaqs,
   getHomeLayout,
   getPackages,
@@ -48,11 +51,13 @@ type HomeBlock = {
  * - A ORDEM e a VISIBILIDADE das seções vêm de `getHomeLayout()` (Editar site › Página inicial).
  * - Cada seção só existe em `blocks` quando tem conteúdo publicado: seção vazia não renderiza nem o título, e a
  *   numeração ("01 —", "02 —"…) continua sequencial.
- * - Pontos de encaixe da próxima etapa: BANNERS (no lugar do <HomeHero>, que continua sendo o topo e o dono do
- *   <h1>) e EXPERIÊNCIA INTERATIVA (depois da última seção, antes do rodapé) — estão marcados abaixo.
+ * - Topo: o carrossel de BANNERS (Editar site › Banners) quando há algum no ar; sem nenhum, o <HomeHero>. Em
+ *   qualquer dos dois casos a página tem exatamente um <h1>.
+ * - Ponto de encaixe da próxima etapa: EXPERIÊNCIA INTERATIVA (depois da última seção, antes do rodapé) — está
+ *   marcado abaixo.
  */
 export default async function HomePage() {
-  const [content, layout, images, services, packages, faqs, portfolio, testimonials] = await Promise.all([
+  const [content, layout, images, services, packages, faqs, portfolio, testimonials, banners] = await Promise.all([
     getSiteContent(),
     getHomeLayout(),
     getSiteImages(),
@@ -61,6 +66,7 @@ export default async function HomePage() {
     getFaqs(),
     getPortfolio(),
     getTestimonials(),
+    getBanners(),
   ]);
   const { general, visibility, home, about, differentials, howItWorks, packagesPage, weddingsPage, servicesPage, contactPage } = content;
   const { hero } = home;
@@ -71,7 +77,8 @@ export default async function HomePage() {
   const foundersText = paragraphs(home.founders.text);
   const diffItems = differentials.items.filter((item) => item.title);
   const steps = howItWorks.steps.filter((step) => step.title);
-  const featuredProjects = portfolio.slice(0, 3); // já vem com os destaques primeiro
+  // projetos marcados como destaque, na ordem do painel (sem nenhum marcado, os primeiros da lista)
+  const featuredProjects = homeFeaturedProjects(portfolio);
   const featuredTestimonials = testimonials.slice(0, 3);
   const homeFaqs = visibility.faq ? faqs.filter((faq) => faq.showOnHome) : [];
   const closingLead = [home.closing.title, home.closing.text].filter(Boolean).join(" ");
@@ -340,19 +347,23 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* PONTO DE ENCAIXE · BANNERS — na próxima etapa o carrossel gerenciável entra aqui, no lugar do hero.
-          Enquanto isso: "sua história" (papel) atravessa para dentro do "nosso olhar" (campo roxo com visor). */}
-      <HomeHero
-        eyebrow={hero.eyebrow}
-        title={hero.title}
-        lead={hero.lead}
-        text={hero.text}
-        primaryCta={hero.primaryCta}
-        secondaryCta={hero.secondaryCta}
-        image={images.hero}
-        caption={[blocks.fundadores ? founders.map((founder) => founder.name).join(" + ") : "", hero.mediaCaption]}
-        aside={instagram ? { label: general.instagram, href: instagram } : null}
-      />
+      {/* BANNERS (Editar site › Banners): com algum banner no ar, o carrossel ocupa o topo; sem nenhum, fica a
+          abertura padrão — "sua história" (papel) atravessa para dentro do "nosso olhar" (campo roxo com visor). */}
+      {banners.length > 0 ? (
+        <HomeBanners banners={banners} title={hero.title} eyebrow={hero.eyebrow} />
+      ) : (
+        <HomeHero
+          eyebrow={hero.eyebrow}
+          title={hero.title}
+          lead={hero.lead}
+          text={hero.text}
+          primaryCta={hero.primaryCta}
+          secondaryCta={hero.secondaryCta}
+          image={images.hero}
+          caption={[blocks.fundadores ? founders.map((founder) => founder.name).join(" + ") : "", hero.mediaCaption]}
+          aside={instagram ? { label: general.instagram, href: instagram } : null}
+        />
+      )}
 
       {sections}
 

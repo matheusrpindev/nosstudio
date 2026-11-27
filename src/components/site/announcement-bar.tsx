@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type CSSProperties } from "react";
+import { usePathname } from "next/navigation";
+import { Suspense, useState, type CSSProperties } from "react";
+import { announcementMatchesPath } from "@/lib/site/announcement-pages";
 import { InlineScript } from "./inline-script";
 import { AccentMark, Icon } from "./marks";
 
@@ -21,6 +23,8 @@ export type AnnouncementView = {
   startsAt: string | null;
   endsAt: string | null;
   dismissible: boolean;
+  /** Caminhos das páginas em que o aviso aparece (`/contato`…). Vazio = todas. */
+  paths: string[];
 };
 
 const storageKey = (item: Pick<AnnouncementView, "id" | "version">) => `nos:aviso:${item.id}:${item.version}`;
@@ -73,8 +77,30 @@ const PRE_PAINT = `(function(s){var r=s&&s.previousElementSibling;if(!r)return;v
 /**
  * Barra de avisos do topo. Mostra um aviso por vez; fechável quando `dismissible` (lembra em localStorage
  * por id + versão). Rola junto com a página — não ocupa espaço fixo no celular.
+ *
+ * Páginas: cada aviso pode valer para o site inteiro ou só para algumas páginas (`paths`). A barra mora no
+ * layout (que não sabe em que página está), então a página atual vem de `usePathname()`: só os avisos desta
+ * página entram no HTML dela, e a barra se refaz quando o visitante navega. Em rota com parâmetro que o servidor
+ * ainda não conhece, `usePathname` suspende: nesse instante aparecem só os avisos de "todas as páginas".
  */
 export function AnnouncementBar({ items, timeZone }: { items: AnnouncementView[]; timeZone: string }) {
+  if (items.length === 0) return null;
+  const everywhere = items.filter((item) => item.paths.length === 0);
+  return (
+    <Suspense fallback={<NoticeList key="geral" items={everywhere} timeZone={timeZone} />}>
+      <NoticesForPath items={items} timeZone={timeZone} />
+    </Suspense>
+  );
+}
+
+function NoticesForPath({ items, timeZone }: { items: AnnouncementView[]; timeZone: string }) {
+  const pathname = usePathname() ?? "/";
+  const here = items.filter((item) => announcementMatchesPath(item.paths, pathname));
+  // `key`: outra lista de avisos (mudou de página) = barra nova, com a escolha do aviso refeita
+  return <NoticeList key={here.map((item) => item.id).join("-")} items={here} timeZone={timeZone} />;
+}
+
+function NoticeList({ items, timeZone }: { items: AnnouncementView[]; timeZone: string }) {
   // No servidor: o primeiro aviso (a lista só traz avisos que já começaram — os agendados não saem do servidor
   // antes da hora). No navegador: a mesma conta que o script inline já aplicou ao HTML.
   const [activeId, setActiveId] = useState<number | null>(() =>

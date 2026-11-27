@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { announcementCacheLife, announcementStatuses, secondsToNextAnnouncementChange, servableAnnouncements } from "./announcement-status";
+import { announcementCacheLife, announcementHiddenPages, announcementStatuses, secondsToNextAnnouncementChange, servableAnnouncements } from "./announcement-status";
 
 const NOW = "2026-11-18T10:00";
 const item = (id: number, over: Partial<{ enabled: boolean; startsAt: string | null; endsAt: string | null }> = {}) => ({
@@ -33,6 +33,41 @@ describe("announcementStatuses", () => {
   it("o fim é exclusivo e o início é inclusivo", () => {
     expect(announcementStatuses([item(1, { endsAt: NOW })], NOW).get(1)).toBe("encerrado");
     expect(announcementStatuses([item(1, { startsAt: NOW })], NOW).get(1)).toBe("no_ar");
+  });
+});
+
+describe("announcementStatuses com páginas", () => {
+  const paged = (id: number, pages: string[]) => ({ ...item(id), pages });
+
+  it("aviso só de uma página não tira do ar o aviso geral que vem depois", () => {
+    const list = [paged(1, ["contact"]), paged(2, [])];
+    const result = announcementStatuses(list, NOW);
+    expect([result.get(1), result.get(2)]).toEqual(["no_ar", "no_ar"]);
+    // ...mas na página de contato quem aparece é o primeiro
+    expect(announcementHiddenPages(list, 2, NOW)).toEqual(["contact"]);
+    expect(announcementHiddenPages(list, 1, NOW)).toEqual([]);
+  });
+
+  it("aviso geral antes encobre todos os que vêm depois, de qualquer página", () => {
+    const result = announcementStatuses([paged(1, []), paged(2, ["contact"]), paged(3, [])], NOW);
+    expect([1, 2, 3].map((id) => result.get(id))).toEqual(["no_ar", "na_fila", "na_fila"]);
+  });
+
+  it("aviso de página fica na fila só quando TODAS as páginas dele já têm outro aviso", () => {
+    const list = [paged(1, ["contact"]), paged(2, ["plans"]), paged(3, ["contact", "plans"]), paged(4, ["contact", "about"])];
+    const result = announcementStatuses(list, NOW);
+    expect([1, 2, 3, 4].map((id) => result.get(id))).toEqual(["no_ar", "no_ar", "na_fila", "no_ar"]);
+    expect(announcementHiddenPages(list, 4, NOW)).toEqual(["contact"]);
+  });
+
+  it("avisos desligados, agendados ou encerrados não ocupam página", () => {
+    const result = announcementStatuses([{ ...paged(1, ["contact"]), enabled: false }, { ...paged(2, []), startsAt: "2026-12-01T00:00" }, paged(3, ["contact"])], NOW);
+    expect(result.get(3)).toBe("no_ar");
+  });
+
+  it("chaves desconhecidas são ignoradas (lista só com lixo = todas as páginas)", () => {
+    const result = announcementStatuses([paged(1, ["nao-existe"]), paged(2, ["contact"])], NOW);
+    expect([result.get(1), result.get(2)]).toEqual(["no_ar", "na_fila"]);
   });
 });
 

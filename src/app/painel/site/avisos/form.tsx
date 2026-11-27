@@ -4,11 +4,12 @@ import { CheckCircle2 } from "lucide-react";
 import { useId, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
-import { ActionForm, Field, FieldRow, FormActions, SubmitButton, type FormAction } from "@/components/ui/form";
-import { Input, Textarea } from "@/components/ui/input";
+import { ActionForm, Field, FieldRow, FormActions, SubmitButton, useFieldState, type FormAction } from "@/components/ui/form";
+import { Checkbox, Input, RadioCards, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { BRAND_COLOR_HEX, BRAND_COLOR_LABELS, BRAND_COLORS, type BrandColor } from "@/lib/domain";
 import { cn } from "@/lib/cn";
+import { ANNOUNCEMENT_PAGE_KEYS, ANNOUNCEMENT_PAGE_LABELS, type AnnouncementPageKey } from "@/lib/site/announcement-pages";
 import { contrastRatio, MIN_CONTRAST } from "./contrast";
 import { AnnouncementPreview } from "./preview";
 
@@ -23,7 +24,49 @@ export type AnnouncementFormValues = {
   endsAt: string;
   dismissible: boolean;
   enabled: boolean;
+  /** Páginas em que aparece. Vazio = todas. */
+  pages: AnnouncementPageKey[];
 };
+
+/** "Em quais páginas aparece": todas, ou só as marcadas. */
+function PagesField({ initial }: { initial: AnnouncementPageKey[] }) {
+  const [mode, setMode] = useState<"todas" | "algumas">(initial.length > 0 ? "algumas" : "todas");
+  // o erro vem em "pagesMode" (em "pages" cada caixa repetiria a mensagem)
+  const { error } = useFieldState("pagesMode");
+  const errorId = useId();
+  return (
+    <fieldset className="min-w-0" aria-describedby={error ? errorId : undefined}>
+      <legend className="label">Em quais páginas aparece</legend>
+      <RadioCards
+        name="pagesMode"
+        cols={2}
+        compact
+        value={mode}
+        onValueChange={(value) => setMode(value as "todas" | "algumas")}
+        options={[
+          { value: "todas", label: "Todas as páginas" },
+          { value: "algumas", label: "Só em algumas páginas" },
+        ]}
+      />
+      {/* As caixas continuam montadas (guardam o que estava marcado) e só valem com "Só em algumas páginas". */}
+      <div hidden={mode !== "algumas"} className="mt-3 grid gap-x-4 gap-y-1 sm:grid-cols-2">
+        {ANNOUNCEMENT_PAGE_KEYS.map((key) => (
+          <Checkbox key={key} name="pages" value={key} label={ANNOUNCEMENT_PAGE_LABELS[key]} defaultChecked={initial.includes(key)} />
+        ))}
+      </div>
+      {error ? (
+        <p className="field-error" role="alert" id={errorId}>
+          {error}
+        </p>
+      ) : null}
+      <p className="hint">
+        {mode === "todas"
+          ? "O aviso aparece no topo do site inteiro."
+          : "O aviso só aparece nas páginas marcadas. Nas outras, o site mostra o próximo aviso da lista que valha para elas (ou nenhum)."}
+      </p>
+    </fieldset>
+  );
+}
 
 /** Amostras da paleta como botões de rádio (setas funcionam; o escolhido tem anel e marca de seleção). */
 function ColorSwatches({ name, label, value, onChange }: { name: string; label: string; value: BrandColor; onChange: (color: BrandColor) => void }) {
@@ -68,7 +111,7 @@ export function AnnouncementForm({ action, initial }: { action: FormAction; init
 
   return (
     <ActionForm action={action} hidden={{ id: initial.id }}>
-      <Field name="message" label="Mensagem" required hint="Frase curta: aparece no topo de todas as páginas do site.">
+      <Field name="message" label="Mensagem" required hint="Frase curta, mostrada na barra do topo do site.">
         <Textarea rows={2} maxLength={240} defaultValue={initial.message} onChange={(event) => setMessage(event.target.value)} />
       </Field>
 
@@ -109,13 +152,15 @@ export function AnnouncementForm({ action, initial }: { action: FormAction; init
         </Field>
       </FieldRow>
 
+      <PagesField initial={initial.pages} />
+
       <div className="space-y-1">
         <Switch name="dismissible" label="O visitante pode fechar o aviso" hint="Mostra um “×”. Quem fecha não vê o aviso de novo, a menos que você edite o texto." defaultChecked={initial.dismissible} onCheckedChange={setDismissible} />
         <Switch name="enabled" label="Aviso ligado" hint="Desligado, ele fica guardado aqui e não aparece no site." defaultChecked={initial.enabled} />
       </div>
 
       <Alert tone="info">
-        O site mostra <strong>um aviso por vez</strong>: o primeiro da lista que estiver ligado e dentro do período. Use as setas da lista para decidir qual vem primeiro.
+        Cada página mostra <strong>um aviso por vez</strong>: o primeiro da lista que estiver ligado, dentro do período e valer para aquela página. Use as setas da lista para decidir qual vem primeiro.
       </Alert>
 
       <FormActions>

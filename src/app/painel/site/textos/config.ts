@@ -876,7 +876,7 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
     notice: {
       tone: "alerta",
       title: "Texto-base sugerido: precisa de revisão jurídica",
-      text: "O texto descreve o que o site usa hoje: nenhum cookie de rastreamento no site público e só os cookies essenciais do login nas áreas privadas — por isso não há aviso de consentimento de cookies. Se um dia forem ligadas estatísticas ou publicidade (Google Analytics, Meta Pixel…), este texto e o site precisam mudar antes. Peçam a revisão de um advogado ou assessoria jurídica.",
+      text: "O texto descreve o que o site usa hoje: nenhum cookie de rastreamento no site público e só os cookies essenciais do login nas áreas privadas — por isso não há aviso de consentimento de cookies. A contagem de visitas é do próprio site e não usa cookies (está descrita no texto). Se um dia forem ligadas estatísticas de terceiros ou publicidade (Google Analytics, Meta Pixel…), este texto e o site precisam mudar antes. Peçam a revisão de um advogado ou assessoria jurídica.",
     },
     groups: [
       {

@@ -15,7 +15,7 @@
  */
 import type { NextRequest } from "next/server";
 import { consumeRateLimit } from "@/lib/auth/rate-limit";
-import { rateLimitIp, resolveClientIp } from "@/lib/client-ip";
+import { rateLimitIp, resolveClientIp, UNKNOWN_IP } from "@/lib/client-ip";
 import { todayISO } from "@/lib/dates";
 import { env } from "@/lib/env";
 import { BEACON_MAX_BYTES, parseBeacon } from "@/lib/metrics/beacon";
@@ -28,6 +28,11 @@ import { dailySalt, visitRateKey } from "@/server/metrics/salt";
 const SESSION_COOKIES = ["__Host-nos_session", "nos_session"];
 /** Por IP: folga para uma rede compartilhada (escritório, faculdade), mas não para um laço de requisições. */
 const RATE_RULE = { limit: 300, windowMs: 5 * 60 * 1000 } as const;
+/**
+ * Sem proxy na frente (ou cabeçalho inválido) todo mundo cai no mesmo balde "IP desconhecido": o teto é mais alto
+ * para a contagem não parar num dia movimentado — continua existindo um limite para o banco.
+ */
+const UNKNOWN_IP_RATE_RULE = { limit: 3000, windowMs: 5 * 60 * 1000 } as const;
 
 const HEADERS = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } as const;
 const reply = (status: number, extra: Record<string, string> = {}) => new Response(null, { status, headers: { ...HEADERS, ...extra } });
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const ip = rateLimitIp(resolveClientIp(request.headers.get("x-forwarded-for"), request.headers.get("x-real-ip"), env.trustedProxies));
     const { salt } = await dailySalt(todayISO(now));
-    const allowed = await consumeRateLimit(visitRateKey(salt, ip), RATE_RULE);
+    const allowed = await consumeRateLimit(visitRateKey(salt, ip), ip === UNKNOWN_IP ? UNKNOWN_IP_RATE_RULE : RATE_RULE);
     if (!allowed.ok) return reply(429, { "Retry-After": String(allowed.retryAfterSeconds) });
 
     if (event) {

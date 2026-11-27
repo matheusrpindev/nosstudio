@@ -4,19 +4,18 @@
  */
 import { Paragraphs } from "@/components/markdown";
 import { cn } from "@/lib/cn";
-import { PORTFOLIO_CATEGORY_LABELS } from "@/lib/domain";
 import type { PublicPortfolioProject, PublicTestimonial } from "@/server/site/queries";
-import { SmartLink } from "./button";
 import { AccentMark } from "./marks";
-import { PhotoSlot, type PhotoRatio } from "./photo-slot";
+import type { PhotoRatio } from "./photo-slot";
+import { PortfolioCardBody } from "./portfolio-card";
 import { revealProps } from "./reveal";
 import { SiteImage } from "./site-image";
-import type { SiteTone } from "./text";
 import { VideoEmbed } from "./video-embed";
 
-const TONES: SiteTone[] = ["roxo", "lavanda", "grafite"];
-
-/** Cartão de projeto: capa (ou o estado vazio da marca), categoria, título e resumo. O cartão inteiro é o link. */
+/**
+ * Cartão de projeto: capa (ou o estado vazio da marca), categoria, título e resumo. O cartão inteiro é o link.
+ * O miolo (com o selo de experiência anterior dos fundadores) é o mesmo da grade de /portfolio: <PortfolioCardBody>.
+ */
 export function PortfolioCard({
   project,
   index = 0,
@@ -31,20 +30,9 @@ export function PortfolioCard({
   headingLevel?: 2 | 3;
   sizes?: string;
 }) {
-  const Title = `h${headingLevel}` as "h2" | "h3";
-  const year = project.projectDate?.slice(0, 4);
   return (
     <li className="s-work" {...revealProps(index % 3)}>
-      <PhotoSlot image={project.cover} ratio={ratio} tone={TONES[index % TONES.length]} monogram={project.title} sizes={sizes} />
-      <p className="s-meta s-work__meta">
-        <b>{PORTFOLIO_CATEGORY_LABELS[project.category]}</b>
-        {project.clientName ? <span>{project.clientName}</span> : null}
-        {year ? <span>{year}</span> : null}
-      </p>
-      <Title className="s-h3 s-work__title">
-        <SmartLink href={`/portfolio/${project.slug}`}>{project.title}</SmartLink>
-      </Title>
-      {project.summary ? <p className="s-work__text">{project.summary}</p> : null}
+      <PortfolioCardBody project={project} index={index} ratio={ratio} headingLevel={headingLevel} sizes={sizes} />
     </li>
   );
 }

@@ -12,15 +12,20 @@
  *   Plano Estratégico, com as entregas do briefing. Avulsos: acrescenta "Design" e "Campanhas pontuais" nas mesmas
  *   condições dos serviços novos.
  * - FAQ (rascunho) que citava os nomes antigos dos planos e o link do aviso de casamentos.
+ * - Aviso de abertura da barra do topo: vira o texto inicial do briefing v2 ("Agenda aberta para novos projetos.
+ *   Vamos criar juntos?") — só se ainda estiver idêntico ao do seed antigo (texto, link, cores, sem período e sem
+ *   páginas escolhidas). Ligado continua ligado; desligado continua desligado.
  *
  * Roda no `npm run db:seed` (logo, em todo `db:setup` / start de produção) e é testado em upgrade-v2.db.test.ts.
  */
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { announcements, faqs, packages, services } from "@/db/schema";
 import { SITE_PATHS } from "@/lib/site/paths";
 import {
+  ANNOUNCEMENT_OPENING_V1,
+  ANNOUNCEMENT_OPENING_V2,
   FAQ_PLANS_V1,
   FAQ_PLANS_V2,
   OLD_WEDDINGS_PATH,
@@ -39,12 +44,13 @@ export type UpgradeReport = {
   standaloneCreated: number;
   faqsUpdated: number;
   announcementsUpdated: number;
+  openingAnnouncementUpdated: number;
 };
 
 const sameList = (a: readonly string[] | null | undefined, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((item, i) => item === b[i]);
 
 export async function upgradeSiteContentToV2(): Promise<UpgradeReport> {
-  const report: UpgradeReport = { servicesUpdated: 0, servicesCreated: 0, plansUpdated: 0, standaloneCreated: 0, faqsUpdated: 0, announcementsUpdated: 0 };
+  const report: UpgradeReport = { servicesUpdated: 0, servicesCreated: 0, plansUpdated: 0, standaloneCreated: 0, faqsUpdated: 0, announcementsUpdated: 0, openingAnnouncementUpdated: 0 };
 
   await db.transaction(async (tx) => {
     // ------------------------------------------------------------ serviços
@@ -148,6 +154,25 @@ export async function upgradeSiteContentToV2(): Promise<UpgradeReport> {
       .where(sql`${announcements.linkUrl} = ${OLD_WEDDINGS_PATH}`)
       .returning({ id: announcements.id });
     report.announcementsUpdated = updatedAnnouncements.length;
+
+    // texto inicial do briefing v2 no aviso de abertura — só se ninguém mexeu nele
+    const updatedOpening = await tx
+      .update(announcements)
+      .set({ message: ANNOUNCEMENT_OPENING_V2.message, linkLabel: ANNOUNCEMENT_OPENING_V2.linkLabel, linkUrl: ANNOUNCEMENT_OPENING_V2.linkUrl })
+      .where(
+        and(
+          eq(announcements.message, ANNOUNCEMENT_OPENING_V1.message),
+          eq(announcements.linkLabel, ANNOUNCEMENT_OPENING_V1.linkLabel),
+          eq(announcements.linkUrl, ANNOUNCEMENT_OPENING_V1.linkUrl),
+          eq(announcements.bgColor, ANNOUNCEMENT_OPENING_V1.bgColor),
+          eq(announcements.textColor, ANNOUNCEMENT_OPENING_V1.textColor),
+          isNull(announcements.startsAt),
+          isNull(announcements.endsAt),
+          sql`json_array_length(${announcements.pages}) = 0`,
+        ),
+      )
+      .returning({ id: announcements.id });
+    report.openingAnnouncementUpdated = updatedOpening.length;
   });
 
   return report;

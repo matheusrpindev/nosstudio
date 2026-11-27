@@ -5,7 +5,8 @@
  */
 import type { BannerLayout, BannerTone, BrandColor } from "@/lib/domain";
 import { safeHref } from "@/lib/format";
-import type { PublicImage } from "@/lib/media";
+import type { Media } from "@/db/schema";
+import { mediaUrl, toPublicImage, type PublicImage } from "@/lib/media";
 import { SITE_PATHS } from "./paths";
 
 /** Medidas sugeridas das artes (briefing): desktop 1920 × 800 (12:5) e celular 1080 × 1350 (4:5). */
@@ -104,6 +105,65 @@ export function resolveBannerHref(raw: string | null | undefined, site: SiteAvai
     if (!site.events) return moved(SITE_PATHS.contact);
   }
   return { href, redirectedFrom: null };
+}
+
+// ------------------------------------------------------- do banco para a tela
+/** Colunas de `banners` que a tela usa. */
+export type BannerRecord = {
+  id: number;
+  layout: BannerLayout;
+  title: string;
+  subtitle: string;
+  buttonLabel: string;
+  buttonUrl: string;
+  secondaryLabel: string;
+  secondaryUrl: string;
+  desktopMediaId: number | null;
+  mobileMediaId: number | null;
+  videoMediaId: number | null;
+  alt: string;
+  bgColor: BrandColor;
+  tone: BannerTone;
+  durationSeconds: number;
+  endsAt: string | null;
+};
+
+/**
+ * Monta o banner pronto para renderizar a partir do registro e das linhas de `media` dele. É a ÚNICA montagem:
+ * o site (`getBanners`) e o painel (lista e prévia) passam por aqui, então mostram a mesma coisa.
+ * Os botões já saem com o endereço final (`resolveBannerHref`); vídeo só vale no banner de mídia.
+ */
+export function buildBannerView(row: BannerRecord, files: ReadonlyMap<number, Media>, site: SiteAvailability): BannerView {
+  const image = (id: number | null) => (id ? toPublicImage(files.get(id)) : null);
+  const videoRow = row.videoMediaId ? files.get(row.videoMediaId) : undefined;
+  const video: BannerVideo | null =
+    row.layout === "midia" && videoRow && videoRow.visibility === "public" && videoRow.mime.startsWith("video/") ? { id: videoRow.id, url: mediaUrl(videoRow.storageKey), mime: videoRow.mime } : null;
+  const link = (label: string, url: string, allowBare = false): BannerLink | null => {
+    const href = resolveBannerHref(url, site).href;
+    return href && (label.trim() || allowBare) ? { label: label.trim(), href } : null;
+  };
+  return {
+    id: row.id,
+    layout: row.layout,
+    title: row.title,
+    subtitle: row.subtitle,
+    // em peça pronta o botão principal é o link do banner inteiro: vale mesmo sem rótulo
+    primary: link(row.buttonLabel, row.buttonUrl, row.layout === "peca"),
+    secondary: row.layout === "peca" ? null : link(row.secondaryLabel, row.secondaryUrl),
+    desktop: image(row.desktopMediaId),
+    mobile: image(row.mobileMediaId),
+    video,
+    alt: row.alt,
+    bgColor: row.bgColor,
+    tone: row.tone,
+    durationSeconds: row.durationSeconds,
+    endsAt: row.endsAt,
+  };
+}
+
+/** `isBannerRenderable` para um banner já montado. */
+export function isViewRenderable(view: BannerView): boolean {
+  return isBannerRenderable({ layout: view.layout, title: view.title, hasImage: Boolean(view.desktop || view.mobile), hasVideo: Boolean(view.video) });
 }
 
 // ------------------------------------------------------------- o que renderiza

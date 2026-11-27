@@ -402,7 +402,7 @@ A {{marca}} é a controladora dos dados pessoais coletados neste site. Para qual
 
 ## Quais dados coletamos
 
-Coletamos apenas o que você nos envia pelos formulários de contato, orçamento e consulta de data:
+Dados pessoais, só os que você nos envia pelos formulários de contato, orçamento e consulta de data:
 
 - nome e, se informada, a empresa;
 - WhatsApp;
@@ -413,6 +413,8 @@ Coletamos apenas o que você nos envia pelos formulários de contato, orçamento
 
 Não pedimos documentos, dados bancários nem dados sensíveis pelo site. Por favor, não inclua esse tipo de informação na mensagem.
 
+Além disso, o site conta as visitas de forma agregada e anônima — veja "Medição de visitas", abaixo.
+
 ## Para que usamos
 
 - **Responder ao seu pedido** de contato ou orçamento e preparar uma proposta — tratamento necessário para procedimentos preliminares a um contrato, a seu pedido (LGPD, art. 7º, V).
@@ -421,17 +423,27 @@ Não pedimos documentos, dados bancários nem dados sensíveis pelo site. Por fa
 
 Não usamos seus dados para enviar publicidade sem a sua autorização e não vendemos dados pessoais.
 
+## Medição de visitas
+
+Para saber quantas visitas o site recebe e quais páginas são mais procuradas, usamos uma medição própria: sem serviços de terceiros (não há Google Analytics, Meta Pixel nem similares) e sem cookies.
+
+A cada página aberta, o seu navegador envia ao nosso servidor o endereço da página, o domínio do site de onde você veio (por exemplo, "instagram.com" — nunca o endereço completo), a largura da tela e, se o link tiver, as marcações de campanha (utm). Com o seu endereço IP e a identificação do navegador, o servidor calcula na hora um código anônimo, usado só para não contar a mesma visita duas vezes e para barrar abusos. O IP e a identificação do navegador não são gravados. O código é embaralhado com uma chave aleatória que muda todos os dias e é apagada em seguida: depois disso, não é possível ligar uma visita a outro dia nem chegar ao seu IP a partir dele.
+
+O que fica guardado são totais por dia: visitas, visitantes estimados, páginas vistas, origem (acesso direto, busca, redes sociais, outros sites ou campanha), tipo de aparelho, cliques nos botões de WhatsApp e nos banners e quantidade de formulários enviados. Os registros de cada visita, já sem IP, são apagados depois de 30 dias. Esses números não identificam você, não formam um perfil seu, não são compartilhados com terceiros e não são usados para publicidade. O total de visitas pode ser exibido no próprio site.
+
+Fazemos essa contagem com base no legítimo interesse de entender e melhorar o site (LGPD, art. 7º, IX), usando o mínimo de dados.
+
 ## Com quem compartilhamos
 
 Seus dados ficam restritos à equipe da {{marca}} que cuida do atendimento. Usamos fornecedores de tecnologia (hospedagem do site, banco de dados e e-mail) que tratam os dados em nosso nome, apenas para manter o serviço funcionando. Se você optar por conversar pelo WhatsApp ou Instagram, valem também as políticas dessas plataformas.
 
 ## Por quanto tempo guardamos
 
-Pedidos de orçamento que não viram projeto são mantidos por até 12 meses após o último contato e depois eliminados. Dados de clientes são mantidos durante a relação comercial e pelos prazos legais aplicáveis.
+Pedidos de orçamento que não viram projeto são mantidos por até 12 meses após o último contato e depois eliminados. Dados de clientes são mantidos durante a relação comercial e pelos prazos legais aplicáveis. A contagem de visitas segue os prazos descritos em "Medição de visitas".
 
 ## Cookies
 
-Este site não usa cookies de publicidade nem de rastreamento. Os detalhes estão na [Política de Cookies](/cookies).
+Este site não usa cookies de publicidade nem de rastreamento, e a medição de visitas também não usa cookies. Os detalhes estão na [Política de Cookies](/cookies).
 
 ## Seus direitos
 
@@ -489,11 +501,15 @@ const COOKIES_BODY = `Esta página explica o que a **{{marca}}** guarda no seu n
 
 ## Resumo
 
-O site público não usa cookies de publicidade, de rastreamento nem de estatísticas de terceiros. Por isso não há um aviso de consentimento de cookies: não existe nada opcional para aceitar ou recusar.
+O site público não usa cookies de publicidade, de rastreamento nem de estatísticas de terceiros. A contagem de visitas é feita pelo próprio site, sem cookies e sem guardar nada no seu navegador. Por isso não há um aviso de consentimento de cookies: não existe nada opcional para aceitar ou recusar.
 
 ## Site público
 
 Navegar pelas páginas públicas não grava cookies. Guardamos apenas uma preferência no armazenamento local do seu navegador: a informação de que você fechou um aviso do topo da página, para ele não voltar a aparecer. Essa informação não identifica você e não é enviada para a gente.
+
+## Contagem de visitas (sem cookies)
+
+Para saber quantas visitas o site recebe, usamos uma medição própria, sem serviços de terceiros. Ela não grava cookies nem qualquer outro dado no seu navegador: a cada página aberta, o navegador apenas avisa o nosso servidor, que soma a visita aos totais do dia. O seu endereço IP não é guardado. Os detalhes estão na [Política de Privacidade](/privacidade), em "Medição de visitas".
 
 ## Áreas privadas (login)
 
@@ -515,7 +531,7 @@ Você pode apagar cookies e dados de sites nas configurações do seu navegador.
 
 ## Mudanças
 
-Se o site passar a usar outros cookies (de estatísticas, por exemplo), esta página será atualizada antes e, quando a lei exigir, o seu consentimento será pedido.
+Se o site passar a usar outros cookies (de estatísticas de terceiros ou de publicidade, por exemplo), esta página será atualizada antes e, quando a lei exigir, o seu consentimento será pedido.
 
 ## Contato
 
@@ -862,7 +878,7 @@ export const defaultSiteContent: SiteContent = {
 
   privacyPage: {
     title: "Política de Privacidade",
-    version: "2026-11.2",
+    version: "2026-11.3",
     body: PRIVACY_BODY,
   },
 
@@ -874,7 +890,7 @@ export const defaultSiteContent: SiteContent = {
 
   cookiesPage: {
     title: "Política de Cookies",
-    version: "2026-11",
+    version: "2026-11.1",
     body: COOKIES_BODY,
   },
 

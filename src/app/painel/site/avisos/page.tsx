@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { requirePermission } from "@/lib/auth";
 import { formatDate, nowLocal } from "@/lib/dates";
 import { BRAND_COLOR_HEX } from "@/lib/domain";
-import { announcementStatuses, type AnnouncementStatus } from "@/server/site/admin/announcement-status";
+import { ANNOUNCEMENT_PAGE_SHORT_LABELS, normalizeAnnouncementPages, type AnnouncementPageKey } from "@/lib/site/announcement-pages";
+import { announcementHiddenPages, announcementStatuses, type AnnouncementStatus } from "@/server/site/admin/announcement-status";
 import { listAnnouncements } from "@/server/site/admin/announcements";
 import { MoveButtons, RowSwitch } from "../_colecoes/row-controls";
 import { moveAnnouncementAction, toggleAnnouncementAction } from "./actions";
@@ -19,7 +20,7 @@ export const instant = false;
 
 const STATUS: Record<AnnouncementStatus, { label: string; tone: BadgeTone }> = {
   no_ar: { label: "No ar agora", tone: "sucesso" },
-  na_fila: { label: "Ligado, mas outro aviso aparece antes", tone: "alerta" },
+  na_fila: { label: "Ligado, mas outro aviso aparece antes em todas as páginas dele", tone: "alerta" },
   agendado: { label: "Agendado", tone: "roxo" },
   encerrado: { label: "Período encerrado", tone: "neutral" },
   desligado: { label: "Desligado", tone: "neutral" },
@@ -34,10 +35,13 @@ function period(startsAt: string | null, endsAt: string | null): string {
   return "Sem data para acabar";
 }
 
+const pageNames = (keys: readonly string[]) => keys.map((key) => ANNOUNCEMENT_PAGE_SHORT_LABELS[key as AnnouncementPageKey] ?? key).join(", ");
+
 export default async function AnnouncementsPage() {
   await requirePermission("site", "ver");
   const rows = await listAnnouncements();
-  const statuses = announcementStatuses(rows, nowLocal());
+  const now = nowLocal();
+  const statuses = announcementStatuses(rows, now);
   const live = rows.some((row) => statuses.get(row.id) === "no_ar");
 
   return (
@@ -53,7 +57,7 @@ export default async function AnnouncementsPage() {
       />
 
       <Alert tone="info" className="mb-5">
-        O site mostra <strong>um aviso por vez</strong>: o primeiro da lista que estiver ligado e dentro do período. Use as setas para mudar a ordem. As cores abaixo são as mesmas que o visitante vê.
+        Cada página do site mostra <strong>um aviso por vez</strong>: o primeiro da lista que estiver ligado, dentro do período e valer para aquela página. Use as setas para mudar a ordem. As cores abaixo são as mesmas que o visitante vê.
       </Alert>
 
       {rows.length === 0 ? (
@@ -78,6 +82,8 @@ export default async function AnnouncementsPage() {
             {rows.map((row, index) => {
               const status = STATUS[statuses.get(row.id) ?? "desligado"];
               const label = row.message.length > 40 ? `${row.message.slice(0, 40)}…` : row.message;
+              const pages = normalizeAnnouncementPages(row.pages);
+              const hidden = announcementHiddenPages(rows, row.id, now);
               return (
                 <li key={row.id} className="card space-y-3 p-4">
                   <AnnouncementPreview message={row.message} linkLabel={row.linkUrl ? row.linkLabel : null} bg={BRAND_COLOR_HEX[row.bgColor]} fg={BRAND_COLOR_HEX[row.textColor]} dismissible={row.dismissible} />
@@ -85,7 +91,10 @@ export default async function AnnouncementsPage() {
                     <Badge tone={status.tone} dot>
                       {status.label}
                     </Badge>
-                    <span className="text-texto-suave text-[0.8125rem]">{period(row.startsAt, row.endsAt)}</span>
+                    <span className="text-texto-suave text-[0.8125rem]">
+                      {period(row.startsAt, row.endsAt)} · {pages.length === 0 ? "Todas as páginas" : `Só em: ${pageNames(pages)}`}
+                      {hidden.length > 0 ? ` · em ${pageNames(hidden)} aparece outro aviso antes` : ""}
+                    </span>
                     <div className="ml-auto flex items-center gap-3">
                       <RowSwitch id={row.id} checked={row.enabled} label={`Aviso “${label}” ligado`} action={toggleAnnouncementAction} />
                       <MoveButtons id={row.id} name={label} isFirst={index === 0} isLast={index === rows.length - 1} action={moveAnnouncementAction} />

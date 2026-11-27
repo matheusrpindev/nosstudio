@@ -259,3 +259,23 @@ export const FAQ_PLANS_V2 = {
 };
 /** Link do aviso de casamentos do seed (a rota mudou). */
 export const OLD_WEDDINGS_PATH = "/casamentos";
+
+/**
+ * Aviso de abertura da barra do topo. O briefing v2 (seção 04) pede o texto inicial "Agenda aberta para novos
+ * projetos. Vamos criar juntos?" — a pergunta é o próprio link para o contato, então a barra mostra a frase
+ * inteira, como no briefing. `V1` é o aviso que o seed anterior criava (para reconhecer quem ainda não o editou).
+ */
+export const ANNOUNCEMENT_OPENING_V1 = {
+  message: "Chegou a NÓS Studio. Dois olhares, infinitas possibilidades.",
+  linkLabel: "Vamos conversar",
+  linkUrl: "/contato",
+  bgColor: "roxo",
+  textColor: "branco",
+} as const;
+export const ANNOUNCEMENT_OPENING_V2 = {
+  message: "Agenda aberta para novos projetos.",
+  linkLabel: "Vamos criar juntos?",
+  linkUrl: "/contato",
+  bgColor: "roxo",
+  textColor: "branco",
+} as const;

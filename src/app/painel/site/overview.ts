@@ -100,6 +100,8 @@ export async function getSiteOverview(): Promise<SiteOverview> {
       privacyIsBaseText,
       termsIsBaseText: isBase(terms, "termsPage"),
       cookiesIsBaseText: isBase(cookies, "cookiesPage"),
+      // texto próprio dos sócios, salvo antes de existir a medição de visitas: precisa ganhar esse trecho
+      privacyMissesVisitMeasurement: !privacyIsBaseText && !/(medição|contagem) de visitas/i.test(privacy.body),
       biosUnreviewed: !infos.about.customized,
       visiblePlans: planRows.length,
       plansWithIncludes: planRows.filter((row) => row.includes.length > 0).length,

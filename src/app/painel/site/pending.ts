@@ -13,6 +13,11 @@ export type LaunchSnapshot = {
   /** Idem para os termos de uso e a política de cookies. */
   termsIsBaseText: boolean;
   cookiesIsBaseText: boolean;
+  /**
+   * A política de privacidade foi editada no painel (não é mais o texto-base) e NÃO menciona a medição de visitas
+   * que o site faz — o texto salvo é anterior à medição e precisa ganhar esse trecho.
+   */
+  privacyMissesVisitMeasurement?: boolean;
   /** A seção "Sobre a NÓS" nunca foi salva no painel: as biografias ainda são as do briefing, sem validação. */
   biosUnreviewed: boolean;
   /** Planos mensais (visíveis) e quantos têm entregas cadastradas. */
@@ -119,6 +124,18 @@ export function computeLaunchPending(s: LaunchSnapshot): LaunchPending[] {
     });
   }
 
+  if (s.privacyMissesVisitMeasurement) {
+    out.push({
+      id: "privacy-visits",
+      tone: "alerta",
+      title: "A política de privacidade não descreve a contagem de visitas",
+      description:
+        "O site conta visitas de forma anônima (sem cookie e sem guardar IP), e a política salva no painel não fala disso. Acrescente um trecho sobre a medição de visitas (o Manual do painel descreve o que o site faz, em “Métricas do site”) e atualize a versão.",
+      href: "/painel/site/textos/privacyPage",
+      actionLabel: "Atualizar política",
+    });
+  }
+
   if (s.termsIsBaseText) {
     out.push({
       id: "terms",
@@ -136,7 +153,7 @@ export function computeLaunchPending(s: LaunchSnapshot): LaunchPending[] {
       tone: "alerta",
       title: "Política de cookies ainda no texto-base",
       description:
-        "Descreve o que o site usa hoje (nenhum cookie de rastreamento; só os do login). Precisa de revisão jurídica — e de atualização se um dia forem ligadas estatísticas ou publicidade.",
+        "Descreve o que o site usa hoje (nenhum cookie de rastreamento; só os do login; contagem de visitas sem cookies). Precisa de revisão jurídica — e de atualização se um dia forem ligadas estatísticas de terceiros ou publicidade.",
       href: "/painel/site/textos/cookiesPage",
       actionLabel: "Revisar cookies",
     });

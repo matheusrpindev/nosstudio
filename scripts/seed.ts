@@ -44,8 +44,9 @@ import { addDays, startOfWeek, todayISO } from "@/lib/dates";
 import type { EventInput } from "@/server/agenda/input";
 import { createEvent } from "@/server/agenda/mutations";
 import { ensureAgendaDefaults, ensurePersonalCalendars } from "@/server/agenda/settings";
-import { FAQ_PLANS_V2, PLANS_V2, SERVICES_V2, STANDALONE_ADDED_V2, STANDALONE_V1 } from "@/server/site/seed-data";
+import { ANNOUNCEMENT_OPENING_V2, FAQ_PLANS_V2, PLANS_V2, SERVICES_V2, STANDALONE_ADDED_V2, STANDALONE_V1 } from "@/server/site/seed-data";
 import { upgradePortfolioCategories } from "@/server/site/upgrade-portfolio";
+import { ensureInitialBanners } from "@/server/site/initial-banners";
 import { upgradeSiteContentToV2 } from "@/server/site/upgrade-v2";
 
 const args = new Set(process.argv.slice(2));
@@ -98,6 +99,11 @@ async function seedPackages() {
 async function upgradeSiteV2() {
   const report = await upgradeSiteContentToV2();
   return Object.values(report).some((count) => count > 0);
+}
+
+/** Banners iniciais do carrossel da home: uma vez por banco, novo ou já criado (ver src/server/site/initial-banners.ts). */
+async function seedInitialBanners() {
+  return (await ensureInitialBanners()) > 0;
 }
 
 /** Portfólio: a categoria "videos" do briefing v1 virou "audiovisual" (ver src/server/site/upgrade-portfolio.ts). */
@@ -164,15 +170,8 @@ async function seedFaqs() {
 async function seedAnnouncements() {
   if (!(await isEmpty(announcements))) return false;
   await db.insert(announcements).values([
-    {
-      message: "Chegou a NÓS Studio. Dois olhares, infinitas possibilidades.",
-      linkLabel: "Vamos conversar",
-      linkUrl: "/contato",
-      bgColor: "roxo",
-      textColor: "branco",
-      enabled: true,
-      sortOrder: 1,
-    },
+    // texto inicial do briefing v2 (seção 04): "Agenda aberta para novos projetos. Vamos criar juntos?"
+    { ...ANNOUNCEMENT_OPENING_V2, enabled: true, sortOrder: 1 },
     {
       message: "Sua próxima grande ideia começa com NÓS. Solicite um orçamento.",
       linkLabel: "Solicitar orçamento",
@@ -744,6 +743,7 @@ async function main() {
     ["perguntas frequentes (rascunhos)", seedFaqs],
     ["avisos", seedAnnouncements],
     ["site: atualização para o briefing v2 (só o que ninguém editou)", upgradeSiteV2],
+    ["banners iniciais do carrossel (uma vez só)", seedInitialBanners],
     ["portfólio: categorias do briefing v2", upgradePortfolio],
     ["modelos de proposta", seedProposalTemplates],
     ["biblioteca da marca", seedBrandAssets],

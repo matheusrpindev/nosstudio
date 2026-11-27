@@ -160,7 +160,12 @@ link que não for de YouTube/Vimeo não renderiza nada.
 | `<StandaloneIndex packages>` | Serviços avulsos em linhas curtas (home); cada uma leva ao formulário com o serviço escolhido. |
 | `<LegalPage>` | Páginas legais (privacidade, termos, cookies): markdown com índice lateral. |
 | `<PackagePrice pkg>` | Só o preço formatado ("Sob consulta", "A partir de R$ …"). |
-| `<PortfolioGrid projects>` / `<PortfolioCard>` | Cartões de projeto (capa ou estado vazio). |
+| `<PortfolioGrid projects>` / `<PortfolioCard>` | Cartões de projeto (capa ou estado vazio). O miolo é `<PortfolioCardBody>` (`portfolio-card.tsx`), que já põe o selo "Experiência anterior" quando `origin = experiencia_anterior`. |
+| `<PortfolioBrowser projects labels>` | Grade de `/portfolio` com pesquisa e filtros (ver "Portfólio" abaixo). |
+| `<PortfolioProjectGallery images label variant>` | Miniaturas que abrem a ampliação (`<PortfolioLightbox>`). `variant="backstage"` = grade densa dos bastidores. |
+| `<PortfolioBeforeAfter before after caption beforeLabel afterLabel>` | Comparação "antes e depois" com divisória arrastável. |
+| `<PortfolioShare title url>` | Copiar link + Web Share API (ou WhatsApp, onde ela não existe). Sem script de terceiros. |
+| `<PortfolioProjectJsonLd project>` | Dados estruturados da página de um projeto (`CreativeWork` + trilha). |
 | `<TestimonialGrid testimonials>` / `<TestimonialCard>` | Depoimento em texto, print (com descrição acessível) ou vídeo. |
 | `<HomeHero>` | O hero da home (título cruzando o campo de cor). |
 
@@ -168,6 +173,27 @@ O botão de cada plano aponta para `/contato?servico=…&pacote=…#formulario` 
 serviço tem o próprio formulário (`#servico-orcamento`, já com o serviço e a origem preenchidos). **A página de
 contato deve colocar `id="formulario"` no `<LeadForm>`.** `?pacote=` só vale para nomes publicados
 (`getLeadOriginNames()`).
+
+## Portfólio — `portfolio-*.tsx` + `src/lib/site/portfolio.ts`
+
+- **Dados**: `getPortfolio()` devolve só projetos publicados, na ordem do painel, já no formato público
+  (`PublicPortfolioProject`). Quem monta esse formato é `toPublicProject` (`src/lib/site/portfolio.ts`, testado): nome
+  de cliente sem autorização nunca sai, bloco vazio sai vazio e par de antes/depois só com as duas imagens. Não leia
+  `portfolio_projects` por outro caminho.
+- **Grade com pesquisa e filtros** (`/portfolio`): `<PortfolioBrowser>` (servidor) renderiza TODOS os cartões e
+  entrega a `<PortfolioFilter>` (cliente) só id, categoria e o texto pesquisável de cada um. O filtro esconde com
+  `hidden`; nada é buscado no servidor e a página continua estática. O estado vai na URL (`?categoria=&q=`), lido com
+  `useSyncExternalStore` — **não use `useSearchParams` aqui**: ele tiraria a grade do HTML pré-renderizado.
+  Links para um filtro pronto funcionam de qualquer página: `/portfolio?categoria=casamentos`.
+- **Destaque**: `data-featured` no cartão (duas colunas, mesma altura das capas vizinhas — a conta usa `cqw` em
+  `portfolio.css`). A home usa `homeFeaturedProjects()`; relacionados, `relatedProjects()`.
+- **Ampliação**: `<PortfolioLightbox>` é um `<dialog>` modal nativo (foco preso, Esc, resto da página inerte).
+  Teclado: ← → Home End; toque/mouse: arrastar para os lados. Todo fechamento passa por `dialog.close()`.
+- **Antes e depois**: há um `<input type="range">` de verdade por baixo (teclado e leitores de tela); mouse e toque
+  arrastam o quadro inteiro. A posição vai na variável CSS `--pos`.
+- **Vídeos**: sempre `<VideoEmbed>` (o iframe só existe depois do clique; YouTube sem cookies, Vimeo com `dnt=1`).
+- CSS: `src/app/(site)/portfolio/portfolio.css` (importado pelas duas páginas) e `portfolio-card.css` (selos do cartão,
+  importado pelo próprio componente porque o cartão aparece também na home e nas páginas de serviço).
 
 ## Formulário de contato — `lead-form.tsx`
 
@@ -205,6 +231,24 @@ navegador. Sobre um bloco roxo/grafite ele já vem como cartão claro; não prec
 O conteúdo nasce visível; o `RevealObserver` (montado pelo shell) só anima o que ainda está abaixo da dobra. Sem
 JS ou com `prefers-reduced-motion`, nada muda. `delay` é a posição na sequência (× 80ms). Não use bibliotecas de
 animação; hover e transições ficam no CSS.
+
+## Medição de visitas — `visit-tracker.tsx`, `visit-counter.tsx`
+
+O `<SiteShell>` monta o `<VisitTracker />` (coletor, não renderiza nada): a cada página vista ele envia um sinal
+mínimo para `POST /api/visita` — sem cookie e sem armazenamento no navegador. As páginas continuam estáticas; quem
+decide o que conta é o servidor (`src/server/metrics/collect.ts` explica o método).
+
+**Clique medido:** ponha `data-track="<tipo>:<alvo>"` no link ou botão. Tipos aceitos (`TRACK_EVENT_TYPES` em
+`src/lib/domain.ts`): `whatsapp:<onde>` (`flutuante`, `rodape`, `contato`, `canais`, `formulario` — nome novo ganha
+rótulo em `WHATSAPP_PLACE_LABELS`, `src/lib/metrics/report.ts`) e `banner:<id do banner>`. Um único listener no
+documento cuida de todos; link de WhatsApp sem marcação cai em `whatsapp:link`. `SiteButtonLink`/`SmartLink`
+repassam o atributo.
+
+**Contador público:** `<VisitCounterBand />` (faixa acima do rodapé, já montada pelo shell) ou `<VisitCounter />`
+(só frase + número + legenda, para encaixar dentro de outro bloco `data-tone="roxo" | "grafite"`). Server
+Components; não renderizam nada enquanto o contador estiver desligado em Textos › Contador de visitas (padrão),
+sem visitas medidas ou abaixo do mínimo. O número vem pronto no HTML (`getPublicVisitCount()`, com cache): sem
+salto de layout e sem contagem animada.
 
 ## Acessibilidade e desempenho (checklist de página)
 

@@ -37,6 +37,7 @@ src/lib/permissions/        perfis, ambientes e matriz módulo × ação (puro; 
 src/server/access/          escopo por projeto/cliente, membros, convites (a parte de permissões com banco)
 src/server/…                código só-servidor: site/queries.ts (leitura pública com cache), action.ts (helpers de
                             Server Action), settings.ts, e um arquivo/pasta por módulo do painel
+src/lib/metrics/ + src/server/metrics/   medição própria de visitas (regras puras + coleta/consultas); entrada: /api/visita
 scripts/                    migrate.ts, seed.ts, create-user.ts
 ```
 
@@ -113,6 +114,10 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
   Arquivos privados (contratos, comprovantes) só são servidos com sessão.
 - Registre ações relevantes com `logAudit()` (`@/lib/audit`). Nunca grave senha/token em log.
 - LGPD: dados de leads/clientes só no painel; consentimento registrado com data e versão da política.
+- Medição de visitas (método em `src/server/metrics/collect.ts`): própria, **sem serviço de terceiros, sem cookie e
+  sem gravar IP nem user-agent** — só o código do visitante do dia (HMAC com sal diário, apagado na virada) e totais
+  agregados em `visit_stats`. Não acrescente identificador persistente, script de analytics externo nem campo novo
+  ao sinal sem atualizar as políticas de Privacidade/Cookies (padrões em `src/lib/site/content.ts`) e a versão.
 
 ## Conteúdo do site (regras dos sócios)
 
@@ -126,8 +131,15 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
 - Formulários: o envio vira lead com os campos do tipo do pedido (`buildLeadRecord`); o de Eventos e Casamentos
   NÃO cria compromisso na agenda nem promete data.
 - Portfólio e depoimentos começam ocultos; blocos sem conteúdo publicado **não renderizam** (nem título, nem link).
+- Portfólio: o que vai para o site sai SÓ de `toPublicProject` (`src/lib/site/portfolio.ts`) — nome do cliente apenas
+  com `showClient`; bloco do estudo de caso vazio não renderiza; `origin = experiencia_anterior` sempre leva selo e
+  aviso. Publicar exige capa e texto alternativo em todas as imagens (`publishBlockers`) e é sempre ato manual dos
+  sócios: nenhum arquivo de projeto/equipe entra no portfólio automaticamente. A ordem do painel é a ordem do site.
 - FAQ: só perguntas publicadas e com resposta.
 - Sem WhatsApp configurado, os botões de WhatsApp não aparecem (o formulário continua funcionando).
+- Contador de visitas do rodapé: só o número real de `getPublicVisitCount()`, com a métrica na legenda; nasce
+  desligado (Textos › Contador de visitas). Clique medido = `data-track="<tipo>:<alvo>"` (`whatsapp:<onde>`,
+  `banner:<id>`); guia em `src/components/site/README.md`.
 - Todo texto visível do site vem de `getSiteContent()` (editável no painel) — não deixe copy fixa no JSX, exceto
   rótulos de interface (ex.: "Abrir menu").
 

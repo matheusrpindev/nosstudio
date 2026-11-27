@@ -9,6 +9,7 @@ import { logAudit } from "@/lib/audit";
 import { requirePermission } from "@/lib/auth";
 import { BRAND_COLORS } from "@/lib/domain";
 import { safeHref } from "@/lib/format";
+import { ANNOUNCEMENT_PAGE_KEYS } from "@/lib/site/announcement-pages";
 import { f, parseForm, parseInput } from "@/server/action";
 import { invalidateSite } from "@/server/site/cache";
 import { createAnnouncement, deleteAnnouncement, moveAnnouncement, setAnnouncementEnabled, updateAnnouncement } from "@/server/site/admin/announcements";
@@ -36,6 +37,12 @@ const schema = z
     endsAt: localDateTime("Informe um fim válido."),
     dismissible: f.checkbox(),
     enabled: f.checkbox(),
+    // caixas de seleção "pages": nenhuma marcada (campo ausente) = todas as páginas; uma só chega como texto
+    pages: z
+      .union([z.enum(ANNOUNCEMENT_PAGE_KEYS), z.array(z.enum(ANNOUNCEMENT_PAGE_KEYS)).max(ANNOUNCEMENT_PAGE_KEYS.length)], { error: "Página desconhecida. Recarregue a tela e tente de novo." })
+      .optional()
+      .transform((value) => (value === undefined ? [] : Array.isArray(value) ? value : [value])),
+    pagesMode: z.enum(["todas", "algumas"]).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.linkUrl && !safeHref(value.linkUrl)) {
@@ -46,14 +53,17 @@ const schema = z
     if (value.startsAt && value.endsAt && value.endsAt <= value.startsAt) {
       ctx.addIssue({ code: "custom", path: ["endsAt"], message: "O fim precisa ser depois do início." });
     }
+    if (value.pagesMode === "algumas" && value.pages.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["pagesMode"], message: "Marque pelo menos uma página — ou escolha “Todas as páginas”." });
+    }
   });
 
 export async function saveAnnouncementAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requirePermission("site", "editar");
   const parsed = parseForm(schema, formData);
   if (!parsed.ok) return parsed.state;
-  const { id, ...data } = parsed.data;
-  const input = { ...data, linkUrl: safeHref(data.linkUrl) };
+  const { id, pagesMode, ...data } = parsed.data;
+  const input = { ...data, linkUrl: safeHref(data.linkUrl), pages: pagesMode === "todas" ? [] : data.pages };
 
   if (id === null) {
     const row = await createAnnouncement(input);

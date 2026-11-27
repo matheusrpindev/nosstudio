@@ -7,7 +7,8 @@
 @layer components {
   .s-visits {
     padding-block: clamp(2.25rem, 1.5rem + 3vw, 3.75rem);
-    border-bottom: 1px solid var(--s-rule-light);
+    /* fios em cima e embaixo: a faixa se separa também quando a seção anterior é grafite */
+    border-block: 1px solid var(--s-rule-light);
   }
   .s-visits__row {
     display: grid;

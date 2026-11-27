@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { canEverywhere, canUsePanelModule, requirePanelUser } from "@/lib/auth";
 import { formatDateLong, formatWeekday, todayISO } from "@/lib/dates";
 import { dashboardAccess, getIssues, getSetupGaps, getSummary, listImportantTasks, listUpcomingShoots, listWeekEvents } from "@/server/dashboard/queries";
+import { getVisitSnapshot } from "@/server/metrics/queries";
 import { WeekAgenda, UpcomingShoots } from "./_dashboard/agenda-cards";
 import { Notices } from "./_dashboard/notices";
 import { Shortcuts } from "./_dashboard/shortcuts";
 import { SummaryCards } from "./_dashboard/summary-cards";
 import { TasksCard } from "./_dashboard/tasks-card";
+import { VisitsIndicator } from "./_dashboard/visits-indicator";
 
 export const metadata: Metadata = { title: "Visão geral" };
 export const instant = false;
@@ -24,13 +26,15 @@ export default async function PainelHomePage() {
   const access = await dashboardAccess(user);
   const restricted = access.projects !== "todos";
 
-  const [summary, weekEvents, shoots, importantTasks, issues, gaps] = await Promise.all([
+  const [summary, weekEvents, shoots, importantTasks, issues, gaps, visits] = await Promise.all([
     getSummary(today, access),
     access.agenda ? listWeekEvents(user, today) : null,
     access.agenda ? listUpcomingShoots(user, today) : null,
     access.tasks ? listImportantTasks(today, access.tasks) : null,
     getIssues(today, access),
     getSetupGaps(access),
+    // visitas do site: só para quem vê o módulo Site (para os demais nem é consultado)
+    canEverywhere(user, "site", "ver") ? getVisitSnapshot(today) : null,
   ]);
   const shortcuts = {
     lead: canEverywhere(user, "leads", "editar"),
@@ -52,6 +56,7 @@ export default async function PainelHomePage() {
       </header>
 
       <SummaryCards summary={summary} today={today} />
+      {visits ? <VisitsIndicator snapshot={visits} /> : null}
       <Notices issues={issues} gaps={gaps} today={today} scope={{ deliveries: access.projects !== null, proposals: access.proposals, finance: access.finance, setup: access.site || access.admin }} />
       <Shortcuts allowed={shortcuts} />
 

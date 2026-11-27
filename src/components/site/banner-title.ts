@@ -22,8 +22,8 @@ export function bannerTitleLines(title: string): [string, string | null] {
   for (let cut = 1; cut < words.length; cut++) {
     const a = words.slice(0, cut).join(" ");
     const b = words.slice(cut).join(" ");
-    // prefere a primeira linha um pouco mais longa: a de baixo é a de destaque
-    const gap = Math.abs(width(a) - width(b)) + (width(b) > width(a) ? 0.75 : 0);
+    // prefere a primeira linha mais longa: a de baixo é a de destaque e fica melhor curta ("nosso estilo.")
+    const gap = Math.abs(width(a) - width(b)) + (width(b) > width(a) ? 2 : 0);
     if (gap < bestGap) {
       bestGap = gap;
       best = [a, b];

@@ -319,6 +319,8 @@ action exportada não começar por um guarda, ou usar `requireUser()` genérico.
 | `GET /painel/config/dados/exportar` | `dados:baixar`; compromissos particulares de outras pessoas saem mascarados (seção 6.1) |
 | `GET /painel/clientes/exportar`, `GET /painel/clientes/[id]/dados` | `dados:baixar` + `clientes:ver`; em `/dados`, particulares de outras pessoas ficam de fora, com aviso (seção 6.1) |
 | `GET /painel/financeiro/exportar` | `dados:baixar` + `financeiro:ver` |
+| `GET /painel/site/metricas/exportar` | `dados:baixar` + `site:ver`; os números de leads só entram para quem tem `leads:ver` |
+| `POST /api/visita` (medição de visitas do site) | **pública** (não é rota do painel): mesma origem, corpo ≤ 1 KB validado com zod, limite por IP; ignora robôs, pré-carregamento e quem tem sessão do painel. Só grava totais anônimos (`src/server/metrics`) |
 
 ### 7.2 Páginas (aplicado)
 
@@ -329,7 +331,7 @@ como a tabela manda; página nova sem linha na tabela do teste faz o teste falha
 | Página | Guarda |
 | --- | --- |
 | `_shell/shell.tsx` (casca) | `requirePanelUser({ allowPasswordChange: true })`; menu, atalhos do celular e contador de leads filtrados por `canUsePanelModule(user, módulo, "ver")` (`nav.ts`: cada item tem `module`) |
-| `/painel` (visão geral) | `requirePanelUser()`; cartões, avisos, atalhos e listas por módulo (`dashboardAccess`): o que a pessoa não vê **não é consultado**; projetos e tarefas filtrados pelo escopo; os cartões da agenda exigem `agenda:ver` no **módulo inteiro** (`canEverywhere`) e leem por `listAgenda` (particular de outra pessoa: "Ocupado") |
+| `/painel` (visão geral) | `requirePanelUser()`; cartões, avisos, atalhos e listas por módulo (`dashboardAccess`): o que a pessoa não vê **não é consultado**; projetos e tarefas filtrados pelo escopo; os cartões da agenda exigem `agenda:ver` no **módulo inteiro** (`canEverywhere`) e leem por `listAgenda` (particular de outra pessoa: "Ocupado"); o indicador de visitas do site (hoje / 7 dias) exige `site:ver` |
 | `/painel/[...resto]`, `/painel/ajuda`, `/painel/conta` | `requirePanelUser()` |
 | `/painel/conta/senha` | `requirePanelUser({ allowPasswordChange: true })` |
 | `/painel/leads`, `/leads/[id]` · `/leads/novo` | `leads:ver` · `leads:editar` |
@@ -343,6 +345,8 @@ como a tabela manda; página nova sem linha na tabela do teste faz o teste falha
 | `/painel/financeiro`, `/financeiro/[id]` · `/novo`, `/novo/parcelas` | `financeiro:ver` · `financeiro:editar` |
 | `/painel/marca`, `/marca/[id]` · `/marca/novo` | `marca:ver` · `marca:editar` |
 | `/painel/site/**` (listas, inclusive `/site/inicio` — ordem e visibilidade das seções da página inicial) · `/novo`, `/[id]`, `/textos/[secao]` | `site:ver` · `site:editar` (em `/site/inicio` a lista abre para quem vê; setas, arrastar, chave e "restaurar" só aparecem para quem edita, e as actions de `site/inicio/actions.ts` exigem `site:editar`) |
+| `/painel/site/banners` (carrossel da página inicial) · `/banners/novo`, `/banners/[id]` | `site:ver` · `site:editar`. Na lista, setas, arrastar, chave, "Duplicar" e "Editar" só aparecem para quem edita, e "Excluir" para quem tem `site:excluir`; as actions de `site/banners/actions.ts` exigem `site:editar` (salvar, ligar/desligar, ordenar, duplicar) ou `site:excluir`. Imagens e vídeos entram pela API de mídia (`arquivos:editar`); a arte de um banner desligado ou encerrado só é entregue por `/media` a quem está logado no painel |
+| `/painel/site/metricas` (visitas, origem, páginas, aparelhos, cliques, formulários) | `site:ver`; os blocos de leads (leads recebidos, serviços mais procurados) só aparecem — e só são consultados — com `leads:ver`; os botões de CSV, com `dados:baixar`; "Configurar" o contador, com `site:editar` |
 | `/painel/config`, `/config/propostas` | `config:ver` |
 | `/painel/config/notificacoes` | `requireAdmin()` |
 | `/painel/config/usuarios`, `/config/usuarios/[id]` (permissões) | `usuarios:ver` (botões e actions: `usuarios:editar`) |

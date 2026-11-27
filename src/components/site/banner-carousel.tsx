@@ -5,7 +5,7 @@
  * - região rotulada com `aria-roledescription="carousel"`; cada banner é um grupo "slide" rotulado "N de M";
  * - o botão de pausa é o PRIMEIRO controle na ordem do teclado (o HTML traz a barra de controles antes dos
  *   banners; o CSS a mostra embaixo) e está sempre visível;
- * - a troca automática para quando o mouse passa por cima ou o foco entra no carrossel, e `aria-live` fica
+ * - a troca automática para quando o mouse passa por cima ou o foco do teclado entra no carrossel, e `aria-live` fica
  *   desligado enquanto ela está ligada (ligado = leitores de tela anunciam o banner trocado à mão);
  * - com `prefers-reduced-motion`, não avança sozinho (o visitante pode ligar no botão) e a troca é sem animação;
  * - setas (botões e teclas ← →, Home/End), indicadores e arrastar com o dedo. Cada banner tem a sua duração.
@@ -270,7 +270,10 @@ export function BannerCarousel({
         if (event.pointerType === "mouse") setHovering(true);
       }}
       onPointerLeave={() => setHovering(false)}
-      onFocus={() => setFocused(true)}
+      onFocus={(event) => {
+        // só o foco de TECLADO suspende a troca: clicar numa seta com o mouse não deixa o carrossel parado
+        if ((event.target as HTMLElement).matches(":focus-visible")) setFocused(true);
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
       }}

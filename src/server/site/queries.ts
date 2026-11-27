@@ -27,8 +27,8 @@ import {
   type Service,
   type Testimonial,
 } from "@/db/schema";
-import { mediaUrl, toPublicImage, type PublicImage } from "@/lib/media";
-import { BANNER_MAX_SLIDES, isBannerRenderable, resolveBannerHref, type BannerLink, type BannerVideo, type BannerView, type SiteAvailability } from "@/lib/site/banners";
+import { toPublicImage, type PublicImage } from "@/lib/media";
+import { BANNER_MAX_SLIDES, buildBannerView, isViewRenderable, type BannerView, type SiteAvailability } from "@/lib/site/banners";
 import { defaultSiteContent, resolveSiteContent, SITE_CONTENT_KEYS, type SiteContent } from "@/lib/site/content";
 import { announcementPaths } from "@/lib/site/announcement-pages";
 import { SITE_PATHS } from "@/lib/site/paths";
@@ -210,40 +210,10 @@ export async function getBanners(): Promise<BannerView[]> {
     const live = servableAnnouncements(rows, now);
     const ids = [...new Set(live.flatMap((row) => [row.desktopMediaId, row.mobileMediaId, row.videoMediaId]).filter((id): id is number => typeof id === "number"))];
     const files = new Map((ids.length ? await db.select().from(media).where(inArray(media.id, ids)) : []).map((row) => [row.id, row]));
-    const image = (id: number | null) => (id ? toPublicImage(files.get(id)) : null);
-    const video = (id: number | null): BannerVideo | null => {
-      const row = id ? files.get(id) : undefined;
-      return row && row.visibility === "public" && row.mime.startsWith("video/") ? { id: row.id, url: mediaUrl(row.storageKey), mime: row.mime } : null;
-    };
-    const link = (label: string, url: string): BannerLink | null => {
-      const href = resolveBannerHref(url, site).href;
-      return href && label.trim() ? { label: label.trim(), href } : null;
-    };
-    const views = live.map((row): BannerView => {
-      const primaryHref = resolveBannerHref(row.buttonUrl, site).href;
-      return {
-        id: row.id,
-        layout: row.layout,
-        title: row.title,
-        subtitle: row.subtitle,
-        // em peça pronta o botão principal é o link do banner inteiro: vale mesmo sem rótulo
-        primary: row.layout === "peca" ? (primaryHref ? { label: row.buttonLabel.trim(), href: primaryHref } : null) : link(row.buttonLabel, row.buttonUrl),
-        secondary: link(row.secondaryLabel, row.secondaryUrl),
-        desktop: image(row.desktopMediaId),
-        mobile: image(row.mobileMediaId),
-        video: row.layout === "midia" ? video(row.videoMediaId) : null,
-        alt: row.alt,
-        bgColor: row.bgColor,
-        tone: row.tone,
-        durationSeconds: row.durationSeconds,
-        endsAt: row.endsAt,
-      };
-    });
+    const views = live.map((row) => buildBannerView(row, files, site));
     return {
       nextChange: secondsToNextAnnouncementChange(rows, now),
-      items: views
-        .filter((view) => isBannerRenderable({ layout: view.layout, title: view.title, hasImage: Boolean(view.desktop || view.mobile), hasVideo: Boolean(view.video) }))
-        .slice(0, BANNER_MAX_SLIDES),
+      items: views.filter(isViewRenderable).slice(0, BANNER_MAX_SLIDES),
     };
   });
   const life = announcementCacheLife(nextChange);

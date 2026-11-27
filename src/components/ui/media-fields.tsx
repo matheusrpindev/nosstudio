@@ -7,6 +7,7 @@
  * - <ImageField>   → id da imagem (ou "")            → no servidor: `f.optionalId()`
  * - <GalleryField> → JSON com os ids, na ordem        → `jsonField(formData, name)` + `z.array(z.number().int().positive())`
  * - <FileField>    → id do arquivo privado (ou "")    → `f.optionalId()`
+ * - <VideoField>   → id do vídeo curto público (ou "") → `f.optionalId()` (MP4 ou WebM, até 30 MB; banners do site)
  *
  * Para preencher `defaultValue`, use `getMediaValue(id)` / `getMediaValues(ids)` de `@/server/media`.
  * Remover/trocar no campo só desvincula; o que vale é o que for SALVO no formulário. O arquivo antigo é apagado
@@ -14,7 +15,7 @@
  * nunca chegou a ser salvo, na hora em que sai do campo (`discardMedia`, abaixo).
  */
 import { useEffect, useEffectEvent, useId, useRef, useState, type DragEvent, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ExternalLink, FileText, ImagePlus, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, FileText, Film, ImagePlus, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useFieldState } from "./form";
 
@@ -35,6 +36,8 @@ const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/avif,image/gif";
 const IMAGE_MAX_BYTES = 15 * 1024 * 1024;
 const FILE_ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv,.jpg,.jpeg,.png,.webp,.gif";
 const FILE_MAX_BYTES = 25 * 1024 * 1024;
+const VIDEO_ACCEPT = "video/mp4,video/webm,.mp4,.webm";
+const VIDEO_MAX_BYTES = 30 * 1024 * 1024; // o mesmo limite do servidor (src/server/media/process.ts)
 const ALT_MAX = 300;
 const WAIT_MESSAGE = "Aguarde o envio do arquivo terminar antes de salvar.";
 const CONNECTION_ERROR = "Falha de conexão ao enviar. Confira a internet e tente de novo.";
@@ -60,12 +63,13 @@ function readError(body: unknown, fallback: string): string {
 /** Envia um arquivo para a API do painel, com progresso (0–1). Rejeita com `Error(mensagem pt-BR)`. */
 export function uploadMedia(
   file: File,
-  options: { visibility: "public" | "private"; alt?: string; onProgress?: (fraction: number) => void },
+  options: { visibility: "public" | "private"; kind?: "video"; alt?: string; onProgress?: (fraction: number) => void },
 ): Promise<MediaValue> {
   return new Promise((resolve, reject) => {
     const data = new FormData();
     data.append("file", file);
     data.append("visibility", options.visibility);
+    if (options.kind) data.append("kind", options.kind);
     if (options.alt) data.append("alt", options.alt);
 
     const request = new XMLHttpRequest();
@@ -365,10 +369,12 @@ export type ImageFieldProps = FieldProps & {
   defaultValue?: MediaValue | null;
   /** Proporção da prévia, no formato CSS: "16/9" (padrão), "1/1", "4/5", "3/2"… */
   aspect?: string;
+  /** `false` esconde o campo de texto alternativo (quando o formulário em volta já tem o seu). Padrão: mostra. */
+  altField?: boolean;
   onChange?: (media: MediaValue | null) => void;
 };
 
-export function ImageField({ name, label, defaultValue = null, hint, error, aspect = "16/9", className, onChange }: ImageFieldProps) {
+export function ImageField({ name, label, defaultValue = null, hint, error, aspect = "16/9", altField = true, className, onChange }: ImageFieldProps) {
   const uid = useId();
   const [media, setMedia] = useState<MediaValue | null>(defaultValue);
   const [replacing, setReplacing] = useState(false);
@@ -417,8 +423,8 @@ export function ImageField({ name, label, defaultValue = null, hint, error, aspe
             <img src={media.url} alt={media.alt || `Prévia: ${media.originalName}`} className="size-full object-cover" />
           </div>
           <div className="min-w-0">
-            <AltInput key={media.id} media={media} onSaved={change} />
-            <p className="text-texto-suave mt-2 truncate text-xs" title={media.originalName}>
+            {altField ? <AltInput key={media.id} media={media} onSaved={change} /> : null}
+            <p className={cn("text-texto-suave truncate text-xs", altField && "mt-2")} title={media.originalName}>
               {media.originalName}
               {media.width && media.height ? ` · ${media.width}×${media.height}` : ""} · {formatBytes(media.size)}
             </p>
@@ -756,6 +762,112 @@ export function FileField({ name, label, defaultValue = null, accept = FILE_ACCE
           {media && replacing && upload === null ? (
             <button type="button" className="btn btn-ghost btn-sm mt-2 min-h-11 sm:min-h-9" onClick={() => setReplacing(false)}>
               Cancelar e manter o arquivo atual
+            </button>
+          ) : null}
+        </>
+      )}
+
+      <Messages name={name} hint={hint} error={error} uploadError={uploadError} hintId={`${uid}-hint`} />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ vídeo curto (público)
+export type VideoFieldProps = FieldProps & {
+  defaultValue?: MediaValue | null;
+  onChange?: (media: MediaValue | null) => void;
+};
+
+/**
+ * Vídeo curto PÚBLICO do site (fundo de banner): MP4 ou WebM, até 30 MB. O servidor confere o tipo pelo conteúdo
+ * e guarda o arquivo como chegou (não reencoda) — o que for enviado é o que o visitante baixa.
+ */
+export function VideoField({ name, label, defaultValue = null, hint, error, className, onChange }: VideoFieldProps) {
+  const uid = useId();
+  const [media, setMedia] = useState<MediaValue | null>(defaultValue);
+  const [replacing, setReplacing] = useState(false);
+  const { upload, setUpload, uploadError, setUploadError } = useUploader();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  const change = (next: MediaValue | null) => {
+    if (media && media.id !== next?.id) discardMedia(media.id);
+    setMedia(next);
+    onChange?.(next);
+  };
+
+  const send = async (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
+    const tooBig = checkSize(file, VIDEO_MAX_BYTES, "Vídeo");
+    if (tooBig) return setUploadError(tooBig);
+    setUploadError(null);
+    setUpload({ name: file.name, progress: 0 });
+    try {
+      const uploaded = await uploadMedia(file, { visibility: "public", kind: "video", onProgress: (progress) => setUpload({ name: file.name, progress }) });
+      change(uploaded);
+      setReplacing(false);
+    } catch (reason) {
+      setUploadError(reason instanceof Error ? reason.message : CONNECTION_ERROR);
+    } finally {
+      setUpload(null);
+      setUploadError((current) => (current === WAIT_MESSAGE ? null : current));
+    }
+  };
+
+  const showDropZone = !media || replacing || upload !== null;
+
+  return (
+    <div ref={rootRef} role="group" aria-labelledby={`${uid}-label`} className={className}>
+      <span id={`${uid}-label`} className="label">
+        {label}
+      </span>
+      <input type="hidden" name={name} value={media?.id ?? ""} />
+      <UploadGuard active={upload !== null} onBlocked={() => setUploadError(WAIT_MESSAGE)} />
+
+      {media && !showDropZone ? (
+        <div className="border-borda rounded-campo grid gap-3 border bg-superficie p-3 sm:grid-cols-[minmax(0,14rem)_1fr] sm:gap-4">
+          <video src={media.url} muted loop playsInline controls preload="metadata" className="bg-detalhe-suave aspect-video w-full rounded-md object-cover" aria-label={`Prévia do vídeo ${media.originalName}`} />
+          <div className="min-w-0">
+            <p className="text-texto truncate text-sm font-medium" title={media.originalName}>
+              {media.originalName}
+            </p>
+            <p className="text-texto-suave mt-1 text-xs">
+              {media.mime === "video/webm" ? "WebM" : "MP4"} · {formatBytes(media.size)} · toca sem som, em repetição
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className="btn btn-secondary btn-sm min-h-11 sm:min-h-9" onClick={() => setReplacing(true)}>
+                <RefreshCw aria-hidden="true" className="size-4" />
+                Trocar
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger-ghost btn-sm min-h-11 sm:min-h-9"
+                onClick={() => {
+                  change(null);
+                  setUploadError(null);
+                  requestAnimationFrame(() => rootRef.current?.querySelector<HTMLElement>("[data-pick]")?.focus());
+                }}
+              >
+                <Trash2 aria-hidden="true" className="size-4" />
+                Remover
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <DropZone
+            accept={VIDEO_ACCEPT}
+            onFiles={send}
+            upload={upload}
+            icon={<Film className="size-7" />}
+            buttonLabel={media ? "Escolher outro vídeo" : "Escolher vídeo"}
+            description="ou arraste o vídeo para cá · MP4 ou WebM, até 30 MB"
+            describedBy={hint ? `${uid}-hint` : undefined}
+          />
+          {media && replacing && upload === null ? (
+            <button type="button" className="btn btn-ghost btn-sm mt-2 min-h-11 sm:min-h-9" onClick={() => setReplacing(false)}>
+              Cancelar e manter o vídeo atual
             </button>
           ) : null}
         </>

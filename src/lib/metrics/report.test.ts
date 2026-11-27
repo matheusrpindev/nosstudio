@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { defaultSiteContent } from "@/lib/site/content";
+import { VISIT_SESSION_RETENTION_DAYS } from "./classify";
 import { counterMinimum, visitCounterView } from "./counter";
 import { parseMetricsPeriod, periodDays, periodLabel, periodLength, periodQuery, previousPeriod } from "./period";
 import { buildMetricsReport, clickLabel, formatChange, formatShare, measuredDays, relativeChange, type DailyStatRow, type LeadRow, type StatRow } from "./report";
@@ -221,6 +223,20 @@ describe("contador público", () => {
     expect(visitCounterView({ ...settings, label: "  " }, data)).toBeNull();
     expect(visitCounterView({ ...settings, minimum: "2000" }, data)).toBeNull();
     expect(visitCounterView({ ...settings, minimum: "1248" }, data)?.value).toBe("1.248");
+  });
+
+  it("nasce desligado, com a frase do briefing e a legenda que identifica a métrica", () => {
+    expect(defaultSiteContent.visitCounter).toMatchObject({ enabled: false, minimum: "", phrase: "Cada visita é o começo de uma nova história." });
+    expect(defaultSiteContent.visitCounter.label).toContain("visitas");
+    expect(defaultSiteContent.visitCounter.label).toContain("{{inicio}}");
+  });
+
+  it("a política de privacidade descreve a medição com o prazo de retenção que o código aplica", () => {
+    const privacy = defaultSiteContent.privacyPage.body;
+    expect(privacy).toContain("## Medição de visitas");
+    expect(privacy).toContain(`apagados depois de ${VISIT_SESSION_RETENTION_DAYS} dias`);
+    expect(privacy).toContain("sem cookies");
+    expect(defaultSiteContent.cookiesPage.body).toContain("## Contagem de visitas (sem cookies)");
   });
 
   it("mínimo: só dígitos valem", () => {

@@ -3,6 +3,7 @@ import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { announcements, type Announcement } from "@/db/schema";
 import type { BrandColor } from "@/lib/domain";
+import { normalizeAnnouncementPages } from "@/lib/site/announcement-pages";
 import { moveInOrder, nextSortOrder, type MoveDirection } from "./order";
 
 export type AnnouncementInput = {
@@ -15,6 +16,8 @@ export type AnnouncementInput = {
   endsAt: string | null;
   dismissible: boolean;
   enabled: boolean;
+  /** Páginas em que aparece (chaves de `ANNOUNCEMENT_PAGE_KEYS`). Vazio = todas. */
+  pages: string[];
 };
 
 /** Na mesma ordem do site: `sortOrder`, depois o mais novo primeiro. */
@@ -37,6 +40,7 @@ const toRow = (input: AnnouncementInput) => ({
   endsAt: input.endsAt,
   dismissible: input.dismissible,
   enabled: input.enabled,
+  pages: normalizeAnnouncementPages(input.pages),
 });
 
 export async function createAnnouncement(input: AnnouncementInput): Promise<Announcement> {

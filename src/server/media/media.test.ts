@@ -1,7 +1,9 @@
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { MediaError, processImage, sanitizeFileName, sniffFile, sniffImage } from "./process";
+import { checkVideo, MediaError, processImage, sanitizeFileName, sniffFile, sniffImage, sniffVideo, VIDEO_MAX_BYTES } from "./process";
+import { parseRange } from "./range";
 import { isValidStorageKey, mainKeyOf } from "./storage";
+import { mp4Bytes, webmBytes } from "./video-fixtures";
 
 describe("chaves de armazenamento", () => {
   it("aceita só o formato gerado pelo sistema", () => {
@@ -89,5 +91,67 @@ describe("processamento de imagem", () => {
   it("recusa o que não é imagem e arquivos corrompidos", async () => {
     await expect(processImage(Buffer.from("<svg></svg>"))).rejects.toThrow(MediaError);
     await expect(processImage(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(200)]))).rejects.toThrow(MediaError);
+  });
+});
+
+describe("vídeo curto: tipo conferido pelos bytes", () => {
+  it("aceita MP4 e WebM de verdade", () => {
+    expect(sniffVideo(mp4Bytes())).toEqual({ ext: "mp4", mime: "video/mp4" });
+    expect(sniffVideo(mp4Bytes({ brand: "mp42" }))?.ext).toBe("mp4");
+    expect(sniffVideo(webmBytes())).toEqual({ ext: "webm", mime: "video/webm" });
+    expect(checkVideo(mp4Bytes()).mime).toBe("video/mp4");
+  });
+  it("aceita chave de armazenamento de vídeo", () => {
+    expect(isValidStorageKey("pub/2026/11/0123456789abcdef01234567.mp4")).toBe(true);
+    expect(isValidStorageKey("pub/2026/11/0123456789abcdef01234567.webm")).toBe(true);
+  });
+  it("recusa arquivo que só tem o nome ou o começo de um vídeo", () => {
+    // texto, HTML, imagem e PDF renomeados
+    for (const fake of [Buffer.from("isto não é um vídeo"), Buffer.from("<html><script>alert(1)</script></html>"), Buffer.from("%PDF-1.7\n"), Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0])]) {
+      expect(sniffVideo(fake)).toBeNull();
+      expect(() => checkVideo(fake)).toThrow(MediaError);
+    }
+    // só o cabeçalho "ftyp", sem índice (moov) nem dados (mdat)
+    expect(sniffVideo(mp4Bytes().subarray(0, 24))).toBeNull();
+    // caixas que não fecham com o tamanho do arquivo (truncado)
+    expect(sniffVideo(mp4Bytes().subarray(0, 40))).toBeNull();
+    // cabeçalho de MP4 seguido de lixo
+    expect(sniffVideo(Buffer.concat([mp4Bytes().subarray(0, 24), Buffer.from("<script>alert(1)</script>")]))).toBeNull();
+  });
+  it("recusa formatos parecidos que os navegadores não tocam (QuickTime, HEIC/AVIF, Matroska)", () => {
+    expect(sniffVideo(mp4Bytes({ brand: "qt  " }))).toBeNull();
+    expect(sniffVideo(mp4Bytes({ brand: "heic" }))).toBeNull();
+    expect(sniffVideo(mp4Bytes({ brand: "avif" }))).toBeNull();
+    expect(sniffVideo(webmBytes({ docType: "matroska" }))).toBeNull();
+  });
+  it("recusa vazio e acima do limite de 30 MB", () => {
+    expect(() => checkVideo(Buffer.alloc(0))).toThrow(MediaError);
+    const big = Buffer.concat([mp4Bytes(), Buffer.alloc(VIDEO_MAX_BYTES)]);
+    expect(() => checkVideo(big)).toThrow(/30 MB/);
+  });
+});
+
+describe("Range (pedido de trecho na entrega de arquivos)", () => {
+  it("sem cabeçalho, ou cabeçalho que não atendemos: arquivo inteiro", () => {
+    for (const header of [null, undefined, "", "items=0-5", "bytes=0-5,10-15", "bytes=abc", "bytes=-", "bytes=5-2", "bytes= 0-5 extra"]) {
+      expect(parseRange(header, 1000), String(header)).toEqual({ kind: "full" });
+    }
+  });
+  it("trecho com início e fim (fim inclusivo, limitado ao tamanho)", () => {
+    expect(parseRange("bytes=0-1", 1000)).toEqual({ kind: "partial", range: { start: 0, end: 1 } });
+    expect(parseRange("bytes=200-999", 1000)).toEqual({ kind: "partial", range: { start: 200, end: 999 } });
+    expect(parseRange("bytes=200-5000", 1000)).toEqual({ kind: "partial", range: { start: 200, end: 999 } });
+  });
+  it("trecho aberto e sufixo", () => {
+    expect(parseRange("bytes=0-", 1000)).toEqual({ kind: "partial", range: { start: 0, end: 999 } });
+    expect(parseRange("bytes=999-", 1000)).toEqual({ kind: "partial", range: { start: 999, end: 999 } });
+    expect(parseRange("bytes=-100", 1000)).toEqual({ kind: "partial", range: { start: 900, end: 999 } });
+    expect(parseRange("bytes=-5000", 1000)).toEqual({ kind: "partial", range: { start: 0, end: 999 } });
+  });
+  it("início depois do fim do arquivo: 416", () => {
+    expect(parseRange("bytes=1000-", 1000)).toEqual({ kind: "unsatisfiable" });
+    expect(parseRange("bytes=5000-6000", 1000)).toEqual({ kind: "unsatisfiable" });
+    expect(parseRange("bytes=-0", 1000)).toEqual({ kind: "unsatisfiable" });
+    expect(parseRange("bytes=0-", 0)).toEqual({ kind: "unsatisfiable" });
   });
 });

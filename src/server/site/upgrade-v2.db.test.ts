@@ -2,7 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { announcements, faqs, packages, services } from "@/db/schema";
-import { FAQ_PLANS_V1, FAQ_PLANS_V2, PLANS_V1, PLANS_V2, SERVICES_V1, SERVICES_V2, STANDALONE_ADDED_V2, STANDALONE_V1 } from "./seed-data";
+import { ANNOUNCEMENT_OPENING_V1, ANNOUNCEMENT_OPENING_V2, FAQ_PLANS_V1, FAQ_PLANS_V2, PLANS_V1, PLANS_V2, SERVICES_V1, SERVICES_V2, STANDALONE_ADDED_V2, STANDALONE_V1 } from "./seed-data";
 import { upgradeSiteContentToV2 } from "./upgrade-v2";
 
 /**
@@ -48,6 +48,17 @@ beforeAll(async () => {
   extraFaqs.push(faq.id, editedFaq.id);
   const [notice] = await db.insert(announcements).values({ message: "[Teste] aviso de casamentos", linkUrl: "/casamentos" }).returning({ id: announcements.id });
   extraAnnouncements.push(notice.id);
+  // aviso de abertura: um idêntico ao do seed antigo (desligado pelos sócios) e três que eles já mexeram
+  const opening = await db
+    .insert(announcements)
+    .values([
+      { ...ANNOUNCEMENT_OPENING_V1, enabled: false },
+      { ...ANNOUNCEMENT_OPENING_V1, linkLabel: "[Teste] Fale com a gente" },
+      { ...ANNOUNCEMENT_OPENING_V1, pages: ["contact"] },
+      { ...ANNOUNCEMENT_OPENING_V1, endsAt: "2099-01-01T00:00" },
+    ])
+    .returning({ id: announcements.id });
+  extraAnnouncements.push(...opening.map((row) => row.id));
 });
 
 afterAll(async () => {
@@ -62,7 +73,7 @@ afterAll(async () => {
 describe("atualização idempotente do site para o briefing v2", () => {
   it("primeira execução: atualiza só os registros originais do seed e cria o que falta", async () => {
     const report = await upgradeSiteContentToV2();
-    expect(report).toEqual({ servicesUpdated: 4, servicesCreated: 4, plansUpdated: 2, standaloneCreated: 2, faqsUpdated: 1, announcementsUpdated: 1 });
+    expect(report).toEqual({ servicesUpdated: 4, servicesCreated: 4, plansUpdated: 2, standaloneCreated: 2, faqsUpdated: 1, announcementsUpdated: 1, openingAnnouncementUpdated: 1 });
 
     const serviceRows = await db.select().from(services);
     const bySlug = new Map(serviceRows.map((row) => [row.slug, row]));
@@ -115,6 +126,13 @@ describe("atualização idempotente do site para o briefing v2", () => {
     expect(faqRows.find((row) => row.id === extraFaqs[1])).toMatchObject({ question: FAQ_PLANS_V1.question, answer: "[Teste] Resposta editada." });
     const [notice] = await db.select().from(announcements).where(eq(announcements.id, extraAnnouncements[0]));
     expect(notice.linkUrl).toBe("/eventos-e-casamentos");
+
+    // aviso de abertura: só o que estava idêntico ao seed antigo ganhou o texto do briefing v2 (e continua desligado)
+    const openingRows = await db.select().from(announcements).where(inArray(announcements.id, extraAnnouncements.slice(1)));
+    const byId = new Map(openingRows.map((row) => [row.id, row]));
+    expect(byId.get(extraAnnouncements[1])).toMatchObject({ ...ANNOUNCEMENT_OPENING_V2, enabled: false });
+    expect(`${byId.get(extraAnnouncements[1])?.message} ${byId.get(extraAnnouncements[1])?.linkLabel}`).toBe("Agenda aberta para novos projetos. Vamos criar juntos?");
+    for (const id of extraAnnouncements.slice(2)) expect(byId.get(id)?.message, String(id)).toBe(ANNOUNCEMENT_OPENING_V1.message);
   });
 
   it("segunda execução: não muda nada (nem recria o que os sócios apagarem depois)", async () => {

@@ -16,7 +16,7 @@ export default async function NewAnnouncementPage() {
       <Card>
         <AnnouncementForm
           action={saveAnnouncementAction}
-          initial={{ id: null, message: "", linkLabel: "", linkUrl: "", bgColor: "roxo", textColor: "branco", startsAt: "", endsAt: "", dismissible: true, enabled: false }}
+          initial={{ id: null, message: "", linkLabel: "", linkUrl: "", bgColor: "roxo", textColor: "branco", startsAt: "", endsAt: "", dismissible: true, enabled: false, pages: [] }}
         />
       </Card>
     </div>

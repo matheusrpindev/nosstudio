@@ -9,8 +9,11 @@ import "./portfolio.css";
 export const generateMetadata = () => buildMetadata("portfolio");
 
 /**
- * Portfólio. Estático: só existe com a seção ligada E com projetos publicados — caso contrário responde 404
- * (nada de grade vazia; o menu e a home já omitem o item). O filtro por categoria roda no cliente.
+ * Portfólio (briefing v2, seção 08): "Nosso olhar em prática." — grade com pesquisa e filtros por categoria.
+ *
+ * Estático: só existe com a seção ligada E com projetos publicados — caso contrário responde 404 (nada de grade
+ * vazia; o menu, a home e o mapa do site já omitem o item). A pesquisa e os filtros rodam no navegador sobre a
+ * lista completa (o estado vai na URL: `?categoria=&q=`), então a página não lê `searchParams` no servidor.
  */
 export default async function PortfolioPage() {
   const [content, projects] = await Promise.all([getSiteContent(), getPortfolio()]);
@@ -20,15 +23,21 @@ export default async function PortfolioPage() {
   return (
     <>
       <PageHeader eyebrow={page.eyebrow} title={page.title} lead={page.intro} accent="tail" />
-      <Section id="portfolio-projetos" number="01" label="Projetos">
-        <PortfolioBrowser projects={projects} />
+      <Section id="portfolio-projetos" number="01" label={page.projectsLabel || page.eyebrow}>
+        <PortfolioBrowser
+          projects={projects}
+          labels={{
+            search: page.searchLabel,
+            placeholder: page.searchPlaceholder,
+            all: page.allLabel,
+            featured: page.featuredLabel,
+            noResultsTitle: page.noResultsTitle,
+            noResultsText: page.noResultsText,
+            clear: page.clearLabel,
+          }}
+        />
       </Section>
-      <CtaBand
-        id="portfolio-fechamento"
-        title={home.closing.title}
-        text={home.closing.text}
-        cta={home.closing.cta}
-      />
+      <CtaBand id="portfolio-fechamento" title={home.closing.title} text={home.closing.text} cta={home.closing.cta} />
     </>
   );
 }

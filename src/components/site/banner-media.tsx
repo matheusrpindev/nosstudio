@@ -104,7 +104,7 @@ export function BannerMedia({
       {main && show ? (
         <picture>
           {small ? <source media={`(max-width: ${DESKTOP_MIN - 1}px)`} srcSet={srcSet(small)} sizes="100vw" width={small.width} height={small.height} /> : null}
-          {/* eslint-disable-next-line @next/next/no-img-element -- as versões responsivas já vêm do pipeline de upload */}
+          {/* <img> comum (não next/image): as versões responsivas já vêm do pipeline de upload */}
           <img
             src={main.url}
             srcSet={srcSet(main)}

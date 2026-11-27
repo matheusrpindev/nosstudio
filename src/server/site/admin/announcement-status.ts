@@ -1,15 +1,23 @@
 /**
  * Situação de cada aviso da barra do topo, na mesma regra do site público
- * (`AnnouncementBar`): só o PRIMEIRO aviso ligado e dentro do período aparece.
- * Arquivo puro (sem banco) para ser testado e usado em qualquer lugar.
+ * (`AnnouncementBar`): em cada página, só o PRIMEIRO aviso ligado, dentro do período e válido para aquela
+ * página aparece. Arquivo puro (sem banco) para ser testado e usado em qualquer lugar.
  */
 import { nowLocal } from "@/lib/dates";
+import { ANNOUNCEMENT_PAGE_KEYS, normalizeAnnouncementPages } from "@/lib/site/announcement-pages";
 
-export type AnnouncementTiming = { id: number; enabled: boolean; startsAt: string | null; endsAt: string | null };
+export type AnnouncementTiming = {
+  id: number;
+  enabled: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  /** Páginas em que o aviso aparece (chaves de `ANNOUNCEMENT_PAGE_KEYS`). Vazio ou ausente = todas. */
+  pages?: readonly string[] | null;
+};
 
 export type AnnouncementStatus =
-  | "no_ar" // é o aviso que aparece agora
-  | "na_fila" // ligado e dentro do período, mas há outro antes dele na lista
+  | "no_ar" // aparece agora (em todas as páginas dele, ou em parte delas)
+  | "na_fila" // ligado e dentro do período, mas em TODAS as páginas dele há outro aviso antes na lista
   | "agendado" // ligado, o período ainda não começou
   | "encerrado" // ligado, o período já terminou
   | "desligado";
@@ -17,17 +25,44 @@ export type AnnouncementStatus =
 /** `now`: horário local do estúdio `YYYY-MM-DDTHH:mm` (`nowLocal()`). */
 export function announcementStatuses(items: readonly AnnouncementTiming[], now: string): Map<number, AnnouncementStatus> {
   const result = new Map<number, AnnouncementStatus>();
-  let liveFound = false;
+  // páginas que já têm um aviso no ar, vindo de cima na lista; `everywhere` = um aviso de "todas as páginas"
+  // (que cobre também as páginas fora da lista, como a de erro 404)
+  const taken = new Set<string>();
+  let everywhere = false;
   for (const item of items) {
     if (!item.enabled) result.set(item.id, "desligado");
     else if (item.endsAt && item.endsAt <= now) result.set(item.id, "encerrado");
     else if (item.startsAt && item.startsAt > now) result.set(item.id, "agendado");
-    else if (!liveFound) {
-      liveFound = true;
-      result.set(item.id, "no_ar");
-    } else result.set(item.id, "na_fila");
+    else {
+      const pages = normalizeAnnouncementPages(item.pages ?? []);
+      const free = everywhere ? [] : pages.length === 0 ? [null] : pages.filter((page) => !taken.has(page));
+      result.set(item.id, free.length > 0 ? "no_ar" : "na_fila");
+      if (pages.length === 0) everywhere = true;
+      else for (const page of pages) taken.add(page);
+    }
   }
   return result;
+}
+
+/**
+ * Páginas em que um aviso "no ar" está encoberto por outro que vem antes na lista (para o painel avisar:
+ * "em Contato aparece outro aviso"). Vazio = aparece em todas as páginas dele.
+ */
+export function announcementHiddenPages(items: readonly AnnouncementTiming[], id: number, now: string): string[] {
+  const statuses = announcementStatuses(items, now);
+  const target = items.find((item) => item.id === id);
+  if (!target || statuses.get(id) !== "no_ar") return [];
+  const taken = new Set<string>();
+  for (const item of items) {
+    if (item.id === id) break;
+    const status = statuses.get(item.id);
+    if (status !== "no_ar" && status !== "na_fila") continue;
+    const pages = normalizeAnnouncementPages(item.pages ?? []);
+    if (pages.length === 0) return []; // (não acontece: aí o alvo estaria "na fila")
+    for (const page of pages) taken.add(page);
+  }
+  const own = normalizeAnnouncementPages(target.pages ?? []);
+  return (own.length === 0 ? [...ANNOUNCEMENT_PAGE_KEYS] : own).filter((page) => taken.has(page));
 }
 
 /**

@@ -103,3 +103,9 @@ export async function getVisitSnapshot(today: ISODate): Promise<VisitSnapshot> {
   ]);
   return { today: num(row?.today), visitorsToday: num(row?.visitorsToday), last7: num(row?.last7), collectingSince: since };
 }
+
+/** Total de visitas desde o início da medição (o mesmo número do contador público, sem o cache do site). */
+export async function getVisitGrandTotal(): Promise<number> {
+  const [row] = await db.select({ total: sql<number>`coalesce(sum(${visitStats.visits}), 0)` }).from(visitStats).where(eq(visitStats.dimension, "total"));
+  return num(row?.total);
+}

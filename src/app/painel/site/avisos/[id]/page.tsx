@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { paramId } from "@/components/ui/search-params";
 import { requirePermission } from "@/lib/auth";
+import { normalizeAnnouncementPages } from "@/lib/site/announcement-pages";
 import { getAnnouncement } from "@/server/site/admin/announcements";
 import { deleteAnnouncementAction, saveAnnouncementAction } from "../actions";
 import { AnnouncementForm } from "../form";
@@ -54,6 +55,7 @@ export default async function EditAnnouncementPage({ params }: { params: Promise
             endsAt: row.endsAt ?? "",
             dismissible: row.dismissible,
             enabled: row.enabled,
+            pages: normalizeAnnouncementPages(row.pages),
           }}
         />
       </Card>

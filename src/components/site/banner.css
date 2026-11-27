@@ -1,0 +1,639 @@
+/* ==========================================================================
+   NÓS Studio — carrossel de banners da página inicial (briefing v2, seção 04)
+   --------------------------------------------------------------------------
+   Vive fora de site.css porque também é carregado na prévia do painel (o
+   componente é o mesmo). Depende dos tokens e das classes base do site
+   (.site, .s-wrap, .s-btn, .s-frame, .s-rec…): um bloco com a classe `site`
+   precisa existir em volta.
+
+   Medidas por CONTÊINER (não pela janela): `.s-banners` é o contêiner e tudo
+   aqui usa `cqi` e `@container banners` — o banner se monta pela largura do
+   bloco em que está. No site, o bloco é a página; na prévia do painel, uma
+   moldura de 390px ou de 1440px.
+   - menos de 640px: 4:5 (arte de 1080 × 1350)
+   - 640px ou mais:  12:5 (arte de 1920 × 800), até 800px de altura
+   ========================================================================== */
+@layer theme, base, components, utilities;
+
+@layer components {
+  /* ---------- 1. Carrossel ---------------------------------------------- */
+  .s-banners {
+    container: banners / inline-size;
+    position: relative;
+  }
+  .s-banners__viewport {
+    /* o grid do site, refeito sobre a largura do contêiner */
+    --s-margin: clamp(1.25rem, 4cqi, 3.5rem);
+    --s-gutter: clamp(0.75rem, 1.7cqi, 1.5rem);
+    --s-wrap: calc(min(100cqi, var(--s-maxw)) - 2 * var(--s-margin));
+    display: flex;
+    flex-direction: column;
+  }
+  .s-banners__stage {
+    order: 1;
+    display: grid;
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+  .s-banners__slide {
+    grid-area: 1 / 1;
+    display: grid;
+    min-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.7s var(--s-ease),
+      visibility 0s 0.7s;
+  }
+  .s-banners__slide[data-active] {
+    z-index: 1;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.7s var(--s-ease);
+  }
+  /* o texto do banner que entra sobe um pouco (só com movimento permitido) */
+  .s-banners__slide .s-banner__in > * {
+    transition:
+      opacity 0.6s var(--s-ease),
+      transform 0.8s var(--s-ease);
+  }
+  .s-banners__slide:not([data-active]) .s-banner__in > * {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  .s-banners[data-reduced] .s-banners__slide,
+  .s-banners[data-reduced] .s-banners__slide .s-banner__in > * {
+    transition: none;
+    transform: none;
+  }
+
+  /* ---------- 2. Barra de controles (embaixo dos banners) --------------- */
+  .s-banners__bar {
+    order: 2;
+    border-bottom: 1px solid var(--s-rule);
+    background: var(--color-offwhite);
+    color: var(--color-grafite);
+  }
+  .s-banners__bar-in {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 3.25rem;
+  }
+  .s-banners__btn {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .s-banners__btn svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    transition: transform 0.3s var(--s-ease);
+  }
+  .s-banners__btn:hover {
+    color: var(--color-roxo);
+  }
+  .s-banners__btn:hover svg[data-icon="arrow"] {
+    transform: translateX(3px);
+  }
+  .s-banners__prev {
+    scale: -1 1;
+  }
+  .s-banners__toggle {
+    margin-left: -0.8125rem;
+  }
+  .s-banners__dots {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .s-banners__dot {
+    display: grid;
+    align-items: center;
+    height: 2.75rem;
+    padding: 0 0.25rem;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .s-banners__dot span {
+    position: relative;
+    display: block;
+    width: 1.125rem;
+    height: 3px;
+    background: var(--s-rule);
+    overflow: hidden;
+    transition:
+      width 0.4s var(--s-ease),
+      background-color 0.2s;
+  }
+  .s-banners__dot:hover span {
+    background: var(--color-grafite);
+  }
+  .s-banners__dot[aria-current] span {
+    width: 2.75rem;
+  }
+  .s-banners__dot i {
+    position: absolute;
+    inset: 0;
+    background: var(--color-roxo);
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+  }
+  /* banner em tela: cheio quando a troca automática está desligada; enchendo enquanto ela corre */
+  .s-banners__dot[aria-current] i {
+    transform: none;
+  }
+  .s-banners[data-rotating] .s-banners__dot[aria-current] i {
+    animation: s-banners-fill var(--dur, 7000ms) linear both;
+    animation-play-state: paused;
+  }
+  .s-banners[data-running] .s-banners__dot[aria-current] i {
+    animation-play-state: running;
+  }
+  @keyframes s-banners-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  .s-banners__count {
+    display: none;
+    margin-left: 0.75rem;
+    font-size: var(--s-fs-meta);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: var(--s-ink-2);
+  }
+  .s-banners__count b {
+    font-weight: 700;
+    color: var(--color-grafite);
+  }
+  .s-banners__arrows {
+    display: flex;
+    margin-left: auto;
+    margin-right: -0.8125rem;
+  }
+  @container banners (min-width: 640px) {
+    .s-banners__bar-in {
+      min-height: 3.5rem;
+    }
+    .s-banners__dot span {
+      width: 1.75rem;
+    }
+    .s-banners__dot[aria-current] span {
+      width: 4rem;
+    }
+    .s-banners__count {
+      display: block;
+    }
+  }
+
+  /* ---------- 3. Banner: base ------------------------------------------- */
+  .s-banner {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 125cqi; /* 4:5 */
+  }
+  .site .s-banner[data-bg="preto"] {
+    --s-bg: var(--color-preto);
+  }
+  .site .s-banner[data-bg="branco"] {
+    --s-bg: #fff;
+  }
+  .site .s-banner[data-bg="lima"] {
+    --s-bg: var(--color-lima);
+    --s-fg-2: rgb(27 27 34 / 0.86);
+    --s-line: rgb(27 27 34 / 0.3);
+  }
+  /* sobre lima, o botão principal não pode ser lima: vira grafite */
+  .site .s-banner[data-bg="lima"] .s-btn--primary {
+    --bg: var(--color-grafite);
+    --fg: var(--color-lima);
+    --bd: var(--color-grafite);
+  }
+  .site .s-banner[data-bg="lima"] .s-btn--primary:hover {
+    --bg: var(--color-roxo);
+    --fg: #fff;
+    --bd: var(--color-roxo);
+  }
+  .s-banner__in {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-block: 1.5rem 1.375rem;
+  }
+  .s-banner__eyebrow {
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid var(--s-line-strong);
+  }
+  .s-banner__title {
+    /* --b-word / --b-line: largura estimada da maior palavra / linha (bannerTitleMetrics) — o corpo diminui o
+       necessário para o título caber na coluna com qualquer texto */
+    --col: var(--s-wrap);
+    --fit-word: calc(var(--col) / var(--b-word, 6.75) / 0.66);
+    --fit-line: calc(var(--col) / var(--b-line, 10.3) / 0.66);
+    margin-top: 1.125rem;
+    font-size: max(min(13.4cqi, var(--fit-word)), 2rem);
+    font-weight: 900;
+    line-height: 0.88;
+    letter-spacing: -0.05em;
+    overflow-wrap: anywhere;
+  }
+  .s-banner__title span {
+    display: block;
+    text-wrap: balance; /* se a linha ainda quebrar, quebra em partes parecidas (nada de palavra órfã) */
+  }
+  /* segunda linha: a cor de destaque do tom */
+  .s-banner__title .l2 {
+    color: var(--color-roxo);
+  }
+  .site [data-tone="roxo"] .s-banner__title .l2,
+  .site [data-tone="grafite"] .s-banner__title .l2,
+  .site .s-banner[data-tone="roxo"] .s-banner__title .l2,
+  .site .s-banner[data-tone="grafite"] .s-banner__title .l2 {
+    color: var(--color-lima);
+  }
+  .s-banner__foot {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.125rem;
+    margin-top: 1.25rem;
+  }
+  .s-banner__sub {
+    max-width: 22rem;
+    font-size: clamp(1rem, 4.4cqi, 1.1875rem);
+    line-height: 1.32;
+    text-wrap: balance;
+  }
+  .s-banner__actions {
+    display: grid;
+    gap: 0.625rem;
+    margin-top: auto;
+  }
+
+  /* ---------- 4. Banner só de texto: os motivos da marca ----------------- */
+  .s-banner__art {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    /* altura dos botões, para o motivo pousar logo acima deles no celular */
+    --actions-h: 0rem;
+    --art-h: 29cqi;
+    --art-b: calc(1.375rem + var(--actions-h) + 1rem);
+  }
+  .s-banner[data-actions="1"] .s-banner__art {
+    --actions-h: 3.5rem;
+  }
+  .s-banner[data-actions="2"] .s-banner__art {
+    --actions-h: 7.625rem;
+  }
+  /* no celular o subtítulo divide a linha com o motivo, que fica à direita */
+  .s-banner[data-layout="tipografico"] .s-banner__sub {
+    max-width: 50%;
+  }
+  .s-banner__mark {
+    position: absolute;
+    right: var(--s-margin);
+    bottom: var(--art-b);
+    display: block;
+    height: var(--art-h);
+    width: auto;
+  }
+  .s-banner__mark > svg {
+    display: block;
+    height: 100%;
+    width: auto;
+  }
+  .s-banner__art .s-frame {
+    inset: 0.625rem;
+    --arm: 1.5rem;
+    color: var(--color-lavanda);
+  }
+  .s-banner__rec {
+    position: absolute;
+    top: 1.625rem;
+    right: var(--s-margin);
+  }
+  /* a linha de apoio não passa por baixo do REC */
+  .s-banner[data-bg="roxo"] .s-banner__eyebrow,
+  .s-banner[data-bg="grafite"] .s-banner__eyebrow,
+  .s-banner[data-bg="preto"] .s-banner__eyebrow {
+    padding-right: 3.75rem;
+  }
+
+  /* roxo — visor + o Ó do logo */
+  .s-banner__art[data-motif="symbol"] .s-banner__play {
+    color: var(--color-lima);
+  }
+  /* grafite e preto — o play */
+  .s-banner__art[data-motif="play"] .s-banner__mark {
+    color: var(--color-roxo);
+  }
+  /* lima — o acento, em dobro */
+  .s-banner__art[data-motif="accent"] .s-banner__mark {
+    color: var(--color-roxo);
+    height: calc(var(--art-h) * 0.82);
+  }
+  .s-banner__art[data-motif="accent"] .s-banner__mark--2 {
+    color: var(--color-grafite);
+    height: calc(var(--art-h) * 0.26);
+    right: calc(var(--s-margin) + var(--art-h) * 0.74);
+    bottom: calc(var(--art-b) + var(--art-h) * 0.88);
+  }
+  /* lavanda — os anéis (o "nó" de NÓS) */
+  .s-banner__art[data-motif="rings"] .s-banner__mark {
+    --ring-2: var(--color-grafite);
+    color: var(--color-roxo);
+    height: calc(var(--art-h) * 0.86);
+    right: calc(var(--s-margin) - 2cqi);
+  }
+  /* off-white e branco — papel com um campo roxo */
+  .s-banner__field {
+    position: absolute;
+    right: 0;
+    bottom: var(--art-b);
+    width: 40cqi;
+    height: var(--art-h);
+  }
+  .s-banner__field .s-frame {
+    inset: 0.5rem;
+    --arm: 1.125rem;
+  }
+  .s-banner__field .s-banner__rec {
+    top: 1rem;
+    right: auto;
+    left: 1.125rem;
+  }
+  .s-banner__field .s-banner__mark {
+    right: var(--s-margin);
+    bottom: 12%;
+    height: 62%;
+  }
+
+  /* ---------- 5. Banner com mídia e peça pronta -------------------------- */
+  .s-banner__media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .s-banner__media picture {
+    display: contents;
+  }
+  .s-banner__media img,
+  .s-banner__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .s-banner__video {
+    opacity: 0;
+    transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  .s-banner__video[data-ready] {
+    opacity: 1;
+  }
+  /* mídia com texto por cima: a cor do tom fica embaixo da imagem e um véu garante o contraste */
+  .site .s-banner[data-layout="midia"][data-text="claro"] {
+    --s-bg: var(--color-grafite);
+    --veil: 16 16 20;
+  }
+  .site .s-banner[data-layout="midia"][data-text="escuro"] {
+    --s-bg: var(--color-offwhite);
+    --veil: 246 244 239;
+  }
+  .s-banner[data-layout="midia"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(to top, rgb(var(--veil) / 0.86), rgb(var(--veil) / 0.66) 55%, rgb(var(--veil) / 0.5));
+    pointer-events: none;
+  }
+  .s-banner[data-layout="midia"] .s-banner__in {
+    justify-content: flex-end;
+  }
+  .s-banner[data-layout="midia"] .s-banner__eyebrow {
+    margin-bottom: auto;
+  }
+  .s-banner[data-layout="midia"] .s-banner__title {
+    font-size: max(min(12.4cqi, var(--fit-word)), 2rem);
+  }
+  .s-banner[data-layout="midia"] .s-banner__foot {
+    flex: none;
+  }
+  /* peça pronta: a arte inteira, sem cortes (sobra = cor de fundo do banner) */
+  .site .s-banner[data-layout="peca"] {
+    background: var(--color-roxo);
+  }
+  .site .s-banner[data-layout="peca"][data-bg="lima"] {
+    background: var(--color-lima);
+  }
+  .site .s-banner[data-layout="peca"][data-bg="lavanda"] {
+    background: var(--color-lavanda);
+  }
+  .site .s-banner[data-layout="peca"][data-bg="offwhite"] {
+    background: var(--color-offwhite);
+  }
+  .site .s-banner[data-layout="peca"][data-bg="grafite"] {
+    background: var(--color-grafite);
+  }
+  .site .s-banner[data-layout="peca"][data-bg="preto"] {
+    background: var(--color-preto);
+  }
+  .site .s-banner[data-layout="peca"][data-bg="branco"] {
+    background: #fff;
+  }
+  .s-banner__piece {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+  .s-banner[data-layout="peca"] .s-banner__media {
+    background: none !important;
+  }
+  .s-banner[data-layout="peca"] .s-banner__media img {
+    object-fit: contain;
+  }
+  a.s-banner__piece:focus-visible {
+    outline: 3px solid var(--color-lima);
+    outline-offset: -6px;
+    box-shadow: inset 0 0 0 6px var(--color-grafite);
+  }
+
+  /* ---------- 6. A partir de 640px: 12:5 --------------------------------- */
+  @container banners (min-width: 640px) {
+    .s-banner {
+      min-height: min(41.6667cqi, 50rem);
+    }
+    .s-banner__in {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: auto 1fr auto;
+      column-gap: var(--s-gutter);
+      padding-block: clamp(1rem, 2.6cqi, 2.5rem) clamp(1rem, 2.8cqi, 2.75rem);
+    }
+    .s-banner__eyebrow {
+      grid-column: 1 / 9;
+      grid-row: 1;
+      padding-bottom: clamp(0.5rem, 0.9cqi, 0.75rem);
+    }
+    .s-banner__title {
+      --col: calc((var(--s-wrap) + var(--s-gutter)) / 12 * 8 - var(--s-gutter));
+      grid-column: 1 / 9;
+      grid-row: 2;
+      align-self: center;
+      margin-block: clamp(0.375rem, 1.6cqi, 1.5rem);
+      font-size: max(min(8.2cqi, var(--fit-line)), 2rem);
+      line-height: 0.86;
+    }
+    /* entre 640 e 1023px a faixa é baixa: subtítulo em cima, botões embaixo, lado a lado */
+    .s-banner__foot {
+      grid-column: 1 / 9;
+      grid-row: 3;
+      flex: none;
+      align-items: flex-start;
+      justify-content: flex-end;
+      gap: clamp(0.5rem, 1.2cqi, 0.875rem);
+      margin-top: 0;
+    }
+    .s-banner__sub,
+    .s-banner[data-layout="tipografico"] .s-banner__sub {
+      max-width: 100%;
+      font-size: clamp(1rem, 1.55cqi, 1.375rem);
+      line-height: 1.25;
+    }
+    .s-banner__actions {
+      flex: none;
+      grid-auto-flow: column;
+      justify-content: start;
+      align-items: end;
+      margin-top: 0;
+    }
+    .s-banner__actions .s-btn {
+      min-height: clamp(2.75rem, 3.9cqi, 3.5rem);
+    }
+
+    /* motivos: ocupam as colunas 9–12, à direita do texto */
+    .s-banner__art {
+      --art-x: calc((100cqi - var(--s-wrap)) / 2 + (var(--s-wrap) + var(--s-gutter)) / 12 * 8);
+      --art-w: calc(100cqi - var(--art-x));
+    }
+    .s-banner__art .s-frame {
+      inset: clamp(0.75rem, 1.6cqi, 1.5rem);
+      --arm: clamp(1.5rem, 3cqi, 3rem);
+    }
+    .s-banner__rec {
+      top: clamp(1.5rem, 3.1cqi, 2.9rem);
+      right: max(var(--s-margin), calc((100cqi - var(--s-maxw)) / 2 + var(--s-margin)));
+    }
+    .s-banner[data-bg="roxo"] .s-banner__eyebrow,
+    .s-banner[data-bg="grafite"] .s-banner__eyebrow,
+    .s-banner[data-bg="preto"] .s-banner__eyebrow {
+      padding-right: 0;
+    }
+    .s-banner__mark {
+      right: max(var(--s-margin), calc((100cqi - var(--s-maxw)) / 2 + var(--s-margin)));
+      bottom: clamp(1.75rem, 4.6cqi, 4.5rem);
+      height: 58%;
+    }
+    .s-banner__art[data-motif="play"] .s-banner__mark {
+      height: 64%;
+      top: 18%;
+      bottom: auto;
+    }
+    .s-banner__art[data-motif="accent"] .s-banner__mark {
+      height: 46%;
+      top: 30%;
+      bottom: auto;
+    }
+    .s-banner__art[data-motif="accent"] .s-banner__mark--2 {
+      height: 17%;
+      top: 15%;
+      bottom: auto;
+      right: calc(max(var(--s-margin), (100cqi - var(--s-maxw)) / 2 + var(--s-margin)) + 16cqi);
+    }
+    .s-banner__art[data-motif="rings"] .s-banner__mark {
+      height: 50%;
+      top: 25%;
+      bottom: auto;
+      right: calc(max(var(--s-margin), (100cqi - var(--s-maxw)) / 2 + var(--s-margin)) - 1.5cqi);
+    }
+    .s-banner__field {
+      top: 0;
+      bottom: 0;
+      left: var(--art-x);
+      width: auto;
+      height: auto;
+    }
+    .s-banner__field .s-frame {
+      inset: clamp(0.75rem, 1.6cqi, 1.5rem);
+      --arm: clamp(1.5rem, 3cqi, 3rem);
+    }
+    .s-banner__field .s-banner__rec {
+      top: clamp(1.5rem, 3.1cqi, 2.9rem);
+      left: auto;
+      right: max(var(--s-margin), calc((100cqi - var(--s-maxw)) / 2 + var(--s-margin)));
+    }
+    .s-banner__field .s-banner__mark {
+      right: max(var(--s-margin), calc((100cqi - var(--s-maxw)) / 2 + var(--s-margin)));
+      bottom: clamp(1.75rem, 4.6cqi, 4.5rem);
+      height: 58%;
+    }
+
+    /* mídia: o texto ocupa a esquerda; o véu é mais forte desse lado */
+    .s-banner[data-layout="midia"]::after {
+      background: linear-gradient(to right, rgb(var(--veil) / 0.86), rgb(var(--veil) / 0.72) 45%, rgb(var(--veil) / 0.3) 78%, rgb(var(--veil) / 0.12));
+    }
+    .s-banner[data-layout="midia"] .s-banner__eyebrow {
+      margin-bottom: 0;
+    }
+    .s-banner[data-layout="midia"] .s-banner__title {
+      align-self: end;
+      font-size: max(min(6.6cqi, var(--fit-line)), 2rem);
+    }
+  }
+
+  /* ---------- 7. A partir de 1024px: título maior, subtítulo e botões lado a lado ---- */
+  @container banners (min-width: 1024px) {
+    .s-banner__title {
+      font-size: max(min(9.4cqi, 8.75rem, var(--fit-line)), 2.25rem);
+    }
+    .s-banner__foot {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: flex-start;
+      gap: var(--s-gutter) clamp(1.25rem, 3cqi, 3rem);
+    }
+    .s-banner__sub,
+    .s-banner[data-layout="tipografico"] .s-banner__sub {
+      flex: 1 1 0;
+      max-width: 26rem;
+    }
+    .s-banner[data-layout="midia"] .s-banner__title {
+      font-size: max(min(7.4cqi, 7rem, var(--fit-line)), 2.25rem);
+    }
+  }
+}
