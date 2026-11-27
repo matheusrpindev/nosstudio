@@ -167,7 +167,29 @@ link que não for de YouTube/Vimeo não renderiza nada.
 | `<PortfolioShare title url>` | Copiar link + Web Share API (ou WhatsApp, onde ela não existe). Sem script de terceiros. |
 | `<PortfolioProjectJsonLd project>` | Dados estruturados da página de um projeto (`CreativeWork` + trilha). |
 | `<TestimonialGrid testimonials>` / `<TestimonialCard>` | Depoimento em texto, print (com descrição acessível) ou vídeo. |
-| `<HomeHero>` | O hero da home (título cruzando o campo de cor). |
+| `<HomeHero>` | O hero da home (título cruzando o campo de cor). É o topo da página quando NÃO há banner no ar. |
+| `<HomeBanners banners title eyebrow>` | O carrossel de banners da home (ver "Banners" abaixo). |
+
+### Banners (carrossel da home) — `banner-*.tsx`, `banner.css`
+
+Dados: `getBanners()` (só os ligados, dentro da janela e com o mínimo para aparecer; agendado não sai do servidor
+antes da hora). Lista vazia → a página usa `<HomeHero>`. Regras puras e tipos em `src/lib/site/banners.ts`.
+
+| Arquivo | Papel |
+| --- | --- |
+| `banner-section.tsx` | `<HomeBanners>` (Server): monta um `<BannerSlide>` por banner, com o Ó do logo, e entrega ao carrossel. Dono do `<h1>` da página (o título de abertura, só para leitores de tela e buscadores). |
+| `banner-slide.tsx` | `<BannerSlide banner eyebrow symbol priority viewport titleAs>`: UM banner, nas três montagens (`tipografico`, `midia`, `peca`). Sem dependência de servidor: é o mesmo componente na prévia do painel. `<BannerStill>` = o contêiner de medidas para um banner fora do carrossel. |
+| `banner-carousel.tsx` | `<BannerCarousel slides heading timeZone>` (Client): padrão "carousel" do WAI-ARIA APG — pausa (primeiro controle), setas, indicadores, teclado (← → Home End), arrastar no celular, duração por banner, `aria-live` desligado enquanto roda sozinho, nada automático com `prefers-reduced-motion`. Um banner só = sem controles. |
+| `banner-media.tsx` | `<BannerMedia>` (Client): `<picture>` com a versão de celular e de computador; vídeo de fundo só no banner em tela, e nunca com movimento reduzido ou `Save-Data`. |
+| `banner-title.ts` | Quebra do título em duas linhas e métricas para o corpo caber. |
+| `banner.css` | Estilos. **Consultas de contêiner** (`@container banners`, unidades `cqi`): o banner se monta pela largura do bloco em que está — 4:5 abaixo de 640px, 12:5 acima. Depende dos tokens de `site.css` (precisa de um ancestral `.site`). |
+
+- Cor de fundo → composição (`COMPOSITIONS` em `banner-slide.tsx`): roxo = visor + Ó; grafite/preto = play; lima =
+  acento; lavanda = anéis; off-white/branco = papel com campo roxo. Cor nova na paleta precisa entrar ali.
+- Os botões levam `data-track="banner:<id>"` (coletor de cliques) e o endereço já vem resolvido por
+  `resolveBannerHref` (página fora do ar → destino alternativo).
+- A troca de banner é por opacidade, com todos empilhados na mesma célula de grade: a altura é a do maior e não
+  há salto de layout. Banner fora de tela fica `inert`.
 
 O botão de cada plano aponta para `/contato?servico=…&pacote=…#formulario` (`packageContactHref`); a página de cada
 serviço tem o próprio formulário (`#servico-orcamento`, já com o serviço e a origem preenchidos). **A página de
@@ -256,7 +278,7 @@ salto de layout e sem contagem animada.
   ao `id` do título.
 - `id`s com o nome da página na frente (`sobre-valores`, `eventos-faq`): o Next 16 mantém a página anterior
   oculta no DOM depois de uma navegação, então `id`s repetidos entre páginas podem colidir em âncoras.
-- O WhatsApp flutuante se recolhe sozinho sobre `.s-hero__actions`, `.s-pagehead__actions` e `.s-form` — use o
+- O WhatsApp flutuante se recolhe sozinho sobre `.s-hero__actions`, `.s-banner__actions`, `.s-pagehead__actions` e `.s-form` — use o
   slot `actions` do `PageHeader` e o `<LeadForm>` em vez de recriar esses blocos.
 - Alvos de toque ≥ 44px; foco visível (já vem do sistema — não remova `outline`).
 - Lima só como preenchimento com texto grafite, ou como texto sobre roxo/grafite.

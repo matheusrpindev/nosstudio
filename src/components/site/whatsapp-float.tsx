@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "./marks";
 
 /** Blocos que o botão não deve cobrir: os CTAs de abertura da página e os formulários. */
-const AVOID = ".s-hero__actions, .s-pagehead__actions, .s-form";
+const AVOID = ".s-hero__actions, .s-banner__actions, .s-pagehead__actions, .s-form";
 
 /**
  * Botão flutuante de WhatsApp (só no celular — some a partir de 1024px via CSS). Para não cobrir conteúdo

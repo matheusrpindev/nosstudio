@@ -111,7 +111,9 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
 - Nada de `dangerouslySetInnerHTML` com conteúdo vindo do banco. Texto rico = markdown via `<Markdown>`.
   Links vindos de formulário passam por `safeHref`/`safeUrl`.
 - Uploads: só pelo pipeline de `src/server/media` (valida tipo real, reencoda imagens, nomes aleatórios).
-  Arquivos privados (contratos, comprovantes) só são servidos com sessão.
+  Arquivos privados (contratos, comprovantes) só são servidos com sessão. Vídeo curto público (fundo de banner):
+  MP4/WebM até 30 MB, só com `kind: "video"`, conferido pelos bytes e guardado sem reencodar. Coluna nova que
+  guarda id de mídia precisa entrar em `findMediaUsage` (senão o arquivo é tratado como "sem uso" e apagado).
 - Registre ações relevantes com `logAudit()` (`@/lib/audit`). Nunca grave senha/token em log.
 - LGPD: dados de leads/clientes só no painel; consentimento registrado com data e versão da política.
 - Medição de visitas (método em `src/server/metrics/collect.ts`): própria, **sem serviço de terceiros, sem cookie e
@@ -128,6 +130,11 @@ scripts/                    migrate.ts, seed.ts, create-user.ts
 - Serviços: cada serviço publicado tem página própria (`/servicos/[slug]`). Benefícios, FAQ do serviço e trabalhos
   relacionados nascem vazios e só renderizam quando preenchidos no painel.
 - Página inicial: a ordem e a visibilidade das seções vêm de `getHomeLayout()` (Editar site › Página inicial).
+  O topo é o carrossel de banners (`getBanners()`, Editar site › Banners) quando há algum no ar; sem nenhum, o
+  `<HomeHero>`. Banner e aviso agendados não vão para o HTML antes da hora (cache que vence no instante da
+  mudança: `announcementCacheLife`). O banner usa consultas de contêiner (`src/components/site/banner.css`)
+  porque o MESMO componente é a prévia do painel; botão que aponta para página fora do ar é desviado por
+  `resolveBannerHref` (`src/lib/site/banners.ts`).
 - Formulários: o envio vira lead com os campos do tipo do pedido (`buildLeadRecord`); o de Eventos e Casamentos
   NÃO cria compromisso na agenda nem promete data.
 - Portfólio e depoimentos começam ocultos; blocos sem conteúdo publicado **não renderizam** (nem título, nem link).

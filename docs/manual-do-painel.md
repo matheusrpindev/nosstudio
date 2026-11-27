@@ -209,7 +209,7 @@ Os padrões de cada orçamento novo (validade, sinal, textos, tributos e meta de
 
 ## Editar o site
 
-Tudo o que o público vê é editado em **Editar site**, que tem nove abas: **Visão geral**, **Página inicial**, **Textos**, **Avisos**, **Serviços**, **Planos**, **FAQ**, **Portfólio** e **Depoimentos**.
+Tudo o que o público vê é editado em **Editar site**, que tem estas abas: **Visão geral**, **Página inicial**, **Textos**, **Banners**, **Avisos**, **Serviços**, **Planos**, **FAQ**, **Portfólio** e **Depoimentos**.
 
 **Salvar atualiza o site na hora.** Não existe botão de "publicar" depois de salvar. Para conferir, use **Ver no site**, que abre em outra aba. Se um texto nunca foi editado, o site mostra o texto original combinado com vocês.
 
@@ -223,7 +223,7 @@ Em **Página inicial** fica a lista das seções da home, na ordem em que aparec
 - Uma seção ligada mas **sem conteúdo publicado** não aparece no site (o painel mostra "Sem conteúdo: não aparece" e explica o motivo).
 - **Restaurar ordem original** devolve a sequência combinada, com tudo ligado.
 
-A barra de avisos, o menu, o topo da página e o rodapé são fixos e não entram na lista.
+A barra de avisos, o menu, o topo da página (os banners, ou a abertura padrão quando não há banner no ar) e o rodapé são fixos e não entram na lista.
 
 ### Textos
 
@@ -253,12 +253,63 @@ Sem fotos, o site mostra um espaço com as iniciais. Só envie fotos reais.
 ### O que acontece com as fotos enviadas
 
 - Uma foto só fica acessível ao público **enquanto algum conteúdo publicado a usa**. Ao despublicar um depoimento, um projeto do portfólio ou um serviço, a foto dele sai do ar de verdade: quem guardou o link deixa de ver. Vocês, logados no painel, continuam vendo.
+- Com os **banners** é igual, e vale também para o vídeo: a arte só é pública enquanto o banner está ligado e o período dele não terminou.
 - Ao **trocar** ou **remover** uma foto e salvar, ou ao **excluir** o depoimento, projeto, serviço ou lançamento que a usava, o arquivo antigo é apagado do servidor (se nada mais o usar).
 - Navegadores e serviços de busca podem guardar uma cópia por até **24 horas** depois que a foto sai do ar. Os backups antigos também guardam o arquivo até serem substituídos.
 
+### Banners (carrossel da página inicial)
+
+Em **Banners** fica o carrossel do topo da página inicial. O site mostra, na ordem da lista, os banners **ligados e dentro do período** (no máximo oito). Com um banner só, ele aparece parado, sem setas. **Sem nenhum banner no ar, a página inicial volta a mostrar a abertura padrão** (o título grande com o campo roxo), então dá para desligar tudo sem deixar o topo vazio.
+
+O site já vem com quatro banners só de texto, com as frases que vocês passaram. Eles são de vocês: podem editar, desligar ou excluir, e não voltam sozinhos.
+
+**Três tipos de banner**
+
+- **Só texto (composição da marca):** título grande sobre uma cor da marca, com um símbolo do logo. Não precisa de foto. Cada **cor de fundo** traz uma composição: roxo (visor e o Ó do logo), grafite ou preto (o play), lima (o acento), lavanda (os anéis), off-white ou branco (papel com um campo roxo).
+- **Imagem ou vídeo com texto por cima:** uma foto, ou um vídeo curto, ao fundo, com título, subtítulo e botões. Escolham **texto claro** para mídia escura e **texto escuro** para mídia clara; o site escurece (ou clareia) a imagem atrás do texto para garantir a leitura.
+- **Peça pronta (arte diagramada):** uma arte que já vem com os textos dentro. Ela ocupa o banner inteiro, sem cortes, e **o banner todo vira o link** do botão principal. Como o texto está "dentro da imagem", preencham o **Texto alternativo** contando o que a arte diz: é o que leitores de tela e o Google recebem. Sem essa descrição (ou um título), a peça não pode ser ligada.
+
+**Medidas das artes**
+
+- Computador: **1920 × 800 px** (deitada).
+- Celular: **1080 × 1350 px** (em pé). Sem a versão de celular, o site usa a de computador também no celular, cortada nas laterais.
+- O painel avisa quando a imagem está fora da proporção ou pequena demais. Fotos podem ser JPG, PNG ou WebP, até 15 MB.
+
+**Vídeo de fundo** (só no banner de imagem ou vídeo): MP4 ou WebM, **até 30 MB**. Prefiram um trecho curto, de até uns 15 segundos, já comprimido, porque o site entrega o arquivo como vocês enviaram. Ele toca sem som e em repetição, só quando o banner está em tela. Quem pediu menos movimento ou economia de dados no aparelho vê a imagem no lugar do vídeo, por isso enviem também uma **imagem de capa**.
+
+**Títulos e botões**
+
+- Com vírgula ou ponto no meio, o título quebra em duas linhas e a segunda ganha a cor de destaque ("Sua história, / nosso olhar.").
+- Cada banner pode ter **dois botões**: o principal (preenchido) e um segundo (de contorno). Em **Para onde leva**, usem um caminho do site (`/sobre`, `/contato`) ou um link completo (`https://…`).
+- Se um botão apontar para uma página que **ainda não está no ar** (por exemplo, o Portfólio enquanto estiver oculto), o site não leva o visitante a uma página vazia: o botão vai para **Serviços** (ou Contato) e o painel avisa. Quando a página for publicada, o botão volta a apontar para ela sozinho.
+
+**Prévia antes de publicar**
+
+Ao lado do formulário, a **Prévia** mostra o banner como ele aparece no site, com as cores reais, em **Computador** e em **Celular**. Ela muda enquanto vocês digitam. O site só muda quando vocês salvam **com o banner ligado**. Um banner novo nasce desligado, como rascunho. Abaixo da prévia ficam os **pontos de atenção** (imagem fora da medida, peça sem descrição, datas que já passaram).
+
+**Na lista**
+
+- **Ordem:** arrastem pela alça (os seis pontinhos) ou usem as setas. No celular, usem as setas.
+- **Chave:** liga e desliga sem apagar.
+- **Duplicar:** cria uma cópia desligada logo abaixo, com os mesmos textos, imagens e datas. Serve para fazer a versão de uma nova campanha a partir de outra.
+- **Excluir:** pede confirmação e não dá para desfazer. Para tirar do ar por um tempo, desliguem.
+- **Tempo em tela:** de 3 a 30 segundos, definido em cada banner.
+
+**Agendar**
+
+Preencham **Começa em** e **Termina em** (horário do estúdio). O banner aparece na lista como **Agendado** e entra e sai do ar sozinho. Como nos avisos, **nem o texto nem a arte vão para o site antes da hora**. Em uma página que alguém acabou de visitar, a troca pode levar cerca de um minuto (uma visita a mais).
+
+**O que o visitante encontra:** setas, indicadores, um botão de **pausa** sempre visível e, no celular, a troca arrastando com o dedo. O carrossel para sozinho quando o mouse está em cima ou quando alguém navega nele pelo teclado. Para quem pediu **menos movimento** no aparelho, ele não avança sozinho. Com banners no ar, o **título da abertura** (em **Textos › Página inicial**) continua valendo como título da página para o Google e para leitores de tela, mesmo sem aparecer na tela.
+
 ### Avisos (barra do topo)
 
-Em **Avisos**, use **Novo aviso** para criar recados como férias ou novidades. Defina a mensagem, o botão (opcional), as cores (a prévia ao vivo mostra como fica e avisa se o contraste for baixo), o período e se o visitante pode fechar o aviso. O site mostra **um aviso por vez**: o primeiro da lista que estiver ligado e dentro do período. Use as setas para mudar a ordem.
+Em **Avisos**, use **Novo aviso** para criar recados como férias ou novidades. Defina a mensagem, o botão (opcional), as cores (a prévia ao vivo mostra como fica e avisa se o contraste for baixo), o período, **em quais páginas ele aparece** e se o visitante pode fechar o aviso.
+
+Em **Em quais páginas aparece**, escolha **Todas as páginas** ou **Só em algumas páginas** e marque quais. "Serviços" vale também para a página de cada serviço, e "Portfólio", para a de cada projeto.
+
+Cada página mostra **um aviso por vez**: o primeiro da lista que estiver ligado, dentro do período e valer para aquela página. Assim dá para ter um recado só no Contato e outro no resto do site. A lista mostra onde cada aviso aparece e avisa quando outro vem antes dele em alguma página. Use as setas para mudar a ordem.
+
+O site começa com o aviso "Agenda aberta para novos projetos. **Vamos criar juntos?**", em que a pergunta é o link para o Contato.
 
 Um aviso com **Começa em** no futuro aparece na lista como **Agendado**. O texto dele **não vai para o site antes da hora** (nem escondido no código da página), então dá para deixar pronto um lançamento ou uma promoção com data marcada. Na hora combinada ele entra no ar sozinho; em uma página que alguém acabou de visitar, pode levar cerca de um minuto (uma visita a mais) para aparecer.
 

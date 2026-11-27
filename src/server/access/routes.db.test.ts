@@ -10,7 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 // data/uploads); quem a apaga no fim é src/test/global-setup.ts.
 
 const browser = vi.hoisted(() => ({ token: null as string | null }));
-const site = vi.hoisted(() => ({ published: [] as number[] }));
+const site = vi.hoisted(() => ({ published: [] as number[], banners: [] as number[] }));
 const pdf = vi.hoisted(() => ({
   load: vi.fn(async (_id: number) => ({ number: "2026-001", version: 1, clientName: "Cliente de Teste" })),
   render: vi.fn(async (_proposal: unknown) => Buffer.from("%PDF-1.7 conteudo-da-proposta")),
@@ -29,11 +29,12 @@ vi.mock("next/navigation", () => ({
   },
 }));
 vi.mock("next/cache", () => ({ revalidateTag: () => {}, updateTag: () => {}, refresh: () => {}, cacheTag: () => {}, cacheLife: () => {} }));
-vi.mock("@/server/site/queries", () => ({ getPublishedMediaIds: async () => site.published }));
+vi.mock("@/server/site/queries", () => ({ getPublishedMediaIds: async () => site.published, getBannerMediaIds: async () => site.banners }));
 vi.mock("@/server/proposals/source", () => ({ loadPublicProposal: pdf.load }));
 vi.mock("@/server/proposals/pdf/render", () => ({ renderProposalPdf: pdf.render }));
 
 import sharp from "sharp";
+import { mp4Bytes, webmBytes } from "@/server/media/video-fixtures";
 import { GET as mediaGET } from "@/app/media/[...key]/route";
 import { DELETE as mediaDELETE, PATCH as mediaPATCH } from "@/app/painel/api/media/[id]/route";
 import { POST as mediaPOST } from "@/app/painel/api/media/route";
@@ -92,6 +93,7 @@ beforeAll(async () => {
 beforeEach(() => {
   browser.token = null;
   site.published = [liveImage.id];
+  site.banners = [];
   pdf.load.mockClear();
   pdf.render.mockClear();
 });
@@ -314,5 +316,110 @@ describe("API de arquivos do painel (upload, texto alternativo, exclusão)", () 
     const remove = () => mediaDELETE(new Request(`${ORIGIN}/painel/api/media/${receipt.id}`, { method: "DELETE", headers }), inUse);
     expect(await statusByRole(remove)).toEqual({ anonimo: 401, admin: 409, socio: 409, tecnico: 409, gestor: 409, funcionario: 403, freelancer: 403, cliente: 403 });
     expect(await db.select({ id: media.id }).from(media).where(eq(media.id, receipt.id))).toHaveLength(1);
+  });
+});
+
+describe("vídeo curto de banner: envio, entrega e pedidos de trecho (Range)", () => {
+  const HEADERS = { origin: ORIGIN, host: "localhost:3000" };
+  const uploadVideo = (bytes: Buffer, name = "fundo.mp4", fields: Record<string, string> = { visibility: "public", kind: "video" }) => {
+    const form = new FormData();
+    form.set("file", new File([new Uint8Array(bytes)], name, { type: "video/mp4" }));
+    for (const [key, value] of Object.entries(fields)) form.set(key, value);
+    return mediaPOST(new Request(`${ORIGIN}/painel/api/media`, { method: "POST", body: form, headers: HEADERS }));
+  };
+  const getRange = (row: { storageKey: string }, headers: Record<string, string>) =>
+    mediaGET(new Request(`${ORIGIN}/media/${row.storageKey}`, { headers }), { params: Promise.resolve({ key: row.storageKey.split("/") }) });
+  const bytes = mp4Bytes();
+  let video: { id: number; storageKey: string };
+
+  it("enviar vídeo: mesmas barreiras do envio de arquivos; o registro sai como vídeo público", async () => {
+    const result = await statusByRole(async () => {
+      const response = await uploadVideo(bytes);
+      if (response.status === 201) mediaIds.push((await response.json()).media.id);
+      return response;
+    });
+    expect(result).toEqual({ anonimo: 401, admin: 201, socio: 201, tecnico: 201, gestor: 201, funcionario: 403, freelancer: 403, cliente: 403 });
+
+    browser.token = accounts.admin.token;
+    const response = await uploadVideo(bytes, "Meu Vídeo Final.MP4");
+    expect(response.status).toBe(201);
+    const body = (await response.json()).media;
+    expect(body).toMatchObject({ mime: "video/mp4", visibility: "public", size: bytes.length, originalName: "Meu Vídeo Final.MP4", width: null });
+    expect(body.url).toMatch(/^\/media\/pub\/\d{4}\/\d{2}\/[a-f0-9]{24}\.mp4$/);
+    mediaIds.push(body.id);
+    const [row] = await db.select().from(media).where(eq(media.id, body.id));
+    video = row;
+  });
+
+  it("arquivo falso é recusado (415) e nada é gravado", async () => {
+    browser.token = accounts.admin.token;
+    const before = (await db.select({ id: media.id }).from(media)).length;
+    for (const fake of [Buffer.from("isto é um texto renomeado para .mp4"), await jpeg(40), pdfBuffer("x"), mp4Bytes({ brand: "qt  " }), webmBytes({ docType: "matroska" })]) {
+      const response = await uploadVideo(fake);
+      expect(response.status).toBe(415);
+      expect((await response.json()).error).toMatch(/Formato de vídeo não aceito/);
+    }
+    // um vídeo de verdade sem `kind: video` cai na regra das imagens e também é recusado
+    expect((await uploadVideo(bytes, "fundo.mp4", { visibility: "public" })).status).toBe(415);
+    expect((await db.select({ id: media.id }).from(media)).length).toBe(before);
+  });
+
+  it("vídeo de banner fora do ar: só quem cuida do site; no ar: qualquer visitante", async () => {
+    expect(await statusByRole(() => getMedia(video))).toEqual({ anonimo: 404, admin: 200, socio: 200, tecnico: 200, gestor: 404, funcionario: 404, freelancer: 404, cliente: 404 });
+    site.banners = [video.id];
+    expect(Object.values(await statusByRole(() => getMedia(video))).every((status) => status === 200)).toBe(true);
+    const response = await getMedia(video);
+    expect(response.headers.get("content-type")).toBe("video/mp4");
+    expect(response.headers.get("accept-ranges")).toBe("bytes");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("cache-control")).toBe("public, max-age=86400");
+    expect(Buffer.from(await response.arrayBuffer()).equals(bytes)).toBe(true);
+  });
+
+  it("Range: 206 com o trecho certo (o Safari exige para tocar vídeo)", async () => {
+    site.banners = [video.id];
+    const first = await getRange(video, { range: "bytes=0-1" });
+    expect(first.status).toBe(206);
+    expect(first.headers.get("content-range")).toBe(`bytes 0-1/${bytes.length}`);
+    expect(first.headers.get("content-length")).toBe("2");
+    expect(Buffer.from(await first.arrayBuffer()).equals(bytes.subarray(0, 2))).toBe(true);
+
+    const middle = await getRange(video, { range: "bytes=10-29" });
+    expect(middle.status).toBe(206);
+    expect(Buffer.from(await middle.arrayBuffer()).equals(bytes.subarray(10, 30))).toBe(true);
+
+    const open = await getRange(video, { range: "bytes=24-" });
+    expect(open.headers.get("content-range")).toBe(`bytes 24-${bytes.length - 1}/${bytes.length}`);
+    expect(Buffer.from(await open.arrayBuffer()).equals(bytes.subarray(24))).toBe(true);
+
+    const tail = await getRange(video, { range: "bytes=-8" });
+    expect(tail.status).toBe(206);
+    expect(Buffer.from(await tail.arrayBuffer()).equals(bytes.subarray(bytes.length - 8))).toBe(true);
+  });
+
+  it("Range fora do arquivo: 416; cabeçalho que não atendemos ou If-Range de outra versão: arquivo inteiro", async () => {
+    site.banners = [video.id];
+    const beyond = await getRange(video, { range: `bytes=${bytes.length}-` });
+    expect(beyond.status).toBe(416);
+    expect(beyond.headers.get("content-range")).toBe(`bytes */${bytes.length}`);
+    expect((await getRange(video, { range: "bytes=0-1,4-5" })).status).toBe(200);
+    expect((await getRange(video, { range: "linhas=0-1" })).status).toBe(200);
+    const etag = (await getMedia(video)).headers.get("etag") as string;
+    expect((await getRange(video, { range: "bytes=0-1", "if-range": etag })).status).toBe(206);
+    const stale = await getRange(video, { range: "bytes=0-1", "if-range": '"outra-versao"' });
+    expect(stale.status).toBe(200);
+    expect(stale.headers.get("content-length")).toBe(String(bytes.length));
+  });
+
+  it("um pedido de trecho não fura o acesso: fora do ar e arquivo privado continuam 404 para quem não pode", async () => {
+    expect((await getRange(video, { range: "bytes=0-1" })).status).toBe(404); // fora do ar, sem sessão
+    expect((await getRange(receipt, { range: "bytes=0-1" })).status).toBe(404);
+    browser.token = accounts.freelancer.token;
+    expect((await getRange(receipt, { range: "bytes=0-1" })).status).toBe(404);
+    browser.token = accounts.admin.token;
+    const allowed = await getRange(receipt, { range: "bytes=0-3" });
+    expect(allowed.status).toBe(206);
+    expect(allowed.headers.get("cache-control")).toBe("private, no-store");
+    expect(await allowed.text()).toBe("%PDF");
   });
 });

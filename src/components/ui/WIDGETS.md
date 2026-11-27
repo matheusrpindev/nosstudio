@@ -213,10 +213,14 @@ só desvincula — nada é apagado no servidor. Texto alternativo é salvo na ho
 | `ImageField` | `MediaValue \| null` | `aspect?` (CSS, ex. `"16/9"`, `"1/1"`, `"4/5"`) | id ou `""` | `f.optionalId()` |
 | `GalleryField` | `MediaValue[]` | `max?` | JSON `[id, id…]` na ordem | `jsonField` + `z.array(z.number().int().positive())` |
 | `FileField` | `MediaValue \| null` | `accept?` | id ou `""` | `f.optionalId()` |
+| `VideoField` | `MediaValue \| null` | — | id ou `""` | `f.optionalId()` |
 
 Comuns: `name`, `label`, `hint?`, `error?`, `onChange?`. Imagens são **públicas** (JPG, PNG, WebP, AVIF ou GIF até
 15 MB; viram WebP). `FileField` envia como **privado** (PDF, Office, zip, txt/csv, imagens; até 25 MB) e mostra nome,
-tamanho e link para abrir (`url?inline=1` para PDF/imagem), que só funciona com sessão.
+tamanho e link para abrir (`url?inline=1` para PDF/imagem), que só funciona com sessão. `VideoField` envia um
+**vídeo curto público** (MP4 ou WebM até 30 MB, conferido pelos bytes no servidor e guardado sem reencodar; hoje, o
+fundo dos banners). `ImageField` aceita `altField={false}` para esconder o campo de texto alternativo quando o
+formulário em volta já tem o seu.
 
 ```tsx
 // página (server)

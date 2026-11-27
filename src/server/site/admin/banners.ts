@@ -6,12 +6,11 @@
 import "server-only";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { banners } from "@/db/schema";
+import { banners, type Banner } from "@/db/schema";
 import type { BannerLayout, BannerTone, BrandColor } from "@/lib/domain";
 import { moveInOrder, nextSortOrder, type MoveDirection } from "./order";
 
-/** (O schema ainda não exporta este tipo.) */
-export type Banner = typeof banners.$inferSelect;
+export type { Banner };
 
 export type BannerInput = {
   name: string;

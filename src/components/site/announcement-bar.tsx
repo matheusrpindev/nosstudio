@@ -80,8 +80,10 @@ const PRE_PAINT = `(function(s){var r=s&&s.previousElementSibling;if(!r)return;v
  *
  * Páginas: cada aviso pode valer para o site inteiro ou só para algumas páginas (`paths`). A barra mora no
  * layout (que não sabe em que página está), então a página atual vem de `usePathname()`: só os avisos desta
- * página entram no HTML dela, e a barra se refaz quando o visitante navega. Em rota com parâmetro que o servidor
- * ainda não conhece, `usePathname` suspende: nesse instante aparecem só os avisos de "todas as páginas".
+ * página são renderizados nela, e a barra se refaz quando o visitante navega. (A lista completa dos avisos NO AR
+ * viaja junto com a página, como dado deste componente — por isso não é lugar para segredo: o que não pode
+ * aparecer antes da hora é barrado no servidor, pelo agendamento.) Em rota com parâmetro que o servidor ainda não
+ * conhece, `usePathname` suspende: nesse instante aparecem só os avisos de "todas as páginas".
  */
 export function AnnouncementBar({ items, timeZone }: { items: AnnouncementView[]; timeZone: string }) {
   if (items.length === 0) return null;

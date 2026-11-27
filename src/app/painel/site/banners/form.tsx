@@ -156,7 +156,7 @@ export function BannerForm({
   );
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] xl:items-start">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] xl:items-start">
       <ActionForm action={action} hidden={{ id: initial.id }} className="card space-y-5 p-4 sm:p-6">
         <Field name="name" label="Nome interno" optional hint="Só aparece aqui no painel, para você achar o banner na lista. Vazio = usa o título.">
           <Input maxLength={120} autoComplete="off" defaultValue={initial.name} />

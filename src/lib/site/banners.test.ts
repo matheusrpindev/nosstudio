@@ -44,8 +44,8 @@ describe("endereço final do botão de um banner", () => {
   });
 });
 
-const file = (id: number, over: Partial<Media> = {}): Media =>
-  ({ id, storageKey: `pub/2026/11/${String(id).padStart(24, "0")}.webp`, visibility: "public", mime: "image/webp", originalName: "arte.jpg", size: 1000, width: 1920, height: 800, alt: "", variants: [], placeholderColor: "#3b1f8e", uploadedBy: null, createdAt: new Date(0) }) as Media & typeof over;
+const file = (id: number): Media =>
+  ({ id, storageKey: `pub/2026/11/${String(id).padStart(24, "0")}.webp`, visibility: "public", mime: "image/webp", originalName: "arte.jpg", size: 1000, width: 1920, height: 800, alt: "", variants: [], placeholderColor: "#3b1f8e", uploadedBy: null, createdAt: new Date(0) }) as Media;
 const record = (over: Partial<BannerRecord> = {}): BannerRecord => ({
   id: 7,
   layout: "tipografico",
@@ -69,7 +69,7 @@ const record = (over: Partial<BannerRecord> = {}): BannerRecord => ({
 describe("montagem do banner (a mesma no site e no painel)", () => {
   const files = new Map<number, Media>([
     [1, file(1)],
-    [2, file(2, {})],
+    [2, file(2)],
     [3, { ...file(3), storageKey: "pub/2026/11/000000000000000000000003.mp4", mime: "video/mp4", width: null, height: null }],
     [4, { ...file(4), visibility: "private" }],
   ]);
