@@ -170,9 +170,10 @@ export function BannerCarousel({
   const drag = useRef<{ pointer: number; x: number; y: number; moved: boolean } | null>(null);
   const swallowClick = useRef(false);
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
+    // todo toque/clique novo começa limpo: só o clique gerado pelo PRÓPRIO arrasto é engolido
+    swallowClick.current = false;
     if (!multiple || event.pointerType === "mouse" || !event.isPrimary) return;
     drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
-    swallowClick.current = false;
   }
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
     const state = drag.current;
