@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Shell, ShellFallback } from "./_shell/shell";
 
@@ -20,7 +21,14 @@ export const viewport: Viewport = {
  */
 export const instant = false;
 
-export default function PainelLayout({ children }: LayoutProps<"/painel">) {
+/**
+ * `connection()` ANTES de tudo: o documento do painel é renderizado inteiro a cada requisição, sem casca
+ * estática do build. É o que permite a Content-Security-Policy com nonce (src/proxy.ts): o Next só põe o nonce
+ * nos scripts que renderiza na hora — os de uma casca pré-renderizada sairiam sem ele e seriam bloqueados.
+ * (O painel já era todo dinâmico; a única perda é a casca instantânea do primeiro carregamento.)
+ */
+export default async function PainelLayout({ children }: LayoutProps<"/painel">) {
+  await connection();
   return (
     <Suspense fallback={<ShellFallback />}>
       <Shell>{children}</Shell>

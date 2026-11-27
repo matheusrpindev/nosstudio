@@ -3,6 +3,7 @@
  * qualquer chave desconhecida, campo a mais ou formato errado é erro. Repetidas são removidas.
  * Importe daqui (não do índice de `@/lib/permissions`): assim o zod não entra nos Client Components.
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 import { ACTIONS, isPermissionKey, MODULES, type PermissionKey } from "./matrix";
 

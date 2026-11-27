@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader, StatCard } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { requirePermission } from "@/lib/auth";
+import { getFooterExperienceForEdit } from "@/server/site/footer-experience";
 import { getSiteOverview } from "./overview";
 
 export const metadata: Metadata = { title: "Editar site" };
@@ -15,7 +16,7 @@ const plural = (value: number, one: string, many: string) => `${value} ${value =
 
 export default async function SiteOverviewPage() {
   await requirePermission("site", "ver");
-  const { counts, visibility, pending, sectionsEdited, sectionsTotal } = await getSiteOverview();
+  const [{ counts, visibility, pending, sectionsEdited, sectionsTotal }, { settings: footer }] = await Promise.all([getSiteOverview(), getFooterExperienceForEdit()]);
 
   const portfolioCaption = !visibility.portfolio
     ? "Portfólio oculto no site"
@@ -114,6 +115,12 @@ export default async function SiteOverviewPage() {
           value={counts.testimonialsPublished}
           caption={`${plural(counts.testimonialsPublished, "publicado", "publicados")} de ${counts.testimonialsTotal} · ${testimonialsCaption}`}
           href="/painel/site/depoimentos"
+        />
+        <StatCard
+          label="Rodapé interativo"
+          value={footer.enabled ? "Ligado" : "Desligado"}
+          caption={`Câmera e celular acima do rodapé · ${plural(footer.photos.length, "foto", "fotos")} e ${plural(footer.clips.length, "trecho", "trechos")} de vídeo`}
+          href="/painel/site/rodape"
         />
       </div>
 

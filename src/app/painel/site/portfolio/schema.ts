@@ -6,6 +6,7 @@
  * banco — ver `findPublishBlockers` em src/server/site/admin/portfolio.ts e `publishBlockers` em
  * src/lib/site/portfolio.ts.
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 import type { PortfolioBeforeAfter } from "@/db/schema";
 import { PORTFOLIO_CATEGORIES, PORTFOLIO_ORIGINS } from "@/lib/domain";

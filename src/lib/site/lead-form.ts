@@ -3,6 +3,7 @@
  * Roda no SERVIDOR (`submitLeadAction`). Componentes do navegador não importam este arquivo (ele carrega o zod):
  * constantes, tipos e helpers sem dependências ficam em ./lead-form-fields.ts.
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 import { isISODate, isTime } from "@/lib/dates";
 import type { LeadDetails } from "@/db/schema";

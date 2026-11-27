@@ -8,6 +8,7 @@
  * Arquivo puro (sem acesso a banco): pode ser importado no servidor e no cliente.
  * Leitura no servidor: `getSiteContent()` em src/server/site/queries.ts.
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 
 // ------------------------------------------------------------------ helpers
@@ -321,6 +322,25 @@ const visitCounter = z.object({
   label: text(120),
 });
 
+// ================================================== RODAPÉ INTERATIVO
+/**
+ * Textos do rodapé interativo (briefing v2, seção 11): a câmera e o celular simulados logo acima do rodapé
+ * institucional. Ligar/desligar e as fotos/trechos ficam em Editar site › Rodapé (`src/lib/site/footer-experience.ts`).
+ * Texto vazio = a linha some (o título, se apagado, também).
+ */
+const footerExperience = z.object({
+  title: text(120),
+  subtitle: text(200),
+  /** Legenda curta embaixo da câmera. */
+  cameraCaption: text(120),
+  /** Legenda curta embaixo do celular. */
+  phoneCaption: text(120),
+  /** Frase da composição gráfica (foto instantânea e tela do celular) enquanto não há fotos/trechos cadastrados. */
+  frameText: text(80),
+  /** Aviso de que é uma simulação (nada é gravado, a câmera do aparelho não é usada). */
+  simulationNote: text(240),
+});
+
 // ===================================================================== 404
 const notFoundPage = z.object({ eyebrow: text(80), title: text(160), text: text(300), cta: link });
 
@@ -361,6 +381,7 @@ export const siteContentSchemas = {
   termsPage: legalPage,
   cookiesPage: legalPage,
   visitCounter,
+  footerExperience,
   notFoundPage,
   seo,
 } as const;
@@ -389,6 +410,7 @@ export const SITE_CONTENT_LABELS: Record<SiteContentKey, string> = {
   termsPage: "Termos de uso",
   cookiesPage: "Política de cookies",
   visitCounter: "Contador de visitas",
+  footerExperience: "Rodapé interativo",
   notFoundPage: "Página não encontrada (404)",
   seo: "SEO e compartilhamento",
 };
@@ -900,6 +922,17 @@ export const defaultSiteContent: SiteContent = {
     minimum: "",
     phrase: "Cada visita é o começo de uma nova história.",
     label: "visitas ao site desde {{inicio}}",
+  },
+
+  // Briefing v2, seção 11: título, subtítulo e a frase da marca vêm do briefing; as legendas e o aviso de
+  // simulação foram redigidos para a revisão dos sócios.
+  footerExperience: {
+    title: "Antes de ir, deixe sua marca.",
+    subtitle: "Porque toda conexão merece ser registrada.",
+    cameraCaption: "Clique na câmera e revele uma foto instantânea.",
+    phoneCaption: "Aperte REC e grave um take com a gente.",
+    frameText: "Sua história, nosso olhar.",
+    simulationNote: "É uma simulação: a câmera e o microfone do seu aparelho não são usados e nada é gravado.",
   },
 
   // Briefing v2, seção 31.

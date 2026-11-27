@@ -25,6 +25,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { requireUser } from "@/lib/auth";
 import { PROPOSAL_STATUS_LABELS, type ProposalStatus } from "@/lib/domain";
 import { kitDemoAction } from "./actions";
+import { assertKitEnabled } from "./enabled";
 import { LoadingButtonDemo, OverlayDemos, ToastDemo } from "./demos";
 
 export const metadata: Metadata = { title: "Kit de interface" };
@@ -65,6 +66,7 @@ function Demo({ label, children }: { label: string; children: ReactNode }) {
 /** Vitrine dos componentes base (fora do menu). Documentação: src/components/ui/README.md. */
 export default async function KitPage({ searchParams }: { searchParams: PageSearchParams }) {
   await requireUser();
+  assertKitEnabled();
   const page = Math.min(parsePage((await searchParams).pagina), Math.ceil(DEMO_ROWS.length / PAGE_SIZE));
   const pageRows = DEMO_ROWS.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 

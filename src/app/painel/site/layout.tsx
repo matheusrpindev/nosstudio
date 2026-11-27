@@ -12,6 +12,7 @@ const TABS = [
   { href: "/painel/site/faq", label: "FAQ" },
   { href: "/painel/site/portfolio", label: "Portfólio" },
   { href: "/painel/site/depoimentos", label: "Depoimentos" },
+  { href: "/painel/site/rodape", label: "Rodapé" },
   { href: "/painel/site/metricas", label: "Métricas" },
 ] as const;
 

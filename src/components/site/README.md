@@ -8,7 +8,7 @@ numeradas ("01 — Serviços"), títulos gigantes em Montserrat Black com tracki
 
 - CSS: `src/app/(site)/site.css` (importado pelo layout do site). Classes com prefixo `s-`, dentro de
   `@layer components` — utilitários do Tailwind continuam funcionando por cima (`className="s-h2 mt-8"`).
-- Componentes: esta pasta. Quase tudo é Server Component; os únicos clientes são `site-header`,
+- Componentes: esta pasta. Quase tudo é Server Component; os únicos clientes são `site-header`, `footer-experience-loader` (que baixa sob demanda o motor do rodapé interativo, `footer-experience-engine.ts`),
   `announcement-bar`, `lead-form`, `video-embed`, `whatsapp-float` e `reveal-observer`.
 - Moldura: `site-shell.tsx` (usada pelo layout e pelo 404) — barra de avisos, cabeçalho, rodapé e WhatsApp
   flutuante. O `<Logo>` entra nos componentes cliente como `children`/prop, nunca por import.

@@ -1,28 +1,16 @@
 import type { NextConfig } from "next";
+import { PUBLIC_CSP_SOURCE, publicCsp } from "./src/lib/security/csp";
 
 const isDev = process.env.NODE_ENV !== "production";
 
 /**
- * Content-Security-Policy sem nonces (compatível com páginas pré-renderizadas).
- * Vídeos entram só por embed do YouTube (modo sem cookies) e Vimeo.
+ * Cabeçalhos de segurança. A Content-Security-Policy vem de src/lib/security/csp.ts:
+ * - site público (estático): a política SEM nonce, aplicada aqui;
+ * - painel, telas de acesso, /conta, /equipe e /cliente: a política COM nonce, gerada a cada requisição pelo
+ *   proxy (src/proxy.ts) — por isso esses caminhos ficam de fora da regra abaixo (dois cabeçalhos CSP somariam
+ *   as restrições das duas).
  */
-const csp = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "media-src 'self' blob:",
-  "connect-src 'self'",
-  "frame-src 'self' blob: https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com",
-  "frame-ancestors 'self'",
-  "form-action 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-].join("; ");
-
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -74,6 +62,8 @@ const nextConfig: NextConfig = {
     return [
       // Tudo, exceto os arquivos enviados (que têm política própria logo abaixo).
       { source: "/((?!media/).*)", headers: securityHeaders },
+      // CSP do site público (estático, sem nonce). Os ambientes privados recebem a deles do proxy.
+      { source: PUBLIC_CSP_SOURCE, headers: [{ key: "Content-Security-Policy", value: publicCsp({ dev: isDev }) }] },
       // Uploads: nada servido daqui pode executar como página (os cabeçalhos do next.config têm
       // precedência sobre os da rota, então a política dos arquivos é definida aqui).
       {

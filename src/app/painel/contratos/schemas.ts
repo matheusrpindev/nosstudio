@@ -1,3 +1,4 @@
+import "@/lib/zod-setup";
 import { z } from "zod";
 import { CONTRACT_KINDS, CONTRACT_STATUSES } from "@/lib/domain";
 import { safeUrl } from "@/lib/format";

@@ -3,6 +3,7 @@
  * Arquivo puro (sem banco): o editor usa os tipos e os cálculos ao vivo; a Server Action valida com
  * `proposalDraftSchema` e o servidor recalcula tudo antes de gravar (fonte da verdade).
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 import type { Proposal, ProposalCost, ProposalItem, ProposalPayment } from "@/db/schema";
 import { isISODate } from "@/lib/dates";

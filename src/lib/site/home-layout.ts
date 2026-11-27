@@ -10,6 +10,7 @@
  * Seção nova: acrescente o id em `HOME_SECTION_IDS` na posição padrão, o rótulo abaixo e o bloco em
  * src/app/(site)/page.tsx — bancos que já salvaram uma ordem recebem a seção nova depois da vizinha anterior.
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 
 /** Ordem padrão = ordem do briefing. */

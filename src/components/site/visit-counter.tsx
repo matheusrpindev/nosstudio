@@ -9,9 +9,10 @@
  *   (sem salto de layout, sem contagem animada). Ele é refeito a cada poucos minutos (perfil de cache `site`).
  *
  * Duas formas de usar:
- *   <VisitCounterBand />   faixa completa, logo acima do rodapé institucional (é o que o <SiteShell> monta hoje);
- *   <VisitCounter />       só o miolo (frase + número + legenda), para encaixar dentro de outro bloco com
- *                          `data-tone="roxo" | "grafite"` — é a peça que entra na experiência interativa do rodapé.
+ *   <VisitCounterView />   só o miolo (frase + número + legenda), dentro de um bloco `data-tone="roxo" | "grafite"` —
+ *                          é o que o rodapé interativo (footer-experience.tsx) monta, dono desse espaço;
+ *   <VisitCounterBand />   faixa completa acima do rodapé institucional: só quando o rodapé interativo está
+ *                          desligado (o próprio <FooterExperience> decide; nunca aparecem os dois).
  */
 import { cn } from "@/lib/cn";
 import { visitCounterView } from "@/lib/metrics/counter";
@@ -47,9 +48,9 @@ export async function VisitCounter({ className }: { className?: string }) {
   return counter ? <VisitCounterView counter={counter} className={className} /> : null;
 }
 
-/** Faixa do contador, logo acima do rodapé institucional. */
-export async function VisitCounterBand() {
-  const counter = await loadVisitCounter();
+/** Faixa do contador, logo acima do rodapé institucional. `counter` já buscado evita ler de novo. */
+export async function VisitCounterBand({ counter: preloaded }: { counter?: VisitCounterContent | null } = {}) {
+  const counter = preloaded === undefined ? await loadVisitCounter() : preloaded;
   if (!counter) return null;
   return (
     <section className="s-visits" id="contador-de-visitas" data-tone="grafite" data-menu-inert aria-label="Contador de visitas do site">

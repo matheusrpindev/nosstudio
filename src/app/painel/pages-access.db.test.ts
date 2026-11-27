@@ -168,6 +168,7 @@ const PAGES: Record<string, string> = {
   "site/textos/page.tsx": "site:ver",
   "site/textos/[secao]/page.tsx": "site:editar",
   "site/metricas/page.tsx": "site:ver",
+  "site/rodape/page.tsx": "site:ver",
   ...site("banners"),
   ...site("avisos"),
   ...site("servicos"),

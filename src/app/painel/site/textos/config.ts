@@ -907,7 +907,11 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
         id: "exibicao",
         title: "Exibição",
         fields: [
-          toggle("enabled", "Mostrar o contador no site", "Aparece no fim de todas as páginas, logo acima do rodapé. Sem nenhuma visita medida, ele não aparece mesmo ligado."),
+          toggle(
+            "enabled",
+            "Mostrar o contador no site",
+            "Aparece no fim de todas as páginas, logo acima do rodapé (dentro do rodapé interativo, quando ele está ligado). Sem nenhuma visita medida, ele não aparece mesmo ligado.",
+          ),
           text("minimum", "Só mostrar a partir de quantas visitas", "Opcional, só números (ex.: 500). Enquanto o total for menor, o contador fica oculto. Vazio = mostra desde a primeira visita."),
         ],
       },
@@ -920,6 +924,44 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
             "label",
             "Legenda do número",
             "Diz o que o número conta. {{inicio}} é trocado pelo mês em que a contagem começou (ex.: “novembro de 2026”). Sem legenda, o contador não aparece.",
+          ),
+        ],
+      },
+    ],
+  },
+
+  // ---------------------------------------------------- footerExperience
+  footerExperience: {
+    key: "footerExperience",
+    title: SITE_CONTENT_LABELS.footerExperience,
+    summary: "Título, subtítulo e legendas da câmera e do celular simulados, logo acima do rodapé.",
+    publicPath: "/#rodape-interativo",
+    notice: {
+      tone: "info",
+      title: "Ligar, desligar e trocar fotos e vídeos fica em Editar site → Rodapé",
+      text: "Aqui ficam só os textos. Para mostrar ou esconder a experiência e cadastrar as fotos da câmera e os trechos do celular, use a aba “Rodapé”. Sem fotos ou trechos cadastrados, a câmera e o celular mostram uma composição gráfica da marca com a frase abaixo.",
+    },
+    groups: [
+      {
+        id: "chamada",
+        title: "Chamada",
+        fields: [
+          text("title", "Título", "As duas últimas palavras ganham o destaque da marca. Use *asteriscos* para escolher outro trecho."),
+          text("subtitle", "Subtítulo"),
+        ],
+      },
+      {
+        id: "legendas",
+        title: "Câmera e celular",
+        fields: [
+          text("cameraCaption", "Legenda da câmera", "Aparece embaixo da câmera. Vazio = sem legenda."),
+          text("phoneCaption", "Legenda do celular", "Aparece embaixo do celular. Vazio = sem legenda."),
+          text("frameText", "Frase da composição da marca", "Aparece na foto instantânea e na tela do celular enquanto não houver fotos ou trechos cadastrados."),
+          area(
+            "simulationNote",
+            "Aviso de simulação",
+            "Deixa claro ao visitante que nada é gravado e que a câmera e o microfone do aparelho não são usados. Recomendado manter.",
+            2,
           ),
         ],
       },
@@ -1006,6 +1048,7 @@ export const SECTION_ORDER: readonly SiteContentKey[] = [
   "termsPage",
   "cookiesPage",
   "visitCounter",
+  "footerExperience",
   "notFoundPage",
   "seo",
 ];

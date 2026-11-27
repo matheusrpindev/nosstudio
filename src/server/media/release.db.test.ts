@@ -15,12 +15,15 @@ import { deletePortfolioProject, savePortfolioProject, type PortfolioInput } fro
 import { deleteService, saveService, type ServiceInput } from "@/server/site/admin/services";
 import { deleteTestimonial, saveTestimonial, type TestimonialInput } from "@/server/site/admin/testimonials";
 import { saveSiteContent } from "@/server/site/content";
+import { saveFooterExperience } from "@/server/site/footer-experience";
+import { FOOTER_EXPERIENCE_KEY } from "@/lib/site/footer-experience";
 import { defaultSiteContent } from "@/lib/site/content";
 import { collectMediaIds, createMedia, droppedMediaIds, findMediaUsage, getMediaById, MediaError, releaseMedia } from "./index";
 import { mp4Bytes, webmBytes } from "./video-fixtures";
 
 afterAll(async () => {
   await db.delete(siteContent).where(eq(siteContent.key, "seo"));
+  await db.delete(siteContent).where(eq(siteContent.key, FOOTER_EXPERIENCE_KEY));
 });
 
 let counter = 0;
@@ -290,5 +293,17 @@ describe("findMediaUsage enxerga todas as colunas de mídia", () => {
 
     await db.delete(portfolioProjects).where(eq(portfolioProjects.id, created.id));
     expect((await releaseMedia([backstage.id, before.id, after.id])).sort()).toEqual([backstage.id, before.id, after.id].sort());
+  });
+
+  it("rodapé interativo: fotos da câmera e trechos do celular contam como uso; tirar do rodapé libera", async () => {
+    const [photo, clip] = [await image(), await createMedia({ buffer: webmBytes(), originalName: "trecho.webm", visibility: "public", kind: "video" })];
+    await saveFooterExperience({ enabled: false, photos: [{ mediaId: photo.id }], clips: [{ mediaId: clip.id, caption: "[Teste] trecho" }] });
+    // mesmo com o rodapé desligado, o arquivo está guardado lá: não pode ser tratado como "sem uso"
+    for (const row of [photo, clip]) expect(await findMediaUsage(row.id)).toEqual(["rodapé interativo do site"]);
+    expect(await releaseMedia([photo.id, clip.id])).toEqual([]);
+
+    await saveFooterExperience({ enabled: true, photos: [], clips: [] });
+    expect((await releaseMedia([photo.id, clip.id])).sort()).toEqual([photo.id, clip.id].sort());
+    expect(onDisk(photo)).toEqual([]);
   });
 });

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Logo } from "@/components/brand/logo";
 import { Toaster } from "@/components/ui/toast";
 
@@ -16,7 +17,14 @@ export const viewport: Viewport = { themeColor: "#101014" };
  * Sem cadastro público: conta nova só nasce por convite ou em Configurações › Usuários.
  * `tema-painel` liga o tema escuro para o documento inteiro (ver "TEMA ESCURO" em globals.css).
  */
-export default function AuthLayout({ children }: LayoutProps<"/">) {
+/**
+ * Telas de acesso renderizadas a cada requisição (sem casca estática): a Content-Security-Policy delas usa nonce
+ * (src/proxy.ts), e o Next só aplica o nonce aos scripts que renderiza na hora. Ver também painel/layout.tsx.
+ */
+export const instant = false;
+
+export default async function AuthLayout({ children }: LayoutProps<"/">) {
+  await connection();
   return (
     <div className="tema-painel flex min-h-dvh flex-1 flex-col lg:flex-row">
       <aside className="bg-menu border-menu-borda relative flex shrink-0 flex-col justify-between overflow-hidden border-b px-6 py-7 text-white lg:w-[44%] lg:max-w-2xl lg:border-r lg:border-b-0 lg:px-16 lg:py-16">

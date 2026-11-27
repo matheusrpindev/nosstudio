@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { addDays, startOfMonth, todayISO } from "@/lib/dates";
 import { MonthCalendar, parseMonthParam, type CalendarItem } from "@/components/ui/month-calendar";
 import { BoardDemo, FormDemo, ValidatedFormDemo } from "./demos";
+import { assertKitEnabled } from "../enabled";
 
 export const metadata: Metadata = { title: "Widgets do kit" };
 /** A página lê a sessão a cada requisição: pode bloquear a navegação (o `instant = false` do layout não cobre segmentos filhos). */
@@ -32,6 +33,7 @@ export default async function WidgetsShowcasePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireUser();
+  assertKitEnabled();
   const params = await searchParams;
   const today = todayISO();
   const month = parseMonthParam(params.mes, today);

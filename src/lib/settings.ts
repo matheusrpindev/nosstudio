@@ -2,6 +2,7 @@
  * Configurações INTERNAS do painel (tabela `settings`). Nunca aparecem no site público.
  * Arquivo puro; leitura/gravação no servidor em src/server/settings.ts.
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 
 const proposal = z.object({

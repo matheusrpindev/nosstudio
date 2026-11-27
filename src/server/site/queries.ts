@@ -27,12 +27,13 @@ import {
   type Service,
   type Testimonial,
 } from "@/db/schema";
-import { toPublicImage, type PublicImage } from "@/lib/media";
+import { imageSrcSet, mediaUrl, toPublicImage, type PublicImage } from "@/lib/media";
 import { BANNER_MAX_SLIDES, buildBannerView, isViewRenderable, type BannerView, type SiteAvailability } from "@/lib/site/banners";
 import { defaultSiteContent, resolveSiteContent, SITE_CONTENT_KEYS, type SiteContent } from "@/lib/site/content";
 import { announcementPaths } from "@/lib/site/announcement-pages";
 import { SITE_PATHS } from "@/lib/site/paths";
 import { projectMediaIds, relatedProjects, toPublicProject, type PublicPortfolioProject } from "@/lib/site/portfolio";
+import { FOOTER_EXPERIENCE_KEY, resolveFooterExperienceSettings, type PublicFooterExperience } from "@/lib/site/footer-experience";
 import { defaultHomeLayout, HOME_LAYOUT_KEY, resolveHomeLayout, type HomeLayout } from "@/lib/site/home-layout";
 import { announcementCacheLife, secondsToNextAnnouncementChange, servableAnnouncements } from "./admin/announcement-status";
 import { SITE_TAG } from "./cache";
@@ -487,19 +488,54 @@ export async function getTestimonials(): Promise<PublicTestimonial[]> {
   });
 }
 
+// ------------------------------------------------------- rodapé interativo
+/**
+ * Rodapé interativo (câmera e celular simulados): `null` quando desligado em Editar site › Rodapé. Fotos só com
+ * texto alternativo e trechos só se forem vídeos públicos — sem nada cadastrado, as listas vêm vazias e o site
+ * mostra a composição gráfica da marca (nunca uma foto inventada).
+ */
+export async function getFooterExperience(): Promise<PublicFooterExperience | null> {
+  "use cache";
+  cacheTag(SITE_TAG);
+  cacheLife("site");
+  return safely("rodapé interativo", null, async () => {
+    const [row] = await db.select().from(siteContent).where(eq(siteContent.key, FOOTER_EXPERIENCE_KEY));
+    const settings = resolveFooterExperienceSettings(row?.value);
+    if (!settings.enabled) return null;
+    const ids = [...settings.photos.map((photo) => photo.mediaId), ...settings.clips.map((clip) => clip.mediaId)];
+    const files = new Map((ids.length ? await db.select().from(media).where(inArray(media.id, ids)) : []).map((file) => [file.id, file]));
+    const photos = settings.photos.flatMap(({ mediaId }) => {
+      const image = toPublicImage(files.get(mediaId));
+      const alt = image?.alt.trim() ?? "";
+      return image && alt ? [{ id: image.id, url: image.url, srcSet: imageSrcSet(image), width: image.width, height: image.height, alt }] : [];
+    });
+    const clips = settings.clips.flatMap(({ mediaId, caption }) => {
+      const file = files.get(mediaId);
+      return file && file.visibility === "public" && file.mime.startsWith("video/") ? [{ id: file.id, url: mediaUrl(file.storageKey), mime: file.mime, caption }] : [];
+    });
+    return { photos, clips };
+  });
+}
+
 // ------------------------------------------------- imagens em uso no site
 /**
  * Ids das imagens que o site público pode exibir AGORA: exatamente as que saem das consultas acima (conteúdo
- * fixo, serviços visíveis, portfólio e depoimentos publicados). A rota /media usa esta lista: uma imagem pública
- * que nenhum conteúdo publicado usa (depoimento despublicado, projeto em rascunho, upload ainda não salvo) só é
- * entregue a quem está logado no painel — despublicar tira a imagem do ar, não só o texto.
+ * fixo, serviços visíveis, portfólio e depoimentos publicados, fotos e trechos do rodapé interativo ligado). A
+ * rota /media usa esta lista: uma imagem pública que nenhum conteúdo publicado usa (depoimento despublicado,
+ * projeto em rascunho, upload ainda não salvo) só é entregue a quem está logado no painel — despublicar tira a imagem do ar, não só o texto.
  * (As mídias dos banners têm lista própria, `getBannerMediaIds`, porque entram e saem do ar por horário.)
  */
 export async function getPublishedMediaIds(): Promise<number[]> {
   "use cache";
   cacheTag(SITE_TAG);
   cacheLife("site");
-  const [images, serviceList, portfolio, testimonialList] = await Promise.all([getSiteImages(), getServices(), getPortfolio(), getTestimonials()]);
+  const [images, serviceList, portfolio, testimonialList, footer] = await Promise.all([
+    getSiteImages(),
+    getServices(),
+    getPortfolio(),
+    getTestimonials(),
+    getFooterExperience(),
+  ]);
   const all: (PublicImage | null)[] = [
     images.hero,
     images.couple,
@@ -515,7 +551,9 @@ export async function getPublishedMediaIds(): Promise<number[]> {
     ]),
     ...testimonialList.map((testimonial) => testimonial.image),
   ];
-  return [...new Set(all.flatMap((image) => (image ? [image.id] : [])))];
+  // rodapé interativo ligado: as fotos da câmera e os trechos (vídeos) do celular
+  const footerIds = footer ? [...footer.photos.map((photo) => photo.id), ...footer.clips.map((clip) => clip.id)] : [];
+  return [...new Set([...all.flatMap((image) => (image ? [image.id] : [])), ...footerIds])];
 }
 
 // ---------------------------------------------------------------- navegação

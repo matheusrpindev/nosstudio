@@ -25,6 +25,7 @@ import {
 } from "@/db/schema";
 import type { MediaVisibility } from "@/lib/domain";
 import { mediaUrl } from "@/lib/media";
+import { FOOTER_EXPERIENCE_KEY } from "@/lib/site/footer-experience";
 import { checkVideo, FILE_MAX_BYTES, MediaError, processImage, sanitizeFileName, sniffFile } from "./process";
 import { storage } from "./storage";
 
@@ -259,7 +260,10 @@ export async function findMediaUsage(id: number): Promise<string[]> {
   for (const row of contractRows) usage.push(`contrato "${row.title}"`);
   for (const row of financeRows) usage.push(`lançamento "${row.description}"`);
   for (const row of brandRows) usage.push(`material da marca "${row.title}"`);
-  for (const row of contentRows) if (jsonReferencesMedia(row.value, id)) usage.push(`conteúdo do site (${row.key})`);
+  // conteúdo do site, ordem da home e o rodapé interativo (fotos da câmera e trechos do celular): JSON em site_content
+  for (const row of contentRows) {
+    if (jsonReferencesMedia(row.value, id)) usage.push(row.key === FOOTER_EXPERIENCE_KEY ? "rodapé interativo do site" : `conteúdo do site (${row.key})`);
+  }
   if (eventIds.length > 0) usage.push(eventIds.length === 1 ? "um compromisso da agenda (anexo)" : `${eventIds.length} compromissos da agenda (anexo)`);
   return usage;
 }

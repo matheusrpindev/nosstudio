@@ -17,10 +17,10 @@ import { SITE_PATHS } from "@/lib/site/paths";
 import { getAnnouncements, getSiteContent, getSiteNav, type PublicAnnouncement } from "@/server/site/queries";
 import { AnnouncementBar, type AnnouncementView } from "./announcement-bar";
 import { OrganizationJsonLd } from "./json-ld";
+import { FooterExperience } from "./footer-experience";
 import { Icon } from "./marks";
 import { RevealObserver } from "./reveal-observer";
 import { SiteHeader } from "./site-header";
-import { VisitCounterBand } from "./visit-counter";
 import { VisitTracker } from "./visit-tracker";
 import { WhatsAppFloat } from "./whatsapp-float";
 
@@ -105,8 +105,9 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* Contador público de visitas: desligado por padrão (Editar site › Textos › Contador de visitas). */}
-      <VisitCounterBand />
+      {/* Rodapé interativo (câmera e celular simulados) com o contador de visitas dentro; desligado, só o contador
+          (que nasce desligado: Editar site › Textos › Contador de visitas). Ver footer-experience.tsx. */}
+      <FooterExperience />
 
       <footer className="s-footer" id="rodape" data-tone="grafite" data-menu-inert>
         <div className="s-wrap">

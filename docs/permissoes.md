@@ -346,13 +346,14 @@ como a tabela manda; página nova sem linha na tabela do teste faz o teste falha
 | `/painel/marca`, `/marca/[id]` · `/marca/novo` | `marca:ver` · `marca:editar` |
 | `/painel/site/**` (listas, inclusive `/site/inicio` — ordem e visibilidade das seções da página inicial) · `/novo`, `/[id]`, `/textos/[secao]` | `site:ver` · `site:editar` (em `/site/inicio` a lista abre para quem vê; setas, arrastar, chave e "restaurar" só aparecem para quem edita, e as actions de `site/inicio/actions.ts` exigem `site:editar`) |
 | `/painel/site/banners` (carrossel da página inicial) · `/banners/novo`, `/banners/[id]` | `site:ver` · `site:editar`. Na lista, setas, arrastar, chave, "Duplicar" e "Editar" só aparecem para quem edita, e "Excluir" para quem tem `site:excluir`; as actions de `site/banners/actions.ts` exigem `site:editar` (salvar, ligar/desligar, ordenar, duplicar) ou `site:excluir`. Imagens e vídeos entram pela API de mídia (`arquivos:editar`); a arte de um banner desligado ou encerrado só é entregue por `/media` a quem está logado no painel |
+| `/painel/site/rodape` (rodapé interativo: ligar/desligar, fotos da câmera e trechos do celular) | `site:ver`; o botão "Salvar rodapé" só aparece para quem edita, e a action de `site/rodape/actions.ts` exige `site:editar`. Fotos e vídeos entram pela API de mídia (`arquivos:editar`); com o rodapé desligado, eles só são entregues por `/media` a quem está logado no painel |
 | `/painel/site/metricas` (visitas, origem, páginas, aparelhos, cliques, formulários) | `site:ver`; os blocos de leads (leads recebidos, serviços mais procurados) só aparecem — e só são consultados — com `leads:ver`; os botões de CSV, com `dados:baixar`; "Configurar" o contador, com `site:editar` |
 | `/painel/config`, `/config/propostas` | `config:ver` |
 | `/painel/config/notificacoes` | `requireAdmin()` |
 | `/painel/config/usuarios`, `/config/usuarios/[id]` (permissões) | `usuarios:ver` (botões e actions: `usuarios:editar`) |
 | `/painel/config/auditoria` | `auditoria:ver` |
 | `/painel/config/dados` | `dados:baixar` |
-| `/painel/kit/**` | `requireUser()` (demonstração; fica como está) |
+| `/painel/kit/**` | `requireUser()` (demonstração). Em produção responde **404** depois do guarda, a menos que `PANEL_KIT=on` (`kit/enabled.ts`) |
 | `(auth)/login/page.tsx` | `getSessionUser()` + `landingFor(user)`; avisos `?aviso=sem-acesso`, `conta-criada`, `senha-redefinida`, `senha-criada` |
 | `(auth)/convite/page.tsx` | pública; só mostra o formulário com `getPendingInvite(token)` válido |
 | `(auth)/conta/senha/page.tsx` | `requireSessionUser({ allowPasswordChange: true })` — troca de senha de quem não entra no painel |
