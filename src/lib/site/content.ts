@@ -249,6 +249,36 @@ const portfolioPage = z.object({
   title: text(160),
   intro: text(600),
   emptyText: text(300),
+  /** Grade de /portfolio: rótulo da seção, pesquisa, filtros e o estado "nada encontrado". */
+  projectsLabel: text(80),
+  searchLabel: text(80),
+  searchPlaceholder: text(80),
+  allLabel: text(40),
+  featuredLabel: text(40),
+  noResultsTitle: text(160),
+  noResultsText: text(300),
+  clearLabel: text(60),
+  /** Títulos dos blocos da página de um projeto (/portfolio/[slug]). Cada bloco só aparece com conteúdo. */
+  detail: z.object({
+    backLabel: text(60),
+    aboutTitle: text(80),
+    caseTitle: text(80),
+    objectiveTitle: text(80),
+    challengeTitle: text(80),
+    solutionTitle: text(80),
+    resultsTitle: text(80),
+    videoTitle: text(80),
+    galleryTitle: text(80),
+    beforeAfterTitle: text(80),
+    beforeLabel: text(40),
+    afterLabel: text(40),
+    backstageTitle: text(80),
+    relatedTitle: text(80),
+    shareTitle: text(80),
+    /** Aviso dos projetos marcados como experiência anterior dos fundadores. */
+    previousTitle: text(80),
+    previousText: text(400),
+  }),
 });
 
 // ================================================================= CONTATO
@@ -276,6 +306,20 @@ const privacyPage = z.object({
 
 /** Termos de uso e política de cookies: mesmo esquema da privacidade (título, versão e markdown). */
 const legalPage = z.object({ title: text(160), version: text(20), body: longText(30_000) });
+
+// ====================================================== CONTADOR DE VISITAS
+/**
+ * Contador público de visitas (faixa acima do rodapé). Nasce DESLIGADO; o número é o total real da medição
+ * própria do site (`src/server/metrics`) — nunca um valor digitado. Regra de exibição: `src/lib/metrics/counter.ts`.
+ */
+const visitCounter = z.object({
+  enabled: z.boolean(),
+  /** Só aparece a partir deste total de visitas (só dígitos; vazio = sem mínimo). */
+  minimum: text(7).regex(/^\d*$/),
+  phrase: text(160),
+  /** Legenda do número: diz o que ele conta. `{{inicio}}` vira o mês em que a contagem começou. Vazia = não exibe. */
+  label: text(120),
+});
 
 // ===================================================================== 404
 const notFoundPage = z.object({ eyebrow: text(80), title: text(160), text: text(300), cta: link });
@@ -316,6 +360,7 @@ export const siteContentSchemas = {
   privacyPage,
   termsPage: legalPage,
   cookiesPage: legalPage,
+  visitCounter,
   notFoundPage,
   seo,
 } as const;
@@ -343,6 +388,7 @@ export const SITE_CONTENT_LABELS: Record<SiteContentKey, string> = {
   privacyPage: "Política de privacidade",
   termsPage: "Termos de uso",
   cookiesPage: "Política de cookies",
+  visitCounter: "Contador de visitas",
   notFoundPage: "Página não encontrada (404)",
   seo: "SEO e compartilhamento",
 };
@@ -772,6 +818,33 @@ export const defaultSiteContent: SiteContent = {
     title: "Nosso olhar em prática.",
     intro: "Marcas, pessoas e momentos que confiaram sua história à NÓS.",
     emptyText: "Estamos preparando os primeiros projetos para mostrar aqui.",
+    projectsLabel: "Projetos",
+    searchLabel: "Buscar projetos",
+    searchPlaceholder: "Projeto, cliente ou serviço",
+    allLabel: "Todos",
+    featuredLabel: "Destaque",
+    noResultsTitle: "Nenhum projeto encontrado.",
+    noResultsText: "Tente outra palavra ou veja todos os projetos.",
+    clearLabel: "Ver todos os projetos",
+    detail: {
+      backLabel: "Voltar ao portfólio",
+      aboutTitle: "O projeto",
+      caseTitle: "Estudo de caso",
+      objectiveTitle: "Objetivo",
+      challengeTitle: "Desafio",
+      solutionTitle: "Solução",
+      resultsTitle: "Resultados",
+      videoTitle: "Vídeo",
+      galleryTitle: "Galeria",
+      beforeAfterTitle: "Antes e depois",
+      beforeLabel: "Antes",
+      afterLabel: "Depois",
+      backstageTitle: "Bastidores",
+      relatedTitle: "Projetos relacionados",
+      shareTitle: "Compartilhar este projeto",
+      previousTitle: "Experiência anterior",
+      previousText: "Este trabalho foi realizado antes da criação da NÓS Studio e faz parte da experiência profissional dos fundadores.",
+    },
   },
 
   contactPage: {
@@ -803,6 +876,14 @@ export const defaultSiteContent: SiteContent = {
     title: "Política de Cookies",
     version: "2026-11",
     body: COOKIES_BODY,
+  },
+
+  // Briefing v2, seção 11: frase do briefing; a legenda identifica a métrica e desde quando ela é contada.
+  visitCounter: {
+    enabled: false,
+    minimum: "",
+    phrase: "Cada visita é o começo de uma nova história.",
+    label: "visitas ao site desde {{inicio}}",
   },
 
   // Briefing v2, seção 31.

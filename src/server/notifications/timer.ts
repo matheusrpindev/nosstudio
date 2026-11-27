@@ -9,6 +9,7 @@
  */
 import "server-only";
 import { pruneReadNotifications } from "./index";
+import { pruneVisitData } from "@/server/metrics/retention";
 import { dispatchAgendaReminders, pruneReminderDeliveries } from "./reminders";
 
 const INTERVAL_MS = 60_000;
@@ -30,6 +31,8 @@ export async function runReminderTick(state: State = (holder.__nosReminders ??= 
     if (state.runs % PRUNE_EVERY === 0) {
       await pruneReminderDeliveries();
       await pruneReadNotifications();
+      // métricas do site: sessões de visita vencidas e sais de dias anteriores (ver src/server/metrics/retention.ts)
+      await pruneVisitData();
     }
     state.runs += 1;
     return "ok";

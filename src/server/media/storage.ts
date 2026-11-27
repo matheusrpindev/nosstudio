@@ -27,7 +27,8 @@ export function mainKeyOf(key: string): string {
 export interface MediaStorage {
   put(key: string, data: Buffer): Promise<void>;
   stat(key: string): Promise<{ size: number; mtimeMs: number } | null>;
-  stream(key: string): ReadableStream<Uint8Array>;
+  /** `range`: só o trecho pedido, com `end` inclusivo (respostas 206 de /media). */
+  stream(key: string, range?: { start: number; end: number }): ReadableStream<Uint8Array>;
   delete(key: string): Promise<void>;
 }
 
@@ -57,8 +58,8 @@ class LocalDiskStorage implements MediaStorage {
     }
   }
 
-  stream(key: string) {
-    return Readable.toWeb(createReadStream(this.resolve(key))) as ReadableStream<Uint8Array>;
+  stream(key: string, range?: { start: number; end: number }) {
+    return Readable.toWeb(createReadStream(this.resolve(key), range)) as ReadableStream<Uint8Array>;
   }
 
   async delete(key: string) {

@@ -1,0 +1,58 @@
+/* ==========================================================================
+   Contador público de visitas — faixa logo acima do rodapé institucional.
+   Mesma convenção de site.css: `@layer components`, prefixo `s-`, cores pelos
+   tons (`data-tone`). O número é renderizado no servidor: sem salto de layout
+   e sem contagem animada.
+   ========================================================================== */
+@layer components {
+  .s-visits {
+    padding-block: clamp(2.25rem, 1.5rem + 3vw, 3.75rem);
+    border-bottom: 1px solid var(--s-rule-light);
+  }
+  .s-visits__row {
+    display: grid;
+    gap: 1.25rem var(--s-gutter);
+  }
+  .s-visits__phrase {
+    max-width: 22ch;
+    font-size: var(--s-fs-h3);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .s-visits__count {
+    display: grid;
+    gap: 0.375rem;
+  }
+  .s-visits__value {
+    color: var(--color-lima);
+    font-size: var(--s-fs-h2);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    font-variant-numeric: lining-nums;
+  }
+  .s-visits__label {
+    color: var(--s-fg-2);
+    font-size: var(--s-fs-meta);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  /* Sem a frase, o número ocupa a linha sozinho. */
+  @media (min-width: 768px) {
+    .s-visits__row {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: end;
+    }
+    .s-visits__phrase {
+      grid-column: 1 / 8;
+    }
+    .s-visits__count {
+      grid-column: 9 / -1;
+    }
+    .s-visits__row:not(:has(.s-visits__phrase)) .s-visits__count {
+      grid-column: 1 / -1;
+    }
+  }
+}

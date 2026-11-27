@@ -119,12 +119,18 @@ export const PRICE_MODE_LABELS = labels(PRICE_MODES, {
 });
 
 // ---------------------------------------------------------------- portfólio
-export const PORTFOLIO_CATEGORIES = ["marketing", "fotografia", "videos", "eventos", "casamentos"] as const;
+/**
+ * Categorias do portfólio, na ordem dos filtros do briefing v2 (seção 08). "videos" (v1) virou "audiovisual":
+ * os registros antigos são atualizados por `upgradePortfolioCategories()` (src/server/site/upgrade-portfolio.ts).
+ */
+export const PORTFOLIO_CATEGORIES = ["audiovisual", "fotografia", "design", "marketing", "identidade_visual", "eventos", "casamentos"] as const;
 export type PortfolioCategory = (typeof PORTFOLIO_CATEGORIES)[number];
 export const PORTFOLIO_CATEGORY_LABELS = labels(PORTFOLIO_CATEGORIES, {
-  marketing: "Marketing e marcas",
+  audiovisual: "Audiovisual",
   fotografia: "Fotografia",
-  videos: "Vídeos",
+  design: "Design",
+  marketing: "Marketing",
+  identidade_visual: "Identidade visual",
   eventos: "Eventos",
   casamentos: "Casamentos",
 });
@@ -136,6 +142,8 @@ export const PORTFOLIO_ORIGIN_LABELS = labels(PORTFOLIO_ORIGINS, {
   nos: "Trabalho da NÓS Studio",
   experiencia_anterior: "Experiência anterior dos fundadores",
 });
+/** Selo curto dos cartões do site para o que não é trabalho da NÓS (trabalho da NÓS não leva selo). */
+export const PORTFOLIO_PREVIOUS_BADGE = "Experiência anterior";
 
 // -------------------------------------------------------------- depoimentos
 export const TESTIMONIAL_KINDS = ["texto", "print", "video"] as const;
@@ -758,3 +766,49 @@ export const BRAND_ASSET_CATEGORY_LABELS = labels(BRAND_ASSET_CATEGORIES, {
 // -------------------------------------------------------------------- mídia
 export const MEDIA_VISIBILITIES = ["public", "private"] as const;
 export type MediaVisibility = (typeof MEDIA_VISIBILITIES)[number];
+
+// ---------------------------------------------------------- métricas do site
+/**
+ * Medição própria de visitas (sem cookie, sem IP guardado). Método em `src/server/metrics/collect.ts`.
+ * Origem de uma visita: de onde a pessoa chegou na PRIMEIRA página da sessão.
+ */
+export const VISIT_SOURCES = ["direto", "busca", "social", "sites", "campanha"] as const;
+export type VisitSource = (typeof VISIT_SOURCES)[number];
+export const VISIT_SOURCE_LABELS = labels(VISIT_SOURCES, {
+  direto: "Direto",
+  busca: "Busca",
+  social: "Redes sociais",
+  sites: "Outros sites",
+  campanha: "Campanha",
+});
+/** Uma frase por origem, para a tela de métricas. */
+export const VISIT_SOURCE_HINTS = labels(VISIT_SOURCES, {
+  direto: "Digitou o endereço, abriu um favorito ou um link sem referência (WhatsApp, e-mail, aplicativos).",
+  busca: "Chegou por um buscador (Google, Bing…).",
+  social: "Chegou por uma rede social (Instagram, Facebook, TikTok…).",
+  sites: "Clicou num link em outro site.",
+  campanha: "Link com marcação de campanha (utm_source, utm_medium ou utm_campaign).",
+});
+
+export const VISIT_DEVICES = ["celular", "tablet", "computador"] as const;
+export type VisitDevice = (typeof VISIT_DEVICES)[number];
+export const VISIT_DEVICE_LABELS = labels(VISIT_DEVICES, {
+  celular: "Celular",
+  tablet: "Tablet",
+  computador: "Computador",
+});
+
+/**
+ * Recortes dos totais diários (`visit_stats.dimension`). `total` = o dia inteiro; os demais contam por chave
+ * (`origem` → uma das `VISIT_SOURCES`; `pagina` → o caminho; `clique` → `whatsapp:<onde>` ou `banner:<id>`…).
+ */
+export const VISIT_DIMENSIONS = ["total", "origem", "referencia", "campanha", "pagina", "dispositivo", "clique", "formulario"] as const;
+export type VisitDimension = (typeof VISIT_DIMENSIONS)[number];
+
+/** Tipos de clique medidos no site (`data-track="<tipo>:<alvo>"`). */
+export const TRACK_EVENT_TYPES = ["whatsapp", "banner"] as const;
+export type TrackEventType = (typeof TRACK_EVENT_TYPES)[number];
+export const TRACK_EVENT_TYPE_LABELS = labels(TRACK_EVENT_TYPES, {
+  whatsapp: "WhatsApp",
+  banner: "Banner",
+});

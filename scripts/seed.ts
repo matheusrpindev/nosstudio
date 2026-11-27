@@ -45,6 +45,7 @@ import type { EventInput } from "@/server/agenda/input";
 import { createEvent } from "@/server/agenda/mutations";
 import { ensureAgendaDefaults, ensurePersonalCalendars } from "@/server/agenda/settings";
 import { FAQ_PLANS_V2, PLANS_V2, SERVICES_V2, STANDALONE_ADDED_V2, STANDALONE_V1 } from "@/server/site/seed-data";
+import { upgradePortfolioCategories } from "@/server/site/upgrade-portfolio";
 import { upgradeSiteContentToV2 } from "@/server/site/upgrade-v2";
 
 const args = new Set(process.argv.slice(2));
@@ -97,6 +98,11 @@ async function seedPackages() {
 async function upgradeSiteV2() {
   const report = await upgradeSiteContentToV2();
   return Object.values(report).some((count) => count > 0);
+}
+
+/** Portfólio: a categoria "videos" do briefing v1 virou "audiovisual" (ver src/server/site/upgrade-portfolio.ts). */
+async function upgradePortfolio() {
+  return (await upgradePortfolioCategories()) > 0;
 }
 
 // ---------------------------------------------------------------------- FAQ
@@ -738,6 +744,7 @@ async function main() {
     ["perguntas frequentes (rascunhos)", seedFaqs],
     ["avisos", seedAnnouncements],
     ["site: atualização para o briefing v2 (só o que ninguém editou)", upgradeSiteV2],
+    ["portfólio: categorias do briefing v2", upgradePortfolio],
     ["modelos de proposta", seedProposalTemplates],
     ["biblioteca da marca", seedBrandAssets],
     ["agenda: categorias e agendas iniciais", seedAgendaDefaults],

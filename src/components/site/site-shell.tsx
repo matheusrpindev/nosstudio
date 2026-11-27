@@ -20,6 +20,8 @@ import { OrganizationJsonLd } from "./json-ld";
 import { Icon } from "./marks";
 import { RevealObserver } from "./reveal-observer";
 import { SiteHeader } from "./site-header";
+import { VisitCounterBand } from "./visit-counter";
+import { VisitTracker } from "./visit-tracker";
 import { WhatsAppFloat } from "./whatsapp-float";
 
 /** Ano corrente no fuso do estúdio. Em cache: `new Date()` solto quebraria o pré-render (Cache Components). */
@@ -102,6 +104,9 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         {children}
       </main>
 
+      {/* Contador público de visitas: desligado por padrão (Editar site › Textos › Contador de visitas). */}
+      <VisitCounterBand />
+
       <footer className="s-footer" id="rodape" data-tone="grafite" data-menu-inert>
         <div className="s-wrap">
           <div className="s-footer__grid">
@@ -126,7 +131,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
               <ul>
                 {whatsapp ? (
                   <li>
-                    <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                    <a href={whatsapp} target="_blank" rel="noopener noreferrer" data-track="whatsapp:rodape">
                       <Icon name="whatsapp" />
                       WhatsApp
                     </a>
@@ -207,6 +212,8 @@ export async function SiteShell({ children }: { children: ReactNode }) {
       {visibility.whatsappFloat && whatsapp ? <WhatsAppFloat href={whatsapp} label={contactPage.whatsappLabel} /> : null}
 
       <RevealObserver />
+      {/* Medição própria de visitas (sem cookie): um sinal por página vista. Ver visit-tracker.tsx. */}
+      <VisitTracker />
     </div>
   );
 }

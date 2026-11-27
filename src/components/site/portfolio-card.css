@@ -1,0 +1,33 @@
+/* Cartão de projeto do portfólio: selos sobre a capa (destaque e experiência anterior). Prefixo `s-work__`. */
+@layer components {
+  .s-work__cover {
+    position: relative;
+  }
+  /* Selos encostados no canto da capa, fora das cantoneiras do visor. */
+  .s-work__flag,
+  .s-work__seal {
+    position: absolute;
+    left: 0;
+    z-index: 2;
+    max-width: calc(100% - 1rem);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .s-work__flag {
+    top: 0;
+    padding: 0.5rem 0.75rem 0.45rem;
+    background: var(--color-lima);
+    color: var(--color-grafite);
+  }
+  /* Discreto: papel sobre a imagem, sem cor-sinal. */
+  .s-work__seal {
+    bottom: 0;
+    padding: 0.5rem 0.75rem 0.45rem;
+    background: var(--color-offwhite);
+    color: var(--color-grafite);
+    font-weight: 700;
+  }
+}

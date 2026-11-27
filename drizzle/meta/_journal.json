@@ -43,6 +43,13 @@
       "when": 1795755751007,
       "tag": "0005_site_v2_banners_e_portfolio",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795756228977,
+      "tag": "0006_metricas_do_site",
+      "breakpoints": true
     }
   ]
 }

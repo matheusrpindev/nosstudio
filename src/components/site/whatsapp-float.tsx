@@ -55,6 +55,7 @@ export function WhatsAppFloat({ href, label }: { href: string; label: string }) 
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
+      data-track="whatsapp:flutuante"
       data-tucked={tucked ? "true" : undefined}
       tabIndex={tucked ? -1 : undefined}
     >

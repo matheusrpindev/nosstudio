@@ -103,6 +103,9 @@ export const EXPORT_EXCLUDED_TABLES: ReadonlySet<string> = new Set([
   "user_invites",
   "notifications",
   "agenda_reminder_deliveries",
+  // métricas do site: o sal do dia é segredo e as sessões brutas têm vida curta — só os totais (`visit_stats`) saem
+  "visit_salts",
+  "visit_sessions",
 ]);
 /** Colunas que nunca saem, em qualquer tabela (nome no banco e na propriedade do Drizzle). */
 export const EXPORT_EXCLUDED_COLUMNS: ReadonlySet<string> = new Set(["password_hash", "passwordHash", "token_hash", "tokenHash"]);

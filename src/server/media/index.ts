@@ -1,14 +1,17 @@
 /**
  * Serviço de mídia: único caminho de entrada de arquivos no sistema.
  * - Imagens públicas (site): reencodadas em WebP, sem metadados, com versões menores.
+ * - Vídeos curtos públicos (fundo de banner): MP4 ou WebM conferidos pelos bytes, até 30 MB, guardados como
+ *   chegaram (sem reencodar) e com nome aleatório. Só entram quando o envio pede `kind: "video"`.
  * - Arquivos privados (contratos, comprovantes, materiais): guardados como estão, servidos só com sessão.
  */
 import "server-only";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, or, sql } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { db } from "@/db";
 import {
   agendaEvents,
+  banners,
   brandAssets,
   contracts,
   financeEntries,
@@ -22,7 +25,7 @@ import {
 } from "@/db/schema";
 import type { MediaVisibility } from "@/lib/domain";
 import { mediaUrl } from "@/lib/media";
-import { FILE_MAX_BYTES, MediaError, processImage, sanitizeFileName, sniffFile } from "./process";
+import { checkVideo, FILE_MAX_BYTES, MediaError, processImage, sanitizeFileName, sniffFile } from "./process";
 import { storage } from "./storage";
 
 export { MediaError } from "./process";
@@ -65,6 +68,8 @@ type CreateMediaInput = {
   buffer: Buffer;
   originalName: string;
   visibility: MediaVisibility;
+  /** `video`: vídeo curto público (MP4/WebM). Padrão `image` — arquivo público sem isto é sempre tratado como imagem. */
+  kind?: "image" | "video";
   alt?: string;
   userId?: number | null;
 };
@@ -81,6 +86,25 @@ export async function createMedia(input: CreateMediaInput): Promise<Media> {
   };
 
   try {
+    if (input.visibility === "public" && input.kind === "video") {
+      const video = checkVideo(input.buffer);
+      const storageKey = `${base}.${video.ext}`;
+      await put(storageKey, input.buffer);
+      const [row] = await db
+        .insert(media)
+        .values({
+          storageKey,
+          visibility: "public",
+          mime: video.mime,
+          originalName,
+          size: input.buffer.length,
+          alt,
+          uploadedBy: input.userId ?? null,
+        })
+        .returning();
+      return row;
+    }
+
     if (input.visibility === "public") {
       const image = await processImage(input.buffer);
       const storageKey = `${base}.webp`;
@@ -198,11 +222,21 @@ export async function agendaEventIdsUsingMedia(id: number): Promise<number[]> {
  */
 export async function findMediaUsage(id: number): Promise<string[]> {
   const usage: string[] = [];
-  const [serviceRows, portfolioRows, testimonialRows, contractRows, financeRows, brandRows, contentRows, eventIds] = await Promise.all([
+  const [serviceRows, portfolioRows, bannerRows, testimonialRows, contractRows, financeRows, brandRows, contentRows, eventIds] = await Promise.all([
     db.select({ title: services.title, cover: services.coverMediaId, gallery: services.gallery }).from(services),
     db
-      .select({ title: portfolioProjects.title, cover: portfolioProjects.coverMediaId, gallery: portfolioProjects.gallery })
+      .select({
+        title: portfolioProjects.title,
+        cover: portfolioProjects.coverMediaId,
+        gallery: portfolioProjects.gallery,
+        backstage: portfolioProjects.backstage,
+        beforeAfter: portfolioProjects.beforeAfter,
+      })
       .from(portfolioProjects),
+    db
+      .select({ name: banners.name, title: banners.title })
+      .from(banners)
+      .where(or(eq(banners.desktopMediaId, id), eq(banners.mobileMediaId, id), eq(banners.videoMediaId, id))),
     db.select({ author: testimonials.authorName }).from(testimonials).where(eq(testimonials.mediaId, id)),
     db.select({ title: contracts.title }).from(contracts).where(eq(contracts.fileMediaId, id)),
     db.select({ description: financeEntries.description }).from(financeEntries).where(eq(financeEntries.receiptMediaId, id)),
@@ -211,7 +245,16 @@ export async function findMediaUsage(id: number): Promise<string[]> {
     agendaEventIdsUsingMedia(id),
   ]);
   for (const row of serviceRows) if (row.cover === id || row.gallery.includes(id)) usage.push(`serviço "${row.title}"`);
-  for (const row of portfolioRows) if (row.cover === id || row.gallery.includes(id)) usage.push(`projeto "${row.title}"`);
+  for (const row of portfolioRows) {
+    // capa, galeria, bastidores e pares antes/depois (as colunas JSON podem estar nulas em linhas antigas)
+    const inProject =
+      row.cover === id ||
+      (row.gallery ?? []).includes(id) ||
+      (row.backstage ?? []).includes(id) ||
+      (row.beforeAfter ?? []).some((pair) => pair.beforeMediaId === id || pair.afterMediaId === id);
+    if (inProject) usage.push(`projeto "${row.title}"`);
+  }
+  for (const row of bannerRows) usage.push(`banner "${row.name || row.title || "sem nome"}"`);
   for (const row of testimonialRows) usage.push(`depoimento de ${row.author || "cliente"}`);
   for (const row of contractRows) usage.push(`contrato "${row.title}"`);
   for (const row of financeRows) usage.push(`lançamento "${row.description}"`);

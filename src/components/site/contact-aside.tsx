@@ -25,7 +25,7 @@ export function ContactAside({ whatsapp, instagram, email, steps }: ContactAside
           </h2>
           <div className="contact__buttons">
             {whatsapp ? (
-              <SiteButtonLink href={whatsapp.href} icon="whatsapp" block>
+              <SiteButtonLink href={whatsapp.href} icon="whatsapp" block data-track="whatsapp:contato">
                 {whatsapp.label}
               </SiteButtonLink>
             ) : null}

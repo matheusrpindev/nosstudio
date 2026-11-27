@@ -13,6 +13,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import {
   announcements,
+  banners,
   faqs,
   media,
   packages,
@@ -23,13 +24,15 @@ import {
   type Announcement,
   type Faq,
   type Package,
-  type PortfolioProject,
   type Service,
   type Testimonial,
 } from "@/db/schema";
-import { toPublicImage, type PublicImage } from "@/lib/media";
+import { mediaUrl, toPublicImage, type PublicImage } from "@/lib/media";
+import { BANNER_MAX_SLIDES, isBannerRenderable, resolveBannerHref, type BannerLink, type BannerVideo, type BannerView, type SiteAvailability } from "@/lib/site/banners";
 import { defaultSiteContent, resolveSiteContent, SITE_CONTENT_KEYS, type SiteContent } from "@/lib/site/content";
+import { announcementPaths } from "@/lib/site/announcement-pages";
 import { SITE_PATHS } from "@/lib/site/paths";
+import { projectMediaIds, relatedProjects, toPublicProject, type PublicPortfolioProject } from "@/lib/site/portfolio";
 import { defaultHomeLayout, HOME_LAYOUT_KEY, resolveHomeLayout, type HomeLayout } from "@/lib/site/home-layout";
 import { announcementCacheLife, secondsToNextAnnouncementChange, servableAnnouncements } from "./admin/announcement-status";
 import { SITE_TAG } from "./cache";
@@ -128,6 +131,8 @@ export type PublicAnnouncement = Pick<
   Announcement,
   "id" | "message" | "linkLabel" | "linkUrl" | "bgColor" | "textColor" | "startsAt" | "endsAt" | "dismissible"
 > & {
+  /** Caminhos das páginas em que o aviso aparece (`/contato`…). Vazio = todas. */
+  paths: string[];
   /** Muda quando o aviso é editado — um aviso fechado pelo visitante volta a aparecer se o texto mudar. */
   version: number;
 };
@@ -160,6 +165,7 @@ export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
         startsAt: row.startsAt,
         endsAt: row.endsAt,
         dismissible: row.dismissible,
+        paths: announcementPaths(row.pages),
         version: row.updatedAt.getTime(),
       })),
     };
@@ -169,6 +175,109 @@ export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
   if (life === "site") cacheLife("site");
   else cacheLife(life);
   return items;
+}
+
+// ------------------------------------------------------------------ banners
+/** O que está no ar agora (serviços, planos, portfólio, eventos) — decide para onde um botão de banner pode levar. */
+export async function getSiteAvailability(): Promise<SiteAvailability> {
+  const [content, serviceList, pkgs, portfolio] = await Promise.all([getSiteContent(), getServices(), getPackages(), getPortfolio()]);
+  return {
+    services: serviceList.map((service) => service.slug),
+    plans: content.visibility.packages && pkgs.plans.length + pkgs.standalone.length > 0,
+    portfolio: content.visibility.portfolio && portfolio.length > 0,
+    projects: portfolio.map((project) => project.slug),
+    events: content.visibility.weddings,
+  };
+}
+
+/**
+ * Banners do carrossel da página inicial que estão no ar AGORA: ligados, dentro da janela de exibição e com o
+ * mínimo para aparecer (`isBannerRenderable`), na ordem do painel. Lista vazia = a home mostra a abertura padrão.
+ *
+ * Agendamento: mesma técnica da barra de avisos (`getAnnouncements`). Um banner agendado NÃO sai daqui antes da
+ * hora — o texto e a arte não podem aparecer no código-fonte do site antes da data combinada — nem depois do
+ * fim; para entrar e sair no horário, este cache vence no instante da próxima mudança (`announcementCacheLife`).
+ * O carrossel confere o fim da janela de novo no navegador (a página pode ter alguns minutos).
+ * Os botões já saem com o endereço final (`resolveBannerHref`: página fora do ar → destino alternativo).
+ */
+export async function getBanners(): Promise<BannerView[]> {
+  "use cache";
+  cacheTag(SITE_TAG);
+  const site = await getSiteAvailability();
+  const { items, nextChange } = await safely("banners", { items: [] as BannerView[], nextChange: null as number | null }, async () => {
+    const now = new Date();
+    const rows = await db.select().from(banners).where(eq(banners.enabled, true)).orderBy(asc(banners.sortOrder), asc(banners.id));
+    const live = servableAnnouncements(rows, now);
+    const ids = [...new Set(live.flatMap((row) => [row.desktopMediaId, row.mobileMediaId, row.videoMediaId]).filter((id): id is number => typeof id === "number"))];
+    const files = new Map((ids.length ? await db.select().from(media).where(inArray(media.id, ids)) : []).map((row) => [row.id, row]));
+    const image = (id: number | null) => (id ? toPublicImage(files.get(id)) : null);
+    const video = (id: number | null): BannerVideo | null => {
+      const row = id ? files.get(id) : undefined;
+      return row && row.visibility === "public" && row.mime.startsWith("video/") ? { id: row.id, url: mediaUrl(row.storageKey), mime: row.mime } : null;
+    };
+    const link = (label: string, url: string): BannerLink | null => {
+      const href = resolveBannerHref(url, site).href;
+      return href && label.trim() ? { label: label.trim(), href } : null;
+    };
+    const views = live.map((row): BannerView => {
+      const primaryHref = resolveBannerHref(row.buttonUrl, site).href;
+      return {
+        id: row.id,
+        layout: row.layout,
+        title: row.title,
+        subtitle: row.subtitle,
+        // em peça pronta o botão principal é o link do banner inteiro: vale mesmo sem rótulo
+        primary: row.layout === "peca" ? (primaryHref ? { label: row.buttonLabel.trim(), href: primaryHref } : null) : link(row.buttonLabel, row.buttonUrl),
+        secondary: link(row.secondaryLabel, row.secondaryUrl),
+        desktop: image(row.desktopMediaId),
+        mobile: image(row.mobileMediaId),
+        video: row.layout === "midia" ? video(row.videoMediaId) : null,
+        alt: row.alt,
+        bgColor: row.bgColor,
+        tone: row.tone,
+        durationSeconds: row.durationSeconds,
+        endsAt: row.endsAt,
+      };
+    });
+    return {
+      nextChange: secondsToNextAnnouncementChange(rows, now),
+      items: views
+        .filter((view) => isBannerRenderable({ layout: view.layout, title: view.title, hasImage: Boolean(view.desktop || view.mobile), hasVideo: Boolean(view.video) }))
+        .slice(0, BANNER_MAX_SLIDES),
+    };
+  });
+  const life = announcementCacheLife(nextChange);
+  if (life === "site") cacheLife("site");
+  else cacheLife(life);
+  return items;
+}
+
+/**
+ * Ids das mídias (imagens e vídeos) dos banners LIGADOS cuja janela ainda não terminou — as que a rota /media
+ * entrega a qualquer visitante. Banner desligado ou encerrado sai daqui: a arte deixa de ser pública.
+ * Um banner agendado já entra antes do início (o endereço do arquivo é aleatório e não aparece em página
+ * nenhuma até a hora): assim a imagem está liberada no instante em que o banner entra no ar. No fim da janela a
+ * lista se renova junto com o carrossel (mesmo `cacheLife` de `getBanners`).
+ */
+export async function getBannerMediaIds(): Promise<number[]> {
+  "use cache";
+  cacheTag(SITE_TAG);
+  const { ids, nextChange } = await safely("mídias dos banners", { ids: [] as number[], nextChange: null as number | null }, async () => {
+    const now = new Date();
+    const rows = await db.select().from(banners).where(eq(banners.enabled, true));
+    const open = servableAnnouncements(
+      rows.map((row) => ({ ...row, startsAt: null })),
+      now,
+    );
+    return {
+      nextChange: secondsToNextAnnouncementChange(rows, now),
+      ids: [...new Set(open.flatMap((row) => [row.desktopMediaId, row.mobileMediaId, row.videoMediaId]).filter((id): id is number => typeof id === "number"))],
+    };
+  });
+  const life = announcementCacheLife(nextChange);
+  if (life === "site") cacheLife("site");
+  else cacheLife(life);
+  return ids;
 }
 
 // ----------------------------------------------------------------- serviços
@@ -339,17 +448,13 @@ export async function getFaqs(): Promise<PublicFaq[]> {
 }
 
 // ---------------------------------------------------------------- portfólio
-export type PublicPortfolioProject = Pick<
-  PortfolioProject,
-  "id" | "slug" | "title" | "category" | "summary" | "description" | "servicesDone" | "videoUrl" | "projectDate" | "featured"
-> & {
-  /** Nome do cliente — só vem preenchido quando a exibição foi autorizada. */
-  clientName: string;
-  cover: PublicImage | null;
-  gallery: PublicImage[];
-};
+/** O formato público de um projeto (e a função que o monta, testada) vivem em src/lib/site/portfolio.ts. */
+export type { PublicPortfolioProject } from "@/lib/site/portfolio";
 
-/** Projetos publicados (vazio enquanto o portfólio estiver oculto nas configurações de visibilidade). */
+/**
+ * Projetos publicados, na ordem definida no painel (vazio enquanto o portfólio estiver oculto nas configurações
+ * de visibilidade). Rascunhos nunca saem daqui — nem as imagens deles (ver `getPublishedMediaIds`).
+ */
 export async function getPortfolio(): Promise<PublicPortfolioProject[]> {
   "use cache";
   cacheTag(SITE_TAG);
@@ -361,29 +466,22 @@ export async function getPortfolio(): Promise<PublicPortfolioProject[]> {
       .select()
       .from(portfolioProjects)
       .where(eq(portfolioProjects.published, true))
-      .orderBy(desc(portfolioProjects.featured), asc(portfolioProjects.sortOrder), desc(portfolioProjects.projectDate));
-    const images = await loadImages(rows.flatMap((row) => [row.coverMediaId, ...row.gallery]));
-    return rows.map((row) => ({
-      id: row.id,
-      slug: row.slug,
-      title: row.title,
-      category: row.category,
-      summary: row.summary,
-      description: row.description,
-      servicesDone: row.servicesDone,
-      videoUrl: row.videoUrl,
-      projectDate: row.projectDate,
-      featured: row.featured,
-      clientName: row.showClient ? row.clientName : "",
-      cover: row.coverMediaId ? (images.get(row.coverMediaId) ?? null) : null,
-      gallery: row.gallery.map((id) => images.get(id)).filter((image): image is PublicImage => Boolean(image)),
-    }));
+      .orderBy(asc(portfolioProjects.sortOrder), asc(portfolioProjects.id));
+    const images = await loadImages(rows.flatMap(projectMediaIds));
+    return rows.map((row) => toPublicProject(row, images));
   });
 }
 
 export async function getPortfolioProject(slug: string): Promise<PublicPortfolioProject | null> {
   const all = await getPortfolio();
   return all.find((project) => project.slug === slug) ?? null;
+}
+
+/** Um projeto publicado pelo slug, com os relacionados (escolhidos à mão ou da mesma categoria; só publicados). */
+export async function getPortfolioProjectPage(slug: string): Promise<{ project: PublicPortfolioProject; related: PublicPortfolioProject[] } | null> {
+  const all = await getPortfolio();
+  const project = all.find((candidate) => candidate.slug === slug);
+  return project ? { project, related: relatedProjects(project, all) } : null;
 }
 
 // -------------------------------------------------------------- depoimentos
@@ -425,6 +523,7 @@ export async function getTestimonials(): Promise<PublicTestimonial[]> {
  * fixo, serviços visíveis, portfólio e depoimentos publicados). A rota /media usa esta lista: uma imagem pública
  * que nenhum conteúdo publicado usa (depoimento despublicado, projeto em rascunho, upload ainda não salvo) só é
  * entregue a quem está logado no painel — despublicar tira a imagem do ar, não só o texto.
+ * (As mídias dos banners têm lista própria, `getBannerMediaIds`, porque entram e saem do ar por horário.)
  */
 export async function getPublishedMediaIds(): Promise<number[]> {
   "use cache";
@@ -438,7 +537,12 @@ export async function getPublishedMediaIds(): Promise<number[]> {
     images.share,
     ...images.founders,
     ...serviceList.flatMap((service) => [service.cover, ...service.gallery]),
-    ...portfolio.flatMap((project) => [project.cover, ...project.gallery]),
+    ...portfolio.flatMap((project) => [
+      project.cover,
+      ...project.gallery,
+      ...project.backstage,
+      ...project.beforeAfter.flatMap((pair) => [pair.before, pair.after]),
+    ]),
     ...testimonialList.map((testimonial) => testimonial.image),
   ];
   return [...new Set(all.flatMap((image) => (image ? [image.id] : [])))];

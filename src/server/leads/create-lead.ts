@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/dates";
 import { SERVICE_INTEREST_LABELS } from "@/lib/domain";
 import { onlyDigits, whatsAppLink } from "@/lib/format";
 import { buildLeadRecord, type LeadFormData } from "@/lib/site/lead-form";
+import { recordFormSubmission } from "@/server/metrics/collect";
 
 /** Observação gravada no lead quando o formulário foi enviado rápido demais (aparece na ficha, em "Pedido"). */
 export const FAST_SUBMIT_NOTE = { label: "Atenção", value: "Enviado poucos segundos depois de abrir o formulário — pode ser automático. Confira antes de responder." } as const;
@@ -36,6 +37,8 @@ export async function createLead(data: LeadFormData, consentVersion: string, sig
       status: "novo",
     })
     .returning();
+  // métricas do site: conta o envio (só o total do dia e a página do formulário — nenhum dado do lead)
+  await recordFormSubmission(lead.originPath);
   return lead;
 }
 

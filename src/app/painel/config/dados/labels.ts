@@ -34,4 +34,5 @@ export const TABLE_LABELS: Record<string, string> = {
   // não entra na exportação nem na contagem (EXPORT_EXCLUDED_TABLES); o rótulo fica para o dia em que entrar
   user_invites: "Usuários: convites",
   users: "Usuários (sem senhas)",
+  visit_stats: "Site: métricas (totais por dia, sem dados pessoais)",
 };

@@ -57,6 +57,9 @@ import {
   TASK_PRIORITIES,
   TESTIMONIAL_KINDS,
   USER_ROLES,
+  VISIT_DEVICES,
+  VISIT_DIMENSIONS,
+  VISIT_SOURCES,
 } from "@/lib/domain";
 import type { AgendaReminderChannel } from "@/lib/domain";
 import type { Recurrence } from "@/lib/agenda/recurrence";
@@ -1053,6 +1056,64 @@ export const brandAssets = sqliteTable("brand_assets", {
   updatedAt: updatedAt(),
 });
 
+// ========================================================== MÉTRICAS DO SITE
+// Medição própria, sem cookie e sem IP guardado (método em src/server/metrics/collect.ts).
+
+/**
+ * Sal do dia: entra no código do visitante (HMAC de IP + navegador). É aleatório, existe UM por dia e o de ontem
+ * é apagado na virada — depois disso não há como ligar um visitante a outro dia nem chegar ao IP.
+ * Nunca sai do banco (fica fora da exportação).
+ */
+export const visitSalts = sqliteTable("visit_salts", {
+  day: text("day").primaryKey(), // YYYY-MM-DD (fuso do estúdio)
+  salt: text("salt").notNull(),
+  createdAt: createdAt(),
+});
+
+/**
+ * Sessões de visita (dado bruto, vida curta: `VISIT_SESSION_RETENTION_DAYS`). Uma linha por visita: o mesmo
+ * visitante do dia volta a contar como visita nova depois de 30 minutos sem atividade. Sem IP, sem cookie, sem
+ * identificador que dure mais de um dia.
+ */
+export const visitSessions = sqliteTable(
+  "visit_sessions",
+  {
+    id: id(),
+    day: text("day").notNull(),
+    /** HMAC(IP + navegador, sal do dia), truncado. Só serve dentro do próprio dia. */
+    visitorHash: text("visitor_hash").notNull(),
+    startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
+    lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
+    pageviews: integer("pageviews").notNull().default(1),
+    entryPath: text("entry_path").notNull().default("/"),
+    source: text("source", { enum: VISIT_SOURCES }).notNull().default("direto"),
+    /** Só o domínio de onde a pessoa veio (nunca a URL inteira). */
+    referrerHost: text("referrer_host").notNull().default(""),
+    campaign: text("campaign").notNull().default(""),
+    device: text("device", { enum: VISIT_DEVICES }).notNull().default("computador"),
+  },
+  (t) => [index("visit_sessions_visitor_idx").on(t.day, t.visitorHash, t.lastSeenAt), index("visit_sessions_started_idx").on(t.startedAt)],
+);
+
+/**
+ * Totais diários, agregados e anônimos — é o que fica guardado. Uma linha por dia × recorte × chave
+ * (`VISIT_DIMENSIONS`): `visits` = visitas (na página: visitas que COMEÇARAM nela); `visitors` = visitantes
+ * estimados (só no recorte `total`); `hits` = páginas vistas, cliques ou formulários enviados.
+ */
+export const visitStats = sqliteTable(
+  "visit_stats",
+  {
+    id: id(),
+    day: text("day").notNull(),
+    dimension: text("dimension", { enum: VISIT_DIMENSIONS }).notNull(),
+    key: text("key").notNull().default(""),
+    visits: integer("visits").notNull().default(0),
+    visitors: integer("visitors").notNull().default(0),
+    hits: integer("hits").notNull().default(0),
+  },
+  (t) => [uniqueIndex("visit_stats_day_dimension_key_idx").on(t.day, t.dimension, t.key), index("visit_stats_dimension_day_idx").on(t.dimension, t.day)],
+);
+
 // ================================================================== RELAÇÕES
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
@@ -1191,12 +1252,15 @@ export type ProjectMember = typeof projectMembers.$inferSelect;
 export type ClientUser = typeof clientUsers.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
+export type Banner = typeof banners.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type Package = typeof packages.$inferSelect;
 export type PortfolioProject = typeof portfolioProjects.$inferSelect;
 export type Testimonial = typeof testimonials.$inferSelect;
 export type Faq = typeof faqs.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
+export type VisitSession = typeof visitSessions.$inferSelect;
+export type VisitStat = typeof visitStats.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type ClientInteraction = typeof clientInteractions.$inferSelect;
 export type Project = typeof projects.$inferSelect;

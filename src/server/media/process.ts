@@ -8,6 +8,12 @@ import type { MediaVariant } from "@/db/schema";
 
 export const IMAGE_MAX_BYTES = 15 * 1024 * 1024;
 export const FILE_MAX_BYTES = 25 * 1024 * 1024;
+/**
+ * Vídeo curto do site (fundo de banner): 30 MB. É o bastante para ~15–20 s em 1080p bem comprimido e cabe no
+ * limite de corpo do proxy (next.config.ts, `proxyClientMaxBodySize: "32mb"`). O arquivo NÃO é reencodado:
+ * vai para o disco como chegou, então o tamanho enviado é o tamanho que o visitante baixa.
+ */
+export const VIDEO_MAX_BYTES = 30 * 1024 * 1024;
 const IMAGE_MAX_SIDE = 12_000;
 const IMAGE_MAX_PIXELS = 80_000_000; // barra "bombas de pixels" antes de decodificar
 const MAIN_MAX_SIDE = 2560;
@@ -37,6 +43,75 @@ export function sniffImage(buffer: Buffer): ImageKind | null {
   if (ascii(buffer, 0, 6) === "GIF87a" || ascii(buffer, 0, 6) === "GIF89a") return "gif";
   if (ascii(buffer, 4, 8) === "ftyp" && /^(avif|avis)$/.test(ascii(buffer, 8, 12))) return "avif";
   return null;
+}
+
+export type VideoKind = { ext: "mp4" | "webm"; mime: "video/mp4" | "video/webm" };
+
+/** Marcas (`ftyp`) de MP4 que os navegadores tocam. QuickTime (`qt  `, .mov), HEIC/AVIF e 3GP ficam de fora. */
+const MP4_BRANDS = new Set(["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "iso7", "iso8", "iso9", "mp41", "mp42", "avc1", "M4V ", "dash", "mp71", "MSNV"]);
+
+/**
+ * Percorre as caixas de primeiro nível de um arquivo ISO-BMFF (`[tamanho][tipo]…`) e devolve os tipos na ordem.
+ * `null` se a estrutura não fechar com o tamanho do arquivo (arquivo truncado ou que só imita o cabeçalho).
+ */
+function topLevelBoxes(buffer: Buffer): string[] | null {
+  const types: string[] = [];
+  let offset = 0;
+  while (offset < buffer.length) {
+    if (offset + 8 > buffer.length || types.length > 256) return null;
+    let size = buffer.readUInt32BE(offset);
+    const type = ascii(buffer, offset + 4, offset + 8);
+    if (!/^[\x20-\x7e]{4}$/.test(type)) return null;
+    if (size === 1) {
+      // tamanho de 64 bits logo depois do tipo
+      if (offset + 16 > buffer.length) return null;
+      const large = buffer.readBigUInt64BE(offset + 8);
+      if (large < BigInt(16) || large > BigInt(buffer.length - offset)) return null;
+      size = Number(large);
+    } else if (size === 0) {
+      size = buffer.length - offset; // "até o fim do arquivo"
+    } else if (size < 8 || size > buffer.length - offset) {
+      return null;
+    }
+    types.push(type);
+    offset += size;
+  }
+  return types;
+}
+
+/**
+ * Reconhece um vídeo aceito pelo CONTEÚDO: MP4 (ISO-BMFF com marca de MP4, índice `moov` e dados `mdat`/`moof`,
+ * caixas coerentes com o tamanho do arquivo) ou WebM (cabeçalho EBML com DocType "webm" — Matroska comum, .mkv,
+ * não passa). Nada aqui confia na extensão nem no tipo informado pelo navegador.
+ */
+export function sniffVideo(buffer: Buffer): VideoKind | null {
+  if (ascii(buffer, 4, 8) === "ftyp") {
+    if (!MP4_BRANDS.has(ascii(buffer, 8, 12))) return null;
+    const boxes = topLevelBoxes(buffer);
+    if (!boxes || boxes[0] !== "ftyp" || !boxes.includes("moov") || !(boxes.includes("mdat") || boxes.includes("moof"))) return null;
+    return { ext: "mp4", mime: "video/mp4" };
+  }
+  if (startsWith(buffer, [0x1a, 0x45, 0xdf, 0xa3])) {
+    // DocType (id 0x4282) dentro do cabeçalho EBML, que fica nas primeiras dezenas de bytes
+    const head = buffer.subarray(0, 64);
+    const at = head.indexOf(Buffer.from([0x42, 0x82]));
+    if (at === -1) return null;
+    const length = head[at + 2] & 0x7f;
+    if (ascii(head, at + 3, at + 3 + length) !== "webm") return null;
+    // o corpo do arquivo é um Segment (id 0x18538067)
+    if (buffer.indexOf(Buffer.from([0x18, 0x53, 0x80, 0x67])) === -1) return null;
+    return { ext: "webm", mime: "video/webm" };
+  }
+  return null;
+}
+
+/** Valida um vídeo curto do site (tamanho e tipo real). Lança MediaError com mensagem para o usuário. */
+export function checkVideo(buffer: Buffer): VideoKind {
+  if (buffer.length === 0) throw new MediaError("O arquivo está vazio.", 400);
+  if (buffer.length > VIDEO_MAX_BYTES) throw new MediaError("Vídeo grande demais (máximo de 30 MB). Exporte um trecho mais curto ou com menos qualidade.", 413);
+  const kind = sniffVideo(buffer);
+  if (!kind) throw new MediaError("Formato de vídeo não aceito. Envie MP4 (H.264) ou WebM.", 415);
+  return kind;
 }
 
 /** Tipos aceitos como arquivo privado (contratos, comprovantes, materiais da marca). */

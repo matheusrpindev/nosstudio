@@ -229,7 +229,12 @@ export function ContactChannels({ channels, className }: { channels: ContactChan
         const external = /^https?:/i.test(channel.href);
         return (
           <li key={channel.label}>
-            <a href={channel.href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+            <a
+              href={channel.href}
+              {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              // clique medido nas métricas do site (ver visit-tracker.tsx)
+              {...(/^https:\/\/wa\.me\//.test(channel.href) ? { "data-track": "whatsapp:canais" } : {})}
+            >
               <span className="s-channels__label">{channel.label}</span>
               <span className="s-channels__value">{channel.value}</span>
               <Icon name={channel.icon ?? "arrow-ne"} />

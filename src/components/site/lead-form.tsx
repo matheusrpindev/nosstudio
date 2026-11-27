@@ -186,7 +186,7 @@ function LeadFormInner({
         </Title>
         <p className="s-lead">{state.data.text}</p>
         {state.data.whatsappUrl ? (
-          <a className="s-btn s-btn--primary" href={state.data.whatsappUrl} target="_blank" rel="noopener noreferrer">
+          <a className="s-btn s-btn--primary" href={state.data.whatsappUrl} target="_blank" rel="noopener noreferrer" data-track="whatsapp:formulario">
             <span>Continuar no WhatsApp</span>
             <Icon name="whatsapp" />
           </a>

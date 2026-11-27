@@ -725,6 +725,45 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
           area("emptyText", "Texto quando ainda não há projetos", "Mostrado se a página for aberta sem nenhum projeto publicado."),
         ],
       },
+      {
+        id: "grade",
+        title: "Grade, pesquisa e filtros",
+        description: "Os nomes das categorias dos filtros são fixos; só aparecem as categorias que têm projeto publicado.",
+        fields: [
+          text("projectsLabel", "Rótulo da seção de projetos"),
+          text("searchLabel", "Nome do campo de pesquisa", "Lido por leitores de tela e mostrado acima do campo."),
+          text("searchPlaceholder", "Exemplo dentro do campo de pesquisa"),
+          text("allLabel", "Filtro que mostra todas as categorias"),
+          text("featuredLabel", "Selo dos projetos em destaque"),
+          text("noResultsTitle", "Título quando a pesquisa não encontra nada"),
+          area("noResultsText", "Texto quando a pesquisa não encontra nada"),
+          text("clearLabel", "Botão que limpa a pesquisa e os filtros"),
+        ],
+      },
+      {
+        id: "projeto",
+        title: "Página de cada projeto",
+        description: "Títulos dos blocos de /portfolio/nome-do-projeto. Bloco sem conteúdo cadastrado não aparece.",
+        fields: within("detail", [
+          text("backLabel", "Link de volta para o portfólio"),
+          text("aboutTitle", "Rótulo do bloco de apresentação", "Cliente, categoria, data, serviços e descrição."),
+          text("caseTitle", "Rótulo do estudo de caso", "Reúne objetivo, desafio, solução e resultados."),
+          text("objectiveTitle", "Título de “objetivo”"),
+          text("challengeTitle", "Título de “desafio”"),
+          text("solutionTitle", "Título de “solução”"),
+          text("resultsTitle", "Título de “resultados”"),
+          text("videoTitle", "Título dos vídeos"),
+          text("galleryTitle", "Título da galeria"),
+          text("beforeAfterTitle", "Título de “antes e depois”"),
+          text("beforeLabel", "Etiqueta da imagem de antes"),
+          text("afterLabel", "Etiqueta da imagem de depois"),
+          text("backstageTitle", "Título dos bastidores"),
+          text("relatedTitle", "Título dos projetos relacionados"),
+          text("shareTitle", "Título do compartilhamento"),
+          text("previousTitle", "Aviso de experiência anterior: título", "Aparece nos projetos marcados como experiência anterior dos fundadores."),
+          area("previousText", "Aviso de experiência anterior: texto", "A observação escrita em cada projeto aparece logo depois deste texto."),
+        ]),
+      },
     ],
   },
 
@@ -852,6 +891,41 @@ export const SITE_SECTIONS: Record<SiteContentKey, SectionConfig> = {
     ],
   },
 
+  // -------------------------------------------------------- visitCounter
+  visitCounter: {
+    key: "visitCounter",
+    title: SITE_CONTENT_LABELS.visitCounter,
+    summary: "Liga o contador público de visitas (acima do rodapé) e define a frase e a legenda.",
+    publicPath: "/#contador-de-visitas",
+    notice: {
+      tone: "info",
+      title: "O número é real e não pode ser digitado",
+      text: "O contador mostra o total de visitas medido pelo próprio site desde que a contagem começou (veja Editar site → Métricas). Ele nasce desligado: ligue quando quiser mostrar. O número do site é atualizado a cada poucos minutos, e visitas de robôs e de quem está logado no painel não entram na conta.",
+    },
+    groups: [
+      {
+        id: "exibicao",
+        title: "Exibição",
+        fields: [
+          toggle("enabled", "Mostrar o contador no site", "Aparece no fim de todas as páginas, logo acima do rodapé. Sem nenhuma visita medida, ele não aparece mesmo ligado."),
+          text("minimum", "Só mostrar a partir de quantas visitas", "Opcional, só números (ex.: 500). Enquanto o total for menor, o contador fica oculto. Vazio = mostra desde a primeira visita."),
+        ],
+      },
+      {
+        id: "textos",
+        title: "Textos",
+        fields: [
+          text("phrase", "Frase", "Aparece ao lado do número."),
+          text(
+            "label",
+            "Legenda do número",
+            "Diz o que o número conta. {{inicio}} é trocado pelo mês em que a contagem começou (ex.: “novembro de 2026”). Sem legenda, o contador não aparece.",
+          ),
+        ],
+      },
+    ],
+  },
+
   // -------------------------------------------------------- notFoundPage
   notFoundPage: {
     key: "notFoundPage",
@@ -931,6 +1005,7 @@ export const SECTION_ORDER: readonly SiteContentKey[] = [
   "privacyPage",
   "termsPage",
   "cookiesPage",
+  "visitCounter",
   "notFoundPage",
   "seo",
 ];
